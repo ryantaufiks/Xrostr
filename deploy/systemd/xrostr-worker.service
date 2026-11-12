@@ -1,0 +1,16 @@
+# User service. Install: see README "Running as a service".
+[Unit]
+Description=Xrostr worker (outbox relay)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/inroster/inroster-hrms/apps/worker
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node --env-file=../../.env dist/main.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

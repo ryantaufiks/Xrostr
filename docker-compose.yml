@@ -3,6 +3,7 @@ name: xrostr
 services:
   postgres:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: xrostr_owner
       POSTGRES_PASSWORD: xrostr_owner_dev

@@ -66,6 +66,21 @@ cloudflared tunnel run xrostr
 The app trusts exactly one proxy hop (`trust proxy = 1`), so audit logs and rate limits see the
 real client IP that cloudflared forwards.
 
+## Running as a service
+
+`deploy/systemd/` holds user units for the API and worker (paths assume the repo lives at
+`~/inroster/inroster-hrms`; edit `WorkingDirectory` otherwise). PostgreSQL restarts with Docker.
+
+```bash
+pnpm build
+cp deploy/systemd/xrostr-*.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now xrostr-api xrostr-worker
+journalctl --user -u xrostr-api -f
+```
+
+After pulling changes: `pnpm build && pnpm db:migrate && systemctl --user restart xrostr-api xrostr-worker`.
+
 ## Onboarding flow
 
 1. `POST /platform/auth/login` as the superadmin → session with `stage: "mfa_setup"`.
