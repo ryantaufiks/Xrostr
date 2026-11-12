@@ -74,6 +74,10 @@ export abstract class AccountRepository {
   abstract setUserStatus(userId: string, status: AccountStatus): Promise<void>;
   /** Email, status and role of tenant users, by id. Requires a tenant unit of work. */
   abstract summarize(userIds: readonly string[]): Promise<Map<string, UserSummary>>;
+  /** Users holding a role, any status. Requires a tenant unit of work. */
+  abstract usersWithRole(
+    roleKey: string,
+  ): Promise<{ id: string; email: string; fullName: string; status: AccountStatus }[]>;
   /** Active users whose role grants the permission. Requires a tenant unit of work. */
   abstract activeUserIdsWithPermission(permission: string): Promise<string[]>;
 }
@@ -130,4 +134,6 @@ export abstract class SessionRepository {
   abstract revokeFamily(familyId: string, at: Date): Promise<void>;
   /** Signs the subject out everywhere. */
   abstract revokeAllForSubject(subject: SubjectRef, at: Date): Promise<void>;
+  /** Signs every user of a tenant out, e.g. when the tenant is suspended. */
+  abstract revokeAllForTenant(tenantId: string, at: Date): Promise<void>;
 }

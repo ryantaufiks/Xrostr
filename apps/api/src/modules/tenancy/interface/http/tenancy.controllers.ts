@@ -1,7 +1,13 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import {
   createTenantRequestSchema,
+  legalEntityInputSchema,
+  updateTenantSchema,
   type CreateTenantRequest,
+  type LegalEntityInput,
+  type ReissuedAdminInvite,
+  type TenantDetail,
+  type UpdateTenantRequest,
   type CreateTenantResponse,
   type TenantSummary,
 } from '@xrostr/contracts';
@@ -25,6 +31,7 @@ import {
   ListTenantsUseCase,
   type LegalEntityView,
 } from '../../application/tenancy.use-cases.js';
+import { ManageTenantService } from '../../application/manage-tenant.service.js';
 
 @PlatformOnly()
 @Controller('platform/tenants')
@@ -32,6 +39,7 @@ export class PlatformTenantsController {
   constructor(
     private readonly createTenant: CreateTenantUseCase,
     private readonly listTenants: ListTenantsUseCase,
+    private readonly manage: ManageTenantService,
   ) {}
 
   @Post()
@@ -46,6 +54,42 @@ export class PlatformTenantsController {
   @Get()
   list(): Promise<TenantSummary[]> {
     return this.listTenants.execute();
+  }
+
+  @Get(':id')
+  async detail(@Param('id', ParseUUIDPipe) id: string): Promise<TenantDetail> {
+    return unwrap(await this.manage.detail(id));
+  }
+
+  @Patch(':id')
+  async update(
+    @CurrentPrincipal() actor: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(updateTenantSchema)) body: UpdateTenantRequest,
+    @Client() client: ClientInfo,
+  ): Promise<TenantDetail> {
+    return unwrap(await this.manage.update(actor, id, body, client.ip));
+  }
+
+  @Post(':id/legal-entities')
+  async addLegalEntity(
+    @CurrentPrincipal() actor: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(legalEntityInputSchema)) body: LegalEntityInput,
+    @Client() client: ClientInfo,
+  ): Promise<TenantDetail> {
+    return unwrap(await this.manage.addLegalEntity(actor, id, body, client.ip));
+  }
+
+  @Post(':id/admins/:userId/invite')
+  @HttpCode(200)
+  async reissueAdminInvite(
+    @CurrentPrincipal() actor: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Client() client: ClientInfo,
+  ): Promise<ReissuedAdminInvite> {
+    return unwrap(await this.manage.reissueAdminInvite(actor, id, userId, client.ip));
   }
 }
 

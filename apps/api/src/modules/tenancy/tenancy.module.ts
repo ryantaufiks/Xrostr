@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { IdentityModule } from '../identity/identity.module.js';
+import { ManageTenantService } from './application/manage-tenant.service.js';
 import { LegalEntityDirectory } from './application/legal-entity-directory.js';
 import { TenantRepository } from './application/ports.js';
 import {
@@ -24,6 +25,7 @@ import {
     ListTenantsUseCase,
     ListLegalEntitiesUseCase,
     GetTenantProfileUseCase,
+    ManageTenantService,
     LegalEntityDirectory,
   ],
   exports: [LegalEntityDirectory],

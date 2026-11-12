@@ -60,7 +60,14 @@ export default function TenantsPage() {
             <tbody className="divide-y divide-line">
               {tenants.map((t) => (
                 <tr key={t.id} className="hover:bg-sunken">
-                  <td className="px-5 py-3.5 font-medium text-fg">{t.name}</td>
+                  <td className="px-5 py-3.5 font-medium text-fg">
+                    <Link
+                      href={`/platform/tenants/${t.id}`}
+                      className="underline-offset-4 hover:underline"
+                    >
+                      {t.name}
+                    </Link>
+                  </td>
                   <td className="px-5 py-3.5 font-mono text-xs text-muted">{t.slug}</td>
                   <td className="px-5 py-3.5 text-muted">
                     {REGION_LABELS[t.dataRegion] ?? t.dataRegion}
@@ -68,7 +75,7 @@ export default function TenantsPage() {
                   <td className="px-5 py-3.5 text-muted">{PLAN_LABELS[t.plan] ?? t.plan}</td>
                   <td className="px-5 py-3.5">
                     <Badge tone={t.status === 'active' ? 'active' : 'warn'}>
-                      {t.status === 'active' ? 'Aktif' : t.status}
+                      {t.status === 'active' ? 'Aktif' : 'Ditangguhkan'}
                     </Badge>
                   </td>
                   <td className="px-5 py-3.5 text-muted">{formatDate(t.createdAt)}</td>

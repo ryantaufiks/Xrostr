@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { CountryCode, TenantSummary } from '@xrostr/contracts';
+import type { CountryCode, Plan, TenantStatus, TenantSummary } from '@xrostr/contracts';
 import { legalEntities, tenants } from '@xrostr/db';
 import { asc, desc, eq } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
@@ -44,6 +44,13 @@ export class DrizzleTenantRepository extends TenantRepository {
       .where(eq(tenants.id, id))
       .limit(1);
     return row ? toSummary(row) : null;
+  }
+
+  async update(
+    id: string,
+    changes: Partial<{ name: string; plan: Plan; status: TenantStatus }>,
+  ): Promise<void> {
+    await this.ctx.executor().update(tenants).set(changes).where(eq(tenants.id, id));
   }
 
   async list(): Promise<TenantSummary[]> {

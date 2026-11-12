@@ -181,4 +181,12 @@ export class DrizzleSessionRepository extends SessionRepository {
         ),
       );
   }
+
+  async revokeAllForTenant(tenantId: string, at: Date): Promise<void> {
+    await this.ctx
+      .executor()
+      .update(sessions)
+      .set({ revokedAt: at })
+      .where(and(eq(sessions.tenantId, tenantId), isNull(sessions.revokedAt)));
+  }
 }

@@ -244,4 +244,127 @@ describe('Phase 0: platform onboarding, auth and tenant isolation', () => {
       expect(res.body.code).toBe('invalid_credentials');
     }
   });
+
+  describe('superadmin edits an existing tenant', () => {
+    const platform = () => bearer(superadmin.accessToken);
+    let c: { id: string; adminId: string; invite: string };
+
+    beforeAll(async () => {
+      const res = await http
+        .post('/platform/tenants')
+        .set(platform())
+        .send(tenantRequest('tenant-c', 'admin@c.test'))
+        .expect(201);
+      c = {
+        id: res.body.tenantId,
+        adminId: res.body.firstAdminUserId,
+        invite: res.body.inviteToken,
+      };
+    });
+
+    it('shows a tenant with its legal entities and administrators', async () => {
+      const res = await http.get(`/platform/tenants/${c.id}`).set(platform()).expect(200);
+      expect(res.body).toMatchObject({ slug: 'tenant-c', status: 'active' });
+      expect(
+        res.body.legalEntities.map((e: { countryCode: string }) => e.countryCode).sort(),
+      ).toEqual(['ID', 'SG']);
+      expect(res.body.admins).toEqual([
+        { userId: c.adminId, email: 'admin@c.test', fullName: 'Admin tenant-c', status: 'invited' },
+      ]);
+      await http
+        .get('/platform/tenants/00000000-0000-4000-8000-000000000000')
+        .set(platform())
+        .expect(404);
+    });
+
+    it('renames and changes the plan, but never the slug', async () => {
+      const res = await http
+        .patch(`/platform/tenants/${c.id}`)
+        .set(platform())
+        .send({ name: 'Tenant C Renamed', plan: 'enterprise', slug: 'hijack' })
+        .expect(200);
+      expect(res.body).toMatchObject({
+        name: 'Tenant C Renamed',
+        plan: 'enterprise',
+        slug: 'tenant-c',
+      });
+      await http.patch(`/platform/tenants/${c.id}`).set(platform()).send({}).expect(422);
+      await http
+        .patch(`/platform/tenants/${c.id}`)
+        .set(bearer(tenants.b.tokens!.accessToken))
+        .send({ name: 'Nope' })
+        .expect(403);
+    });
+
+    it('adds a legal entity and refuses a duplicate name', async () => {
+      const res = await http
+        .post(`/platform/tenants/${c.id}/legal-entities`)
+        .set(platform())
+        .send({ name: 'PT Tenant C Jawa', countryCode: 'ID' })
+        .expect(201);
+      expect(res.body.legalEntities).toHaveLength(3);
+      const dup = await http
+        .post(`/platform/tenants/${c.id}/legal-entities`)
+        .set(platform())
+        .send({ name: 'pt tenant c jawa', countryCode: 'ID' })
+        .expect(409);
+      expect(dup.body.code).toBe('duplicate_legal_entity');
+    });
+
+    it('re-issues the admin invite and voids the old link', async () => {
+      const res = await http
+        .post(`/platform/tenants/${c.id}/admins/${c.adminId}/invite`)
+        .set(platform())
+        .expect(200);
+      await http
+        .post('/auth/accept-invite')
+        .send({ inviteToken: c.invite, password: ADMIN_PASSWORD })
+        .expect(404);
+      await http
+        .post('/auth/accept-invite')
+        .send({ inviteToken: res.body.inviteToken, password: ADMIN_PASSWORD })
+        .expect(200);
+      const again = await http
+        .post(`/platform/tenants/${c.id}/admins/${c.adminId}/invite`)
+        .set(platform())
+        .expect(409);
+      expect(again.body.code).toBe('user_already_active');
+    });
+
+    it('suspends a tenant: sessions end and sign-in is refused until reactivated', async () => {
+      const signIn = () =>
+        http
+          .post('/auth/login')
+          .send({ tenantSlug: 'tenant-c', email: 'admin@c.test', password: ADMIN_PASSWORD });
+      const session = (await signIn().expect(200)).body as TokenPair;
+
+      const suspended = await http
+        .patch(`/platform/tenants/${c.id}`)
+        .set(platform())
+        .send({ status: 'suspended' })
+        .expect(200);
+      expect(suspended.body.status).toBe('suspended');
+      await http.post('/auth/refresh').send({ refreshToken: session.refreshToken }).expect(401);
+      await signIn().expect(401);
+
+      await http
+        .patch(`/platform/tenants/${c.id}`)
+        .set(platform())
+        .send({ status: 'active' })
+        .expect(200);
+      await signIn().expect(200);
+      const audit = await owner.query(
+        `select action from platform_audit_log where tenant_id = $1 and action like 'tenant.%' order by created_at`,
+        [c.id],
+      );
+      expect(audit.rows.map((r) => r.action)).toEqual([
+        'tenant.created',
+        'tenant.updated',
+        'tenant.legal_entity_added',
+        'tenant.admin_invite_reissued',
+        'tenant.suspended',
+        'tenant.reactivated',
+      ]);
+    });
+  });
 });

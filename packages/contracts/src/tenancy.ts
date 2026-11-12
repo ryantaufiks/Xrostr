@@ -10,20 +10,22 @@ export const tenantSlugSchema = z
   .toLowerCase()
   .regex(/^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/, 'Use 3-40 lowercase letters, digits or hyphens');
 
+export const TENANT_STATUSES = ['active', 'suspended'] as const;
+export type TenantStatus = (typeof TENANT_STATUSES)[number];
+
+export const legalEntityInputSchema = z.object({
+  name: z.string().trim().min(2).max(200),
+  countryCode: z.enum(COUNTRY_CODES),
+  registrationNumber: z.string().trim().max(50).optional(),
+});
+export type LegalEntityInput = z.infer<typeof legalEntityInputSchema>;
+
 export const createTenantRequestSchema = z.object({
   name: z.string().trim().min(2).max(200),
   slug: tenantSlugSchema,
   dataRegion: z.enum(DATA_REGIONS),
   plan: z.enum(PLANS),
-  legalEntities: z
-    .array(
-      z.object({
-        name: z.string().trim().min(2).max(200),
-        countryCode: z.enum(COUNTRY_CODES),
-        registrationNumber: z.string().trim().max(50).optional(),
-      }),
-    )
-    .min(1, 'A tenant needs at least one legal entity'),
+  legalEntities: z.array(legalEntityInputSchema).min(1, 'A tenant needs at least one legal entity'),
   firstAdmin: z.object({
     email: z.string().trim().toLowerCase().pipe(z.email()),
     fullName: z.string().trim().min(2).max(200),
@@ -47,4 +49,36 @@ export interface TenantSummary {
   plan: string;
   status: string;
   createdAt: string;
+}
+
+/** Slug and data region are fixed: staff sign in with the slug, and data stays in its region. */
+export const updateTenantSchema = z
+  .object({
+    name: z.string().trim().min(2).max(200).optional(),
+    plan: z.enum(PLANS).optional(),
+    status: z.enum(TENANT_STATUSES).optional(),
+  })
+  .refine((v) => Object.values(v).some((x) => x !== undefined), { message: 'Nothing to change' });
+export type UpdateTenantRequest = z.infer<typeof updateTenantSchema>;
+
+export interface TenantAdminView {
+  userId: string;
+  email: string;
+  fullName: string;
+  status: 'invited' | 'active' | 'disabled';
+}
+
+export interface TenantDetail extends TenantSummary {
+  legalEntities: {
+    id: string;
+    name: string;
+    countryCode: string;
+    registrationNumber: string | null;
+  }[];
+  admins: TenantAdminView[];
+}
+
+export interface ReissuedAdminInvite {
+  inviteToken: string;
+  inviteExpiresAt: string;
 }

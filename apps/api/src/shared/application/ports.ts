@@ -19,6 +19,7 @@ export abstract class UnitOfWork {
  */
 export abstract class TenantDirectory {
   abstract findActiveIdBySlug(slug: string): Promise<string | null>;
+  abstract isActive(tenantId: string): Promise<boolean>;
 }
 
 /** Encrypts sensitive column values (TOTP secrets, national IDs, bank accounts). */

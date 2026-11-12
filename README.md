@@ -122,30 +122,33 @@ All errors are `application/problem+json` (RFC 9457) with a stable `code`.
 
 ## API (Phase 0)
 
-| Method    | Path                                                  | Access             |
-| --------- | ----------------------------------------------------- | ------------------ |
-| GET       | `/health`                                             | public             |
-| POST      | `/platform/auth/login`                                | public             |
-| POST      | `/auth/login`, `/auth/refresh`, `/auth/accept-invite` | public, 10/min     |
-| GET       | `/auth/me`                                            | any session        |
-| POST      | `/auth/mfa/setup`, `/auth/mfa/enable`, `/auth/logout` | any session        |
-| GET, POST | `/platform/tenants`                                   | superadmin         |
-| GET       | `/tenant/legal-entities`                              | `entities.read`    |
-| GET       | `/tenant/profile`                                     | tenant user        |
-| GET, POST | `/tenant/locations`, PATCH `/tenant/locations/:id`    | `locations.*`      |
-| GET, POST | `/tenant/employees`, PATCH `/tenant/employees/:id`    | `employees.*`      |
-| POST      | `/tenant/employees/:id/invite`                        | `employees.manage` |
-| GET       | `/tenant/roster?locationId&from&to`                   | `schedules.read`   |
-| POST      | `/tenant/shifts`, DELETE `/tenant/shifts/:id`         | `schedules.manage` |
-| POST      | `/tenant/roster/publish`                              | `schedules.manage` |
-| GET       | `/me/shifts?from&to`                                  | tenant user        |
-| GET, POST | `/me/leave?year`, POST `/me/leave/:id/cancel`         | tenant user        |
-| GET       | `/tenant/leave/requests?status`                       | `leave.approve`    |
-| POST      | `/tenant/leave/requests/:id/decision`                 | `leave.approve`    |
-| GET       | `/tenant/holidays?countryCode&year`                   | tenant user        |
-| POST      | `/tenant/holidays`, DELETE `/tenant/holidays/:id`     | `holidays.manage`  |
-| GET, POST | `/notifications`, `/notifications/push/*`             | tenant user        |
-| GET       | `/tenant/audit-log?limit=`                            | `audit.read`       |
+| Method     | Path                                                  | Access             |
+| ---------- | ----------------------------------------------------- | ------------------ |
+| GET        | `/health`                                             | public             |
+| POST       | `/platform/auth/login`                                | public             |
+| POST       | `/auth/login`, `/auth/refresh`, `/auth/accept-invite` | public, 10/min     |
+| GET        | `/auth/me`                                            | any session        |
+| POST       | `/auth/mfa/setup`, `/auth/mfa/enable`, `/auth/logout` | any session        |
+| GET, POST  | `/platform/tenants`                                   | superadmin         |
+| GET, PATCH | `/platform/tenants/:id` (name, plan, suspend)         | superadmin         |
+| POST       | `/platform/tenants/:id/legal-entities`                | superadmin         |
+| POST       | `/platform/tenants/:id/admins/:userId/invite`         | superadmin         |
+| GET        | `/tenant/legal-entities`                              | `entities.read`    |
+| GET        | `/tenant/profile`                                     | tenant user        |
+| GET, POST  | `/tenant/locations`, PATCH `/tenant/locations/:id`    | `locations.*`      |
+| GET, POST  | `/tenant/employees`, PATCH `/tenant/employees/:id`    | `employees.*`      |
+| POST       | `/tenant/employees/:id/invite`                        | `employees.manage` |
+| GET        | `/tenant/roster?locationId&from&to`                   | `schedules.read`   |
+| POST       | `/tenant/shifts`, DELETE `/tenant/shifts/:id`         | `schedules.manage` |
+| POST       | `/tenant/roster/publish`                              | `schedules.manage` |
+| GET        | `/me/shifts?from&to`                                  | tenant user        |
+| GET, POST  | `/me/leave?year`, POST `/me/leave/:id/cancel`         | tenant user        |
+| GET        | `/tenant/leave/requests?status`                       | `leave.approve`    |
+| POST       | `/tenant/leave/requests/:id/decision`                 | `leave.approve`    |
+| GET        | `/tenant/holidays?countryCode&year`                   | tenant user        |
+| POST       | `/tenant/holidays`, DELETE `/tenant/holidays/:id`     | `holidays.manage`  |
+| GET, POST  | `/notifications`, `/notifications/push/*`             | tenant user        |
+| GET        | `/tenant/audit-log?limit=`                            | `audit.read`       |
 
 ## Quality gates
 

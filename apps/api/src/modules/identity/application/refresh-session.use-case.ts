@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import type { TokenPair } from '@xrostr/contracts';
-import { AuditLogger, Clock, UnitOfWork } from '../../../shared/application/ports.js';
+import {
+  AuditLogger,
+  Clock,
+  TenantDirectory,
+  UnitOfWork,
+} from '../../../shared/application/ports.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import { IdentityErrors } from '../domain/identity-errors.js';
 import { AccountRepository, OpaqueTokens, SessionRepository } from './ports.js';
@@ -23,6 +28,7 @@ export class RefreshSessionUseCase {
     private readonly scope: SubjectScope,
     private readonly audit: AuditLogger,
     private readonly clock: Clock,
+    private readonly tenants: TenantDirectory,
   ) {}
 
   execute(refreshToken: string, client: ClientContext): Promise<Result<TokenPair>> {
@@ -51,6 +57,11 @@ export class RefreshSessionUseCase {
         return err(IdentityErrors.invalidRefreshToken());
       }
       if (session.expiresAt <= now) return err(IdentityErrors.invalidRefreshToken());
+      const tenantId = session.subject.tenantId;
+      if (tenantId && !(await this.tenants.isActive(tenantId))) {
+        await this.sessions.revokeFamily(session.familyId, now);
+        return err(IdentityErrors.invalidRefreshToken());
+      }
 
       return this.scope.run(session.subject, async () => {
         const account = await this.accounts.findByRef(session.subject);

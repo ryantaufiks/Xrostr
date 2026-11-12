@@ -81,6 +81,16 @@ export class TenantUserAccess {
     return this.accounts.summarize(userIds);
   }
 
+  /** The tenant's administrators, including those who have not activated yet. */
+  admins() {
+    return this.accounts.usersWithRole('tenant_admin');
+  }
+
+  /** Ends every session of the tenant's users; they must sign in again. */
+  signOutEveryone(tenantId: string): Promise<void> {
+    return this.sessions.revokeAllForTenant(tenantId, this.clock.now());
+  }
+
   /** Who to notify for a task, e.g. everyone who may approve leave. */
   usersWithPermission(permission: Permission): Promise<string[]> {
     return this.accounts.activeUserIdsWithPermission(permission);
