@@ -1,5 +1,5 @@
 import { createParamDecorator, SetMetadata, type ExecutionContext } from '@nestjs/common';
-import type { Permission } from '@inroster/contracts';
+import type { Permission } from '@xrostr/contracts';
 import type { Request } from 'express';
 import type { Principal } from '../../domain/principal.js';
 

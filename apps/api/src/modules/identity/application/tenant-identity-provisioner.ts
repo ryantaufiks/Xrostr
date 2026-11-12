@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { SYSTEM_ROLE_DEFINITIONS } from '@inroster/contracts';
+import { SYSTEM_ROLE_DEFINITIONS } from '@xrostr/contracts';
 import { Clock } from '../../../shared/application/ports.js';
 import { AccountRepository, InviteRepository, OpaqueTokens, RoleRepository } from './ports.js';
 

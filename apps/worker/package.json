@@ -1,5 +1,5 @@
 {
-  "name": "@inroster/worker",
+  "name": "@xrostr/worker",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,12 +11,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@inroster/db": "workspace:*",
+    "@xrostr/db": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "pino": "^10.4.0"
   },
   "devDependencies": {
-    "@inroster/config": "workspace:*",
+    "@xrostr/config": "workspace:*",
     "@testcontainers/postgresql": "^12.2.1",
     "@types/node": "^22.0.0",
     "typescript": "~6.0.3",

@@ -3,14 +3,14 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
 import { createDatabase } from './client.js';
 
-const APP_ROLE = 'hrms_app';
+const APP_ROLE = 'xrostr_app';
 /** Tables the app may append to but never change or delete from. */
 const APPEND_ONLY_TABLES = ['audit_log', 'platform_audit_log'];
 
 export interface MigrateOptions {
   /** Connection string of the owner role that owns the schema. */
   ownerUrl: string;
-  /** Password set on the runtime role `hrms_app`. */
+  /** Password set on the runtime role `xrostr_app`. */
   appPassword: string;
 }
 

@@ -35,18 +35,6 @@ importers:
 
   apps/api:
     dependencies:
-      '@inroster/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@inroster/country-id':
-        specifier: workspace:*
-        version: link:../../packages/country-id
-      '@inroster/country-sg':
-        specifier: workspace:*
-        version: link:../../packages/country-sg
-      '@inroster/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       '@nestjs/common':
         specifier: ^12.4.2
         version: 12.4.2(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -62,6 +50,18 @@ importers:
       '@node-rs/argon2':
         specifier: ^2.2.2
         version: 2.2.2
+      '@xrostr/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@xrostr/country-id':
+        specifier: workspace:*
+        version: link:../../packages/country-id
+      '@xrostr/country-sg':
+        specifier: workspace:*
+        version: link:../../packages/country-sg
+      '@xrostr/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@types/pg@8.23.1)(pg@8.23.1)
@@ -96,9 +96,6 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
-      '@inroster/config':
-        specifier: workspace:*
-        version: link:../../packages/config
       '@nestjs/testing':
         specifier: ^12.4.2
         version: 12.4.2(@nestjs/common@12.4.2(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.4.2)(@nestjs/platform-express@12.4.2)
@@ -120,6 +117,9 @@ importers:
       '@types/supertest':
         specifier: ^6.0.3
         version: 6.0.3
+      '@xrostr/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       pg:
         specifier: ^8.23.1
         version: 8.23.1
@@ -141,7 +141,7 @@ importers:
 
   apps/worker:
     dependencies:
-      '@inroster/db':
+      '@xrostr/db':
         specifier: workspace:*
         version: link:../../packages/db
       drizzle-orm:
@@ -151,15 +151,15 @@ importers:
         specifier: ^10.4.0
         version: 10.4.0
     devDependencies:
-      '@inroster/config':
-        specifier: workspace:*
-        version: link:../../packages/config
       '@testcontainers/postgresql':
         specifier: ^12.2.1
         version: 12.2.1(bare-buffer@3.7.1)
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.5
+      '@xrostr/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       typescript:
         specifier: ~6.0.3
         version: 6.0.3
@@ -175,7 +175,7 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
-      '@inroster/config':
+      '@xrostr/config':
         specifier: workspace:*
         version: link:../config
       typescript:
@@ -184,11 +184,11 @@ importers:
 
   packages/country-id:
     dependencies:
-      '@inroster/contracts':
+      '@xrostr/contracts':
         specifier: workspace:*
         version: link:../contracts
     devDependencies:
-      '@inroster/config':
+      '@xrostr/config':
         specifier: workspace:*
         version: link:../config
       typescript:
@@ -197,11 +197,11 @@ importers:
 
   packages/country-sg:
     dependencies:
-      '@inroster/contracts':
+      '@xrostr/contracts':
         specifier: workspace:*
         version: link:../contracts
     devDependencies:
-      '@inroster/config':
+      '@xrostr/config':
         specifier: workspace:*
         version: link:../config
       typescript:
@@ -223,15 +223,15 @@ importers:
         specifier: ^13.0.0
         version: 13.0.2
     devDependencies:
-      '@inroster/config':
-        specifier: workspace:*
-        version: link:../config
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.5
       '@types/pg':
         specifier: ^8.15.0
         version: 8.23.1
+      '@xrostr/config':
+        specifier: workspace:*
+        version: link:../config
       drizzle-kit:
         specifier: ^0.31.11
         version: 0.31.11

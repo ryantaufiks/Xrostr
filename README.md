@@ -1,4 +1,4 @@
-# InRoster HRMS
+# Xrostr
 
 Autonomous, multi-tenant HRMS for security agencies and shift-based workforces in Singapore and
 Indonesia. This repository holds **Phase 0 — foundation**: tenancy with PostgreSQL Row Level
@@ -38,11 +38,33 @@ pnpm install
 cp .env.example .env        # then set JWT_SECRET and FIELD_ENCRYPTION_KEY
 pnpm db:up                  # PostgreSQL 17 on 127.0.0.1:5440
 pnpm build
-pnpm db:migrate             # creates the hrms_app role, applies migrations and grants
+pnpm db:migrate             # creates the xrostr_app role, applies migrations and grants
 pnpm db:seed                # first superadmin from SEED_SUPERADMIN_*
-pnpm --filter @inroster/api start      # http://localhost:4000
-pnpm --filter @inroster/worker start
+pnpm --filter @xrostr/api start      # http://127.0.0.1:8015
+pnpm --filter @xrostr/worker start
 ```
+
+## Public access via Cloudflare Tunnel
+
+The API binds to `127.0.0.1:8015` only; the internet reaches it through `cloudflared`, so no
+port is opened on the host. Example `~/.cloudflared/config.yml` for a named tunnel:
+
+```yaml
+tunnel: xrostr
+credentials-file: /home/<user>/.cloudflared/<tunnel-id>.json
+ingress:
+  - hostname: xrostr.cloud
+    service: http://127.0.0.1:8015
+  - service: http_status:404
+```
+
+```bash
+cloudflared tunnel route dns xrostr xrostr.cloud
+cloudflared tunnel run xrostr
+```
+
+The app trusts exactly one proxy hop (`trust proxy = 1`), so audit logs and rate limits see the
+real client IP that cloudflared forwards.
 
 ## Onboarding flow
 

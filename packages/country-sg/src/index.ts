@@ -1,4 +1,4 @@
-import type { CountryPack } from '@inroster/contracts';
+import type { CountryPack } from '@xrostr/contracts';
 
 export const singaporePack: CountryPack = {
   code: 'SG',

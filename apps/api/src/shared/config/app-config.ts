@@ -10,10 +10,12 @@ const base64Key = (bytes: number) =>
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  API_PORT: z.coerce.number().int().positive().default(4000),
+  // Loopback by default: public traffic arrives through the Cloudflare Tunnel.
+  API_HOST: z.string().default('127.0.0.1'),
+  API_PORT: z.coerce.number().int().positive().default(8015),
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  JWT_ISSUER: z.string().default('inroster-hrms'),
+  JWT_ISSUER: z.string().default('xrostr'),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   REFRESH_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(2_592_000),
   FIELD_ENCRYPTION_KEY: base64Key(32),
@@ -22,6 +24,7 @@ const envSchema = z.object({
 
 export interface AppConfig {
   env: 'development' | 'test' | 'production';
+  host: string;
   port: number;
   databaseUrl: string;
   jwt: { secret: string; issuer: string; accessTtlSeconds: number; refreshTtlSeconds: number };
@@ -41,6 +44,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
   const env = parsed.data;
   return {
     env: env.NODE_ENV,
+    host: env.API_HOST,
     port: env.API_PORT,
     databaseUrl: env.DATABASE_URL,
     jwt: {

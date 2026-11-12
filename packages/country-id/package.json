@@ -1,5 +1,5 @@
 {
-  "name": "@inroster/country-id",
+  "name": "@xrostr/country-id",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -16,10 +16,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@inroster/contracts": "workspace:*"
+    "@xrostr/contracts": "workspace:*"
   },
   "devDependencies": {
-    "@inroster/config": "workspace:*",
+    "@xrostr/config": "workspace:*",
     "typescript": "~6.0.3"
   }
 }

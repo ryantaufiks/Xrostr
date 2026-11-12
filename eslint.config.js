@@ -3,7 +3,7 @@ import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-const frameworkImports = ['@nestjs/*', 'drizzle-orm', 'drizzle-orm/*', 'pg', '@inroster/db'];
+const frameworkImports = ['@nestjs/*', 'drizzle-orm', 'drizzle-orm/*', 'pg', '@xrostr/db'];
 const outerLayers = ['**/infrastructure/**', '**/interface/**'];
 
 export default tseslint.config(
@@ -52,7 +52,7 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['drizzle-orm', 'drizzle-orm/*', 'pg', '@inroster/db'],
+              group: ['drizzle-orm', 'drizzle-orm/*', 'pg', '@xrostr/db'],
               message: 'Use a port; adapters live in infrastructure.',
             },
             {

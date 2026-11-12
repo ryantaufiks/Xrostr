@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { TokenPair } from '@inroster/contracts';
+import type { TokenPair } from '@xrostr/contracts';
 import { v7 as uuidv7 } from 'uuid';
 import { Clock } from '../../../shared/application/ports.js';
 import { resolveStage, type Account } from '../domain/account.js';

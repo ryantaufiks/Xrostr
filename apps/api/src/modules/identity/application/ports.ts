@@ -1,4 +1,4 @@
-import type { Permission, SessionStage, SystemRoleDefinition } from '@inroster/contracts';
+import type { Permission, SessionStage, SystemRoleDefinition } from '@xrostr/contracts';
 import type { Account, LoginAttemptState, SubjectRef, SubjectType } from '../domain/account.js';
 
 export abstract class PasswordHasher {

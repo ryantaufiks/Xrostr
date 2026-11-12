@@ -13,7 +13,7 @@ import {
   type PlatformLoginRequest,
   type RefreshRequest,
   type TokenPair,
-} from '@inroster/contracts';
+} from '@xrostr/contracts';
 import {
   Client,
   type ClientInfo,

@@ -4,7 +4,7 @@ import {
   type CreateTenantRequest,
   type CreateTenantResponse,
   type TenantSummary,
-} from '@inroster/contracts';
+} from '@xrostr/contracts';
 import {
   Client,
   type ClientInfo,

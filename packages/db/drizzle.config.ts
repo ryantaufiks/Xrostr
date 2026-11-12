@@ -7,6 +7,6 @@ export default defineConfig({
   dbCredentials: {
     url:
       process.env.DATABASE_OWNER_URL ??
-      'postgres://hrms_owner:hrms_owner_dev@127.0.0.1:5440/inroster_hrms',
+      'postgres://xrostr_owner:xrostr_owner_dev@127.0.0.1:5440/xrostr',
   },
 });

@@ -1,8 +1,8 @@
-import { PERMISSIONS, type Permission } from '@inroster/contracts';
+import { PERMISSIONS, type Permission } from '@xrostr/contracts';
 import { jwtVerify, SignJWT } from 'jose';
 import { AccessTokenService, type AccessClaims } from '../application/ports.js';
 
-const AUDIENCE = 'inroster-api';
+const AUDIENCE = 'xrostr-api';
 const ALGORITHM = 'HS256';
 
 interface TokenPayload {

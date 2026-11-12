@@ -1,5 +1,5 @@
 {
-  "extends": "@inroster/config/tsconfig.lib.json",
+  "extends": "@xrostr/config/tsconfig.lib.json",
   "compilerOptions": {
     "types": ["node"]
   }

@@ -1,4 +1,4 @@
-import type { CountryCode, DataRegion, Plan } from '@inroster/contracts';
+import type { CountryCode, DataRegion, Plan } from '@xrostr/contracts';
 import { DomainError } from '../../../shared/domain/domain-error.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 

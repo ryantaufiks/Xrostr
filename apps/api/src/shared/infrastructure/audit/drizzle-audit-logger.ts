@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { auditLog, platformAuditLog } from '@inroster/db';
+import { auditLog, platformAuditLog } from '@xrostr/db';
 import { AuditLogger, type AuditEntry } from '../../application/ports.js';
 import { DatabaseContext } from '../database/database-context.js';
 

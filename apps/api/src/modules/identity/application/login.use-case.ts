@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { LoginRequest, PlatformLoginRequest, TokenPair } from '@inroster/contracts';
+import type { LoginRequest, PlatformLoginRequest, TokenPair } from '@xrostr/contracts';
 import {
   Clock,
   SecretCipher,

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { CountryCode, TenantSummary } from '@inroster/contracts';
-import { legalEntities, tenants } from '@inroster/db';
+import type { CountryCode, TenantSummary } from '@xrostr/contracts';
+import { legalEntities, tenants } from '@xrostr/db';
 import { asc, desc, eq } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import { TenantRepository, type LegalEntity } from '../application/ports.js';

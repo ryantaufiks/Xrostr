@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { outboxEvents } from '@inroster/db';
+import { outboxEvents } from '@xrostr/db';
 import { EventPublisher, type DomainEvent } from '../../application/ports.js';
 import { DatabaseContext } from '../database/database-context.js';
 

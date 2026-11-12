@@ -1,5 +1,5 @@
 {
-  "name": "@inroster/contracts",
+  "name": "@xrostr/contracts",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -19,7 +19,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@inroster/config": "workspace:*",
+    "@xrostr/config": "workspace:*",
     "typescript": "~6.0.3"
   }
 }

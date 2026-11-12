@@ -44,7 +44,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     if (exception instanceof DomainErrorException) {
       const { kind, code, message, details } = exception.error;
       return {
-        type: `urn:inroster:error:${code}`,
+        type: `urn:xrostr:error:${code}`,
         title: message,
         status: STATUS_BY_KIND[kind],
         code,
@@ -56,7 +56,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const code = status === 429 ? 'rate_limited' : `http_${status}`;
       return {
-        type: `urn:inroster:error:${code}`,
+        type: `urn:xrostr:error:${code}`,
         title: exception.message,
         status,
         code,
@@ -65,7 +65,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     }
     this.logger.error(exception);
     return {
-      type: 'urn:inroster:error:internal',
+      type: 'urn:xrostr:error:internal',
       title: 'An unexpected error occurred.',
       status: 500,
       code: 'internal',

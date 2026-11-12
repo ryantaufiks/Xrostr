@@ -1,5 +1,5 @@
-import { createDatabase, outboxEvents, type DatabaseHandle } from '@inroster/db';
-import { migrateDatabase } from '@inroster/db/migrate';
+import { createDatabase, outboxEvents, type DatabaseHandle } from '@xrostr/db';
+import { migrateDatabase } from '@xrostr/db/migrate';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -11,11 +11,11 @@ describe('OutboxRelay', () => {
 
   beforeAll(async () => {
     container = await new PostgreSqlContainer('postgres:17-alpine')
-      .withUsername('hrms_owner')
+      .withUsername('xrostr_owner')
       .start();
     await migrateDatabase({ ownerUrl: container.getConnectionUri(), appPassword: 'app' });
     const appUrl = new URL(container.getConnectionUri());
-    appUrl.username = 'hrms_app';
+    appUrl.username = 'xrostr_app';
     appUrl.password = 'app';
     handle = createDatabase(appUrl.toString(), { max: 2 });
   }, 180_000);

@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import type { CreateTenantRequest, TokenPair } from '@inroster/contracts';
+import type { CreateTenantRequest, TokenPair } from '@xrostr/contracts';
 import pg from 'pg';
 import type request from 'supertest';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';

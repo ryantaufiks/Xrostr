@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { TokenPair } from '@inroster/contracts';
+import type { TokenPair } from '@xrostr/contracts';
 import { AuditLogger, Clock, UnitOfWork } from '../../../shared/application/ports.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import { IdentityErrors } from '../domain/identity-errors.js';

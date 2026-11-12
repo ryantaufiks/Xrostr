@@ -1,4 +1,4 @@
-import type { Permission, SessionStage } from '@inroster/contracts';
+import type { Permission, SessionStage } from '@xrostr/contracts';
 
 export type SubjectType = 'platform_admin' | 'user';
 export type AccountStatus = 'invited' | 'active' | 'disabled';

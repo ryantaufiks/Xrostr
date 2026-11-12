@@ -14,7 +14,7 @@ export async function createApp(config: AppConfig): Promise<INestApplication> {
   });
   app.useLogger(app.get(Logger));
   app.use(helmet());
-  // Behind one reverse proxy in production; makes request.ip the real client address.
+  // One proxy hop (cloudflared) sits in front; makes request.ip the real client address.
   app.set('trust proxy', 1);
   app.useBodyParser('json', { limit: '100kb' });
   app.enableShutdownHooks();

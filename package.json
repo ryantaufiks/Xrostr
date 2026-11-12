@@ -1,5 +1,5 @@
 {
-  "name": "inroster-hrms",
+  "name": "xrostr",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.33.2",
@@ -16,9 +16,9 @@
     "test": "turbo run test",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
-    "db:migrate": "pnpm --filter @inroster/db migrate",
-    "db:generate": "pnpm --filter @inroster/db generate",
-    "db:seed": "pnpm --filter @inroster/db seed"
+    "db:migrate": "pnpm --filter @xrostr/db migrate",
+    "db:generate": "pnpm --filter @xrostr/db generate",
+    "db:seed": "pnpm --filter @xrostr/db seed"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

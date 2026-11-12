@@ -1,4 +1,4 @@
-import { outboxEvents, type Database } from '@inroster/db';
+import { outboxEvents, type Database } from '@xrostr/db';
 import { and, asc, eq, isNull, lt, lte, sql } from 'drizzle-orm';
 
 export interface OutboxEvent {

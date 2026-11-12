@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { tenants } from '@inroster/db';
+import { tenants } from '@xrostr/db';
 import { and, eq } from 'drizzle-orm';
 import { TenantDirectory } from '../../application/ports.js';
 import { DatabaseContext } from './database-context.js';

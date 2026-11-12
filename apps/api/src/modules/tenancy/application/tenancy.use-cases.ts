@@ -4,7 +4,7 @@ import type {
   CreateTenantRequest,
   CreateTenantResponse,
   TenantSummary,
-} from '@inroster/contracts';
+} from '@xrostr/contracts';
 import { AuditLogger, EventPublisher, UnitOfWork } from '../../../shared/application/ports.js';
 import { DomainError } from '../../../shared/domain/domain-error.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { auditLog } from '@inroster/db';
+import { auditLog } from '@xrostr/db';
 import { desc } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import { AuditLogReader, type AuditRecord } from '../application/list-audit-log.use-case.js';

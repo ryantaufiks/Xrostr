@@ -1,5 +1,5 @@
 {
-  "name": "@inroster/api",
+  "name": "@xrostr/api",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,10 +12,10 @@
     "test:unit": "vitest run --project unit"
   },
   "dependencies": {
-    "@inroster/contracts": "workspace:*",
-    "@inroster/country-id": "workspace:*",
-    "@inroster/country-sg": "workspace:*",
-    "@inroster/db": "workspace:*",
+    "@xrostr/contracts": "workspace:*",
+    "@xrostr/country-id": "workspace:*",
+    "@xrostr/country-sg": "workspace:*",
+    "@xrostr/db": "workspace:*",
     "@nestjs/common": "^12.4.2",
     "@nestjs/core": "^12.4.2",
     "@nestjs/platform-express": "^12.4.2",
@@ -34,7 +34,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@inroster/config": "workspace:*",
+    "@xrostr/config": "workspace:*",
     "@nestjs/testing": "^12.4.2",
     "@swc/core": "^1.16.22",
     "@testcontainers/postgresql": "^12.2.1",

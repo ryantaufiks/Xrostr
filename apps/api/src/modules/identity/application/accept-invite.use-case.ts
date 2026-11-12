@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { AcceptInviteRequest } from '@inroster/contracts';
+import type { AcceptInviteRequest } from '@xrostr/contracts';
 import { AuditLogger, Clock, UnitOfWork } from '../../../shared/application/ports.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import { IdentityErrors } from '../domain/identity-errors.js';

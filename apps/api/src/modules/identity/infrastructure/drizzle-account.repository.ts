@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PERMISSIONS, type Permission } from '@inroster/contracts';
-import { platformAdmins, roles, userRoles, users } from '@inroster/db';
+import { PERMISSIONS, type Permission } from '@xrostr/contracts';
+import { platformAdmins, roles, userRoles, users } from '@xrostr/db';
 import { eq } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import { AccountRepository } from '../application/ports.js';

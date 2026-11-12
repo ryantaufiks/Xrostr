@@ -7,16 +7,17 @@ import { inject } from 'vitest';
 import { createApp } from '../../src/bootstrap.js';
 import type { AppConfig } from '../../src/shared/config/app-config.js';
 
-export const SUPERADMIN = { email: 'root@inroster.test', password: 'Superadmin-Password-1' };
+export const SUPERADMIN = { email: 'root@xrostr.test', password: 'Superadmin-Password-1' };
 
 export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
     env: 'test',
+    host: '127.0.0.1',
     port: 0,
     databaseUrl: inject('appUrl'),
     jwt: {
       secret: 'test-secret-test-secret-test-secret-123',
-      issuer: 'inroster-test',
+      issuer: 'xrostr-test',
       accessTtlSeconds: 900,
       refreshTtlSeconds: 3600,
     },

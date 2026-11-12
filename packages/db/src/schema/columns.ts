@@ -3,7 +3,7 @@ import { integer, pgPolicy, pgRole, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { v7 as uuidv7 } from 'uuid';
 
 /** Runtime role used by the API and worker. It owns nothing and cannot bypass RLS. */
-export const appRole = pgRole('hrms_app').existing();
+export const appRole = pgRole('xrostr_app').existing();
 
 /** Session variable carrying the tenant of the current transaction. */
 export const TENANT_SETTING = 'app.tenant_id';

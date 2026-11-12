@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { Inject, Injectable } from '@nestjs/common';
-import { TENANT_SETTING, type Database, type Transaction } from '@inroster/db';
+import { TENANT_SETTING, type Database, type Transaction } from '@xrostr/db';
 import { sql } from 'drizzle-orm';
 import { UnitOfWork } from '../../application/ports.js';
 

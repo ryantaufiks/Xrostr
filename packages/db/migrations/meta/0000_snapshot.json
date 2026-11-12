@@ -1,5 +1,5 @@
 {
-  "id": "dbf6962d-56e9-4358-889a-0d9bcbfbf872",
+  "id": "5c7cfe6d-ee76-4a53-9e05-67d0318da8d0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -608,7 +608,7 @@
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
-            "hrms_app"
+            "xrostr_app"
           ],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
@@ -713,7 +713,7 @@
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
-            "hrms_app"
+            "xrostr_app"
           ],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
@@ -826,7 +826,7 @@
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
-            "hrms_app"
+            "xrostr_app"
           ],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
@@ -928,7 +928,7 @@
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
-            "hrms_app"
+            "xrostr_app"
           ],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
@@ -1025,7 +1025,7 @@
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
-            "hrms_app"
+            "xrostr_app"
           ],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
@@ -1161,7 +1161,7 @@
           "as": "PERMISSIVE",
           "for": "ALL",
           "to": [
-            "hrms_app"
+            "xrostr_app"
           ],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"

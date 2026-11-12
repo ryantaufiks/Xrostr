@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { SystemRoleDefinition } from '@inroster/contracts';
-import { roles, sessions, userInvites, userRoles } from '@inroster/db';
+import type { SystemRoleDefinition } from '@xrostr/contracts';
+import { roles, sessions, userInvites, userRoles } from '@xrostr/db';
 import { and, eq, isNull } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import {

@@ -9,7 +9,7 @@ Status: accepted (2026-11-12)
 | NestJS            | 12          | ESM-only, so the whole monorepo is ESM (`"type": "module"`, NodeNext)                                                   |
 | PostgreSQL        | 17          | Testcontainers uses the same image as `docker-compose.yml`                                                              |
 | Drizzle ORM / kit | 0.45 / 0.31 | RLS policies declared in schema, migrations generated and committed                                                     |
-| Zod               | 4           | Shared request contracts in `@inroster/contracts`                                                                       |
+| Zod               | 4           | Shared request contracts in `@xrostr/contracts`                                                                         |
 | Vitest            | 5           | SWC plugin emits the decorator metadata Nest DI needs                                                                   |
 
 The worker (`apps/worker`) is plain TypeScript, not a Nest application: the outbox relay is one

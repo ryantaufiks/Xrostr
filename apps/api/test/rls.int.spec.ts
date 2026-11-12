@@ -92,7 +92,7 @@ describe('Row Level Security', () => {
 
   it('does not let the app role bypass RLS or alter the audit log', async () => {
     const role = await owner.query(
-      `select rolbypassrls, rolsuper from pg_roles where rolname = 'hrms_app'`,
+      `select rolbypassrls, rolsuper from pg_roles where rolname = 'xrostr_app'`,
     );
     expect(role.rows[0]).toEqual({ rolbypassrls: false, rolsuper: false });
     await expect(

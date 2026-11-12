@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises';
-import { createDatabase } from '@inroster/db';
+import { createDatabase } from '@xrostr/db';
 import { pino } from 'pino';
 import { buildHandlers } from './handlers.js';
 import { OutboxRelay } from './outbox-relay.js';

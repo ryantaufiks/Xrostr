@@ -1,4 +1,4 @@
-import type { Permission, SessionStage } from '@inroster/contracts';
+import type { Permission, SessionStage } from '@xrostr/contracts';
 import type { SubjectRef } from './account.js';
 
 /** The authenticated caller of a request, decoded from the access token. */

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { MfaSetupResponse, TokenPair } from '@inroster/contracts';
+import type { MfaSetupResponse, TokenPair } from '@xrostr/contracts';
 import { Clock, SecretCipher } from '../../../shared/application/ports.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import { IdentityErrors } from '../domain/identity-errors.js';

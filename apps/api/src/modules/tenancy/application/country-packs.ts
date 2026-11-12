@@ -1,6 +1,6 @@
-import type { CountryCode, CountryPack } from '@inroster/contracts';
-import { indonesiaPack } from '@inroster/country-id';
-import { singaporePack } from '@inroster/country-sg';
+import type { CountryCode, CountryPack } from '@xrostr/contracts';
+import { indonesiaPack } from '@xrostr/country-id';
+import { singaporePack } from '@xrostr/country-sg';
 
 /** Installed Country Packs. A new country is a new package registered here. */
 const PACKS: Record<CountryCode, CountryPack> = { SG: singaporePack, ID: indonesiaPack };

@@ -1,5 +1,5 @@
 {
-  "name": "@inroster/db",
+  "name": "@xrostr/db",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -33,7 +33,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@inroster/config": "workspace:*",
+    "@xrostr/config": "workspace:*",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.15.0",
     "drizzle-kit": "^0.31.11",

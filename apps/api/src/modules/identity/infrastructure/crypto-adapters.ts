@@ -23,7 +23,7 @@ export class Argon2PasswordHasher extends PasswordHasher {
   }
 }
 
-const TOTP_ISSUER = 'InRoster HRMS';
+const TOTP_ISSUER = 'Xrostr';
 
 export class OtpauthTotpService extends TotpService {
   generateSecret(): string {

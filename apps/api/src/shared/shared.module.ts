@@ -1,5 +1,5 @@
 import { Global, Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
-import { createDatabase, type DatabaseHandle } from '@inroster/db';
+import { createDatabase, type DatabaseHandle } from '@xrostr/db';
 import {
   AuditLogger,
   Clock,

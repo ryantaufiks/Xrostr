@@ -1,4 +1,4 @@
-import type { CountryCode, TenantSummary } from '@inroster/contracts';
+import type { CountryCode, TenantSummary } from '@xrostr/contracts';
 import type { LegalEntityDraft, TenantDraft } from '../domain/tenant.js';
 
 export interface LegalEntity {

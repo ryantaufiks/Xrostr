@@ -4,7 +4,7 @@ Status: accepted (2026-11-12)
 
 ## Decision
 
-- Two database roles. `hrms_owner` owns the schema and runs migrations. `hrms_app` is the only
+- Two database roles. `xrostr_owner` owns the schema and runs migrations. `xrostr_app` is the only
   role the API and worker use: `NOSUPERUSER NOBYPASSRLS`, owns nothing, DML grants only.
 - Every tenant-scoped table has `tenant_id NOT NULL` and the policy
   `tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid` for both `USING` and
@@ -20,10 +20,10 @@ Status: accepted (2026-11-12)
 - Superadmins have no `BYPASSRLS` path. Cross-tenant platform work, such as onboarding, enters
   each tenant's context explicitly and is written to `platform_audit_log`.
 - `audit_log` and `platform_audit_log` are append-only: `UPDATE`, `DELETE` and `TRUNCATE` are
-  revoked from `hrms_app`.
+  revoked from `xrostr_app`.
 
 ## Verification
 
-`apps/api/test/rls.int.spec.ts` runs as `hrms_app` against a real PostgreSQL and proves:
+`apps/api/test/rls.int.spec.ts` runs as `xrostr_app` against a real PostgreSQL and proves:
 reads are scoped, no context means no rows, cross-tenant inserts are rejected, cross-tenant
 updates touch nothing, and the audit log cannot be changed. CI fails if any of these regress.

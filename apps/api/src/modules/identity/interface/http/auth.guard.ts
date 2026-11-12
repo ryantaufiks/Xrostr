@@ -1,6 +1,6 @@
 import { Injectable, type CanActivate, type ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { Permission } from '@inroster/contracts';
+import type { Permission } from '@xrostr/contracts';
 import { DomainError } from '../../../../shared/domain/domain-error.js';
 import { DomainErrorException } from '../../../../shared/interface/http/domain-error.exception.js';
 import { AccessTokenService } from '../../application/ports.js';
