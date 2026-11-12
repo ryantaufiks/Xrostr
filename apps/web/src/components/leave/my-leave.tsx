@@ -9,6 +9,7 @@ import {
 import { CalendarPlus } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Alert, Button, Card, Field, Input, Select, Spinner, cx } from '@/components/ui';
+import { useConfirm } from '@/components/confirm-dialog';
 import { api, ApiError } from '@/lib/api';
 import { todayLocal } from '@/lib/dates';
 import { LeaveRequestRow } from './leave-request-row';
@@ -21,6 +22,7 @@ export function MyLeaveSection({
   onCountry?: (country: MyLeave['countryCode']) => void;
 }) {
   const { t, locale } = useI18n();
+  const { confirm, confirmDialog } = useConfirm();
   const [leave, setLeave] = useState<MyLeave | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notEmployee, setNotEmployee] = useState(false);
@@ -40,7 +42,13 @@ export function MyLeaveSection({
   useEffect(() => void load(), [load]);
 
   async function cancel(request: LeaveRequestView) {
-    if (!confirm(t.leave.cancelConfirm(request.leaveType.name[locale]))) return;
+    if (
+      !(await confirm({
+        message: t.leave.cancelConfirm(request.leaveType.name[locale]),
+        confirmLabel: t.leave.cancelRequest,
+      }))
+    )
+      return;
     setNotice(null);
     try {
       await api(`/me/leave/${request.id}/cancel`, { method: 'POST' });
@@ -56,6 +64,7 @@ export function MyLeaveSection({
 
   return (
     <section className="space-y-6" aria-labelledby="my-leave">
+      {confirmDialog}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 id="my-leave" className="font-display text-2xl font-bold">
           {t.leave.balanceTitle(leave.year)}

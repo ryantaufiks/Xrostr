@@ -1,8 +1,10 @@
 'use client';
 
 import {
+  ASSIGNMENT_TYPES,
   EMPLOYMENT_TYPES,
   SYSTEM_ROLES,
+  type AssignmentType,
   type EmployeeView,
   type EmploymentType,
   type LocationView,
@@ -12,7 +14,16 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { employmentLabel, fieldErrors, roleLabel, type LegalEntityOption } from '@/lib/workforce';
-import { Alert, Button, Card, Field, Input, Select } from './ui';
+import {
+  Alert,
+  Button,
+  Card,
+  Field,
+  Input,
+  SegmentedControl,
+  Select,
+  segmentedOptionStyles,
+} from './ui';
 
 interface Values {
   fullName: string;
@@ -25,6 +36,8 @@ interface Values {
   employmentType: EmploymentType;
   startDate: string;
   role: SystemRole;
+  assignmentType: AssignmentType;
+  canRelieve: boolean;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -57,6 +70,8 @@ export function EmployeeForm<T>({
     employmentType: employee?.employmentType ?? 'full_time',
     startDate: employee?.startDate ?? today(),
     role: (employee?.role as SystemRole) ?? 'employee',
+    assignmentType: employee?.assignmentType ?? 'fixed',
+    canRelieve: employee?.canRelieve ?? false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -79,6 +94,8 @@ export function EmployeeForm<T>({
       locationId: values.locationId || null,
       jobTitle: values.jobTitle,
       employmentType: values.employmentType,
+      assignmentType: values.assignmentType,
+      canRelieve: values.canRelieve,
     };
     setSaving(true);
     try {
@@ -248,6 +265,39 @@ export function EmployeeForm<T>({
             </Select>
           </Field>
         </div>
+        <div className="space-y-2">
+          <span className="label block font-bold text-muted">{t.workforce.assignmentType}</span>
+          <SegmentedControl
+            className="grid max-w-sm grid-cols-2"
+            role="radiogroup"
+            aria-label={t.workforce.assignmentType}
+          >
+            {ASSIGNMENT_TYPES.map((type) => (
+              <button
+                key={type}
+                type="button"
+                role="radio"
+                aria-checked={values.assignmentType === type}
+                onClick={() => set({ assignmentType: type })}
+                className={segmentedOptionStyles(values.assignmentType === type)}
+              >
+                {type === 'fixed' ? t.workforce.fixed : t.workforce.roving}
+              </button>
+            ))}
+          </SegmentedControl>
+        </div>
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={values.canRelieve}
+            onChange={(e) => set({ canRelieve: e.target.checked })}
+            className="size-5"
+          />
+          <span className="text-base text-fg">
+            {t.workforce.canRelieve}
+            <span className="block text-sm text-muted">{t.workforce.canRelieveHint}</span>
+          </span>
+        </label>
       </Section>
 
       <div className="flex justify-end">

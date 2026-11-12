@@ -13,6 +13,21 @@ export const SchedulingErrors = {
       'employee_other_entity',
       'The employee is contracted by another legal entity than the site’s.',
     ),
+  zoneNotFound: () => new DomainError('not_found', 'zone_not_found', 'Zone not found.'),
+  zoneMixedSites: () =>
+    new DomainError(
+      'validation',
+      'zone_mixed_sites',
+      'A zone groups sites of one legal entity in one time zone.',
+    ),
+  zoneOtherEntity: () =>
+    new DomainError(
+      'validation',
+      'zone_other_entity',
+      'This employee is contracted by a different legal entity from the zone.',
+    ),
+  zoneNameTaken: () =>
+    new DomainError('conflict', 'zone_name_taken', 'A zone with this name already exists.'),
   shiftOverlap: () =>
     new DomainError(
       'conflict',

@@ -2,11 +2,16 @@
 
 import {
   SHIFT_PRESETS,
+  type CopyResult,
   type EmployeeView,
   type LocationView,
   type PublishResult,
+  type RosterAuxiliaryView,
+  type RosterConflictsView,
   type ShiftKind,
   type ShiftView,
+  type StaffingView,
+  type ZoneView,
 } from '@xrostr/contracts';
 import {
   CalendarDays,
@@ -30,10 +35,15 @@ import {
   PageHeader,
   SegmentedControl,
   Select,
+  Skeleton,
   Spinner,
   cx,
   segmentedOptionStyles,
 } from '@/components/ui';
+import { useConfirm } from '@/components/confirm-dialog';
+import { RosterGrid } from '@/components/roster-grid';
+import { useToast } from '@/components/toast';
+import { ZonesSection } from '@/components/zones-section';
 import { api, ApiError } from '@/lib/api';
 import { addDays, dayLabel, mondayOf, todayLocal, weekLabel } from '@/lib/dates';
 import { usePrincipal } from '@/lib/principal-context';
@@ -51,8 +61,10 @@ export default function RosterPage() {
   const employees = useData<EmployeeView[]>(canManage ? '/tenant/employees' : null);
   const [siteId, setSiteId] = useState<string | null>(null);
   const [monday, setMonday] = useState(() => mondayOf(todayLocal()));
-  const [message, setMessage] = useState<{ tone: 'error' | 'success'; text: string } | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [mode, setMode] = useState<'grid' | 'day'>('grid');
+  const toast = useToast();
 
   const activeSites = useMemo(
     () => sites.data?.filter((s) => s.status === 'active') ?? [],
@@ -73,6 +85,14 @@ export default function RosterPage() {
   const roster = useData<ShiftView[]>(
     siteId ? `/tenant/roster?locationId=${siteId}&from=${monday}&to=${sunday}` : null,
   );
+  const staffing = useData<StaffingView>(siteId ? `/tenant/locations/${siteId}/staffing` : null);
+  const conflictsData = useData<RosterConflictsView>(
+    siteId ? `/tenant/roster/conflicts?locationId=${siteId}&from=${monday}&to=${sunday}` : null,
+  );
+  const aux = useData<RosterAuxiliaryView>(
+    siteId ? `/tenant/roster/aux?locationId=${siteId}&from=${monday}&to=${sunday}` : null,
+  );
+  const zones = useData<ZoneView[]>(canManage ? '/tenant/zones' : null);
   const site = activeSites.find((s) => s.id === siteId);
   const drafts = roster.data?.filter((s) => s.status === 'draft').length ?? 0;
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
@@ -80,7 +100,6 @@ export default function RosterPage() {
 
   function chooseSite(id: string) {
     setSiteId(id);
-    setMessage(null);
     try {
       localStorage.setItem(SITE_KEY, id);
     } catch {
@@ -91,20 +110,48 @@ export default function RosterPage() {
   async function publish() {
     if (!siteId) return;
     setPublishing(true);
-    setMessage(null);
     try {
       const result = await api<PublishResult>('/tenant/roster/publish', {
         body: { locationId: siteId, from: monday, to: sunday },
       });
-      setMessage({
-        tone: 'success',
-        text: t.schedule.published(result.published, result.notified),
-      });
+      toast.push('success', t.schedule.published(result.published, result.notified));
       await roster.reload();
     } catch (e) {
-      setMessage({ tone: 'error', text: e instanceof ApiError ? e.message : t.common.error });
+      toast.push('error', e instanceof ApiError ? e.message : t.common.error);
     } finally {
       setPublishing(false);
+    }
+  }
+
+  /** Removes a shift from the list immediately, then reconciles if the server rejects it. */
+  async function removeShift(shift: ShiftView) {
+    const previous = roster.data;
+    roster.mutate((list) => list?.filter((s) => s.id !== shift.id) ?? null);
+    try {
+      await api(`/tenant/shifts/${shift.id}`, { method: 'DELETE' });
+      toast.push(
+        'success',
+        shift.status === 'published' ? t.schedule.shiftCancelled : t.schedule.shiftRemoved,
+      );
+    } catch (e) {
+      roster.mutate(previous);
+      toast.push('error', e instanceof ApiError ? e.message : t.common.error);
+    }
+  }
+
+  async function copyWeek() {
+    if (!siteId) return;
+    setCopying(true);
+    try {
+      const result = await api<CopyResult>('/tenant/roster/copy', {
+        body: { locationId: siteId, from: monday, to: sunday },
+      });
+      toast.push('success', t.schedule.copied(result.copied));
+      await roster.reload();
+    } catch (e) {
+      toast.push('error', e instanceof ApiError ? e.message : t.common.error);
+    } finally {
+      setCopying(false);
     }
   }
 
@@ -139,6 +186,31 @@ export default function RosterPage() {
             ))}
           </Select>
         </Field>
+        {canManage && (
+          <SegmentedControl
+            className="grid grid-cols-2"
+            role="radiogroup"
+            aria-label={t.schedule.title}
+          >
+            {(
+              [
+                { value: 'grid', label: t.schedule.viewGrid },
+                { value: 'day', label: t.schedule.viewDay },
+              ] as const
+            ).map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={mode === value}
+                onClick={() => setMode(value)}
+                className={segmentedOptionStyles(mode === value)}
+              >
+                {label}
+              </button>
+            ))}
+          </SegmentedControl>
+        )}
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
@@ -168,12 +240,45 @@ export default function RosterPage() {
                 : t.schedule.nothingToPublish}
           </Button>
         )}
-        {message && <Alert tone={message.tone}>{message.text}</Alert>}
       </div>
 
+      {canManage && site && (
+        <div className="mb-6">
+          <ZonesSection zones={zones.data ?? []} sites={activeSites} onChanged={zones.reload} />
+        </div>
+      )}
+
       {roster.error && <Alert>{roster.error}</Alert>}
-      {!roster.data && !roster.error && <Spinner />}
-      {roster.data && site && (
+      {!roster.data && !roster.error && (
+        <div className="space-y-4">
+          {[0, 1, 2].map((i) => (
+            <Card key={i} className="p-5">
+              <Skeleton className="h-5 w-40" />
+              <div className="mt-3 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+      {roster.data && site && canManage && mode === 'grid' && (
+        <RosterGrid
+          site={site}
+          days={days}
+          shifts={roster.data}
+          employees={employees.data ?? []}
+          staffing={staffing.data}
+          conflicts={conflictsData.data?.conflicts ?? []}
+          leaves={conflictsData.data?.leaves ?? []}
+          roving={aux.data?.roving ?? []}
+          standby={aux.data?.standby ?? []}
+          onChanged={roster.reload}
+          onCopy={copyWeek}
+          copying={copying}
+        />
+      )}
+      {roster.data && site && (!canManage || mode === 'day') && (
         <div className="space-y-4">
           {days.map((day) => (
             <DayCard
@@ -183,7 +288,9 @@ export default function RosterPage() {
               site={site}
               shifts={roster.data!.filter((s) => s.localDate === day)}
               employees={canManage ? (employees.data ?? []) : null}
+              zones={zones.data ?? []}
               onChanged={roster.reload}
+              onRemove={removeShift}
             />
           ))}
         </div>
@@ -198,7 +305,9 @@ function DayCard({
   site,
   shifts,
   employees,
+  zones,
   onChanged,
+  onRemove,
 }: {
   day: string;
   isToday: boolean;
@@ -206,29 +315,33 @@ function DayCard({
   shifts: ShiftView[];
   /** Null when the viewer cannot plan shifts. */
   employees: EmployeeView[] | null;
+  zones: ZoneView[];
   onChanged: () => Promise<void>;
+  onRemove: (shift: ShiftView) => Promise<void>;
 }) {
   const t = useT();
+  const { confirm, confirmDialog } = useConfirm();
   const [adding, setAdding] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function remove(shift: ShiftView) {
     const question =
       shift.status === 'published'
         ? t.schedule.cancelConfirm(shift.employee.fullName)
         : t.schedule.deleteDraftConfirm(shift.employee.fullName);
-    if (!window.confirm(question)) return;
-    setError(null);
-    try {
-      await api(`/tenant/shifts/${shift.id}`, { method: 'DELETE' });
-      await onChanged();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.common.error);
-    }
+    if (
+      !(await confirm({
+        message: question,
+        confirmLabel:
+          shift.status === 'published' ? t.schedule.cancelShift : t.schedule.deleteShift,
+      }))
+    )
+      return;
+    await onRemove(shift);
   }
 
   return (
     <Card className={cx('p-5', isToday && 'border-fg')}>
+      {confirmDialog}
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-fg">
           {dayLabel(day)}
@@ -246,11 +359,6 @@ function DayCard({
           </Button>
         )}
       </div>
-      {error && (
-        <div className="mt-3">
-          <Alert>{error}</Alert>
-        </div>
-      )}
       {shifts.length === 0 && !adding && (
         <p className="mt-2 text-base text-faint">{t.schedule.noShifts}</p>
       )}
@@ -294,6 +402,7 @@ function DayCard({
           day={day}
           site={site}
           employees={employees}
+          zones={zones}
           onDone={async (saved) => {
             setAdding(false);
             if (saved) await onChanged();
@@ -308,14 +417,17 @@ function AddShift({
   day,
   site,
   employees,
+  zones,
   onDone,
 }: {
   day: string;
   site: LocationView;
   employees: EmployeeView[];
+  zones: ZoneView[];
   onDone: (saved: boolean) => Promise<void>;
 }) {
   const t = useT();
+  const toast = useToast();
   // Officers contracted by the site's legal entity, those based at this site first.
   const candidates = useMemo(
     () =>
@@ -325,13 +437,15 @@ function AddShift({
     [employees, site],
   );
   const [employeeId, setEmployeeId] = useState(candidates[0]?.id ?? '');
+  const [mode, setMode] = useState<'site' | 'roving' | 'standby'>('site');
+  const [zoneId, setZoneId] = useState(zones[0]?.id ?? '');
   const [kind, setKind] = useState<ShiftKind>('day');
   const [startTime, setStartTime] = useState(SHIFT_PRESETS.day.start);
   const [hours, setHours] = useState(String(SHIFT_PRESETS.day.hours));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  function choose(next: ShiftKind) {
+  function choose(next: 'day' | 'night' | 'custom') {
     setKind(next);
     if (next !== 'custom') {
       setStartTime(SHIFT_PRESETS[next].start);
@@ -343,16 +457,17 @@ function AddShift({
     setSaving(true);
     setError(null);
     try {
-      await api('/tenant/shifts', {
-        body: {
-          locationId: site.id,
-          employeeId,
-          date: day,
-          startTime,
-          durationHours: Number(hours),
-          kind,
-        },
-      });
+      const body: Record<string, unknown> = {
+        employeeId,
+        date: day,
+        startTime,
+        durationHours: Number(hours),
+        kind: mode === 'standby' ? 'standby' : kind,
+      };
+      if (mode === 'roving') body.zoneId = zoneId || null;
+      else if (mode === 'site') body.locationId = site.id;
+      await api('/tenant/shifts', { body });
+      toast.push('success', t.schedule.draftSaved);
       await onDone(true);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t.common.error);
@@ -371,7 +486,7 @@ function AddShift({
     );
   }
 
-  const kinds: { value: ShiftKind; label: string }[] = [
+  const kinds: { value: 'day' | 'night' | 'custom'; label: string }[] = [
     { value: 'day', label: t.schedule.presetDay },
     { value: 'night', label: t.schedule.presetNight },
     { value: 'custom', label: t.schedule.presetCustom },
@@ -395,22 +510,59 @@ function AddShift({
       <SegmentedControl
         className="grid grid-cols-3"
         role="radiogroup"
-        aria-label={t.schedule.shiftType}
+        aria-label={t.workforce.assignmentType}
       >
-        {kinds.map((k) => (
+        {(
+          [
+            { value: 'site', label: t.schedule.modeSite },
+            { value: 'roving', label: t.schedule.modeRoving },
+            { value: 'standby', label: t.schedule.modeStandby },
+          ] as const
+        ).map((m) => (
           <button
-            key={k.value}
+            key={m.value}
             type="button"
             role="radio"
-            aria-checked={kind === k.value}
-            onClick={() => choose(k.value)}
-            className={segmentedOptionStyles(kind === k.value)}
+            aria-checked={mode === m.value}
+            onClick={() => setMode(m.value)}
+            className={segmentedOptionStyles(mode === m.value)}
           >
-            {k.label}
+            {m.label}
           </button>
         ))}
       </SegmentedControl>
-      {kind === 'custom' && (
+      {mode === 'roving' && (
+        <Field label={t.schedule.zone} htmlFor={`zone-${day}`}>
+          <Select id={`zone-${day}`} value={zoneId} onChange={(e) => setZoneId(e.target.value)}>
+            {zones.map((z) => (
+              <option key={z.id} value={z.id}>
+                {z.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+      {mode !== 'standby' && (
+        <SegmentedControl
+          className="grid grid-cols-3"
+          role="radiogroup"
+          aria-label={t.schedule.shiftType}
+        >
+          {kinds.map((k) => (
+            <button
+              key={k.value}
+              type="button"
+              role="radio"
+              aria-checked={kind === k.value}
+              onClick={() => choose(k.value)}
+              className={segmentedOptionStyles(kind === k.value)}
+            >
+              {k.label}
+            </button>
+          ))}
+        </SegmentedControl>
+      )}
+      {(mode === 'standby' || kind === 'custom') && (
         <div className="grid grid-cols-2 gap-4">
           <Field label={t.schedule.start} htmlFor={`start-${day}`}>
             <Input
@@ -432,8 +584,11 @@ function AddShift({
           </Field>
         </div>
       )}
+      {mode === 'roving' && zones.length === 0 && (
+        <p className="text-sm text-accent">{t.schedule.noZones}</p>
+      )}
       <div className="flex gap-2">
-        <Button loading={saving} onClick={save}>
+        <Button loading={saving} disabled={mode === 'roving' && !zoneId} onClick={save}>
           {t.schedule.saveDraft}
         </Button>
         <Button variant="ghost" onClick={() => onDone(false)}>

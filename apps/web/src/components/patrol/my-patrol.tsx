@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { localClock, shiftHours } from '@/lib/shifts';
+import { useConfirm } from '../confirm-dialog';
 import { Alert, Button, Card, Spinner, buttonStyles } from '../ui';
 import { ProgressDots } from './progress-dots';
 
@@ -14,6 +15,7 @@ import { ProgressDots } from './progress-dots';
 /** `onNotEmployee` tells the page this account has no officer view, e.g. a company admin. */
 export function MyPatrolSection({ onNotEmployee }: { onNotEmployee?: () => void }) {
   const t = useT();
+  const { confirm, confirmDialog } = useConfirm();
   const [data, setData] = useState<MyPatrol | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notEmployee, setNotEmployee] = useState(false);
@@ -31,7 +33,14 @@ export function MyPatrolSection({ onNotEmployee }: { onNotEmployee?: () => void 
   useEffect(() => void load(), [load]);
 
   async function finish(round: PatrolProgress) {
-    if (!confirm(t.patrol.finishConfirm)) return;
+    if (
+      !(await confirm({
+        message: t.patrol.finishConfirm,
+        confirmLabel: t.patrol.finishRound,
+        tone: 'primary',
+      }))
+    )
+      return;
     try {
       await api(`/me/patrol/rounds/${round.roundId}/finish`, { method: 'POST' });
       await load();
@@ -46,6 +55,7 @@ export function MyPatrolSection({ onNotEmployee }: { onNotEmployee?: () => void 
 
   return (
     <section className="space-y-4" aria-labelledby="my-patrol">
+      {confirmDialog}
       <h2 id="my-patrol" className="font-display text-2xl font-bold">
         {t.patrol.myTitle}
       </h2>

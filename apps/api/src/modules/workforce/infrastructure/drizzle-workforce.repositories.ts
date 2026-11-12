@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type { EmployeeStatus, EmploymentType, LocationStatus } from '@xrostr/contracts';
+import type {
+  AssignmentType,
+  EmployeeStatus,
+  EmploymentType,
+  LocationStatus,
+} from '@xrostr/contracts';
 import { employees, locations } from '@xrostr/db';
 import { and, asc, eq, ne } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
@@ -44,6 +49,8 @@ const toEmployee = (r: EmployeeRow): Employee => ({
   employmentType: r.employmentType as EmploymentType,
   startDate: r.startDate,
   status: r.status as EmployeeStatus,
+  assignmentType: r.assignmentType as AssignmentType,
+  canRelieve: r.canRelieve,
 });
 
 @Injectable()

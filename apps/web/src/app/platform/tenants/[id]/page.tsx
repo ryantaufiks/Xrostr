@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { InviteShare } from '@/components/invite-share';
+import { useConfirm } from '@/components/confirm-dialog';
 import {
   Alert,
   Badge,
@@ -34,6 +35,7 @@ const failure = (e: unknown, fallback: string) => (e instanceof ApiError ? e.mes
 
 export default function TenantDetailPage() {
   const t = useT();
+  const { confirm, confirmDialog } = useConfirm();
   const { id } = useParams<{ id: string }>();
   const [tenant, setTenant] = useState<TenantDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -49,7 +51,14 @@ export default function TenantDetailPage() {
   async function toggleStatus() {
     if (!tenant) return;
     const suspend = tenant.status === 'active';
-    if (suspend && !confirm(t.platform.suspendConfirm(tenant.name))) return;
+    if (
+      suspend &&
+      !(await confirm({
+        message: t.platform.suspendConfirm(tenant.name),
+        confirmLabel: t.platform.suspend,
+      }))
+    )
+      return;
     setToggling(true);
     setMessage(null);
     try {
@@ -76,6 +85,7 @@ export default function TenantDetailPage() {
 
   return (
     <>
+      {confirmDialog}
       <Link href="/platform/tenants" className={buttonStyles('ghost', 'mb-4 -ml-4')}>
         <ArrowLeft className="size-5" aria-hidden />
         {t.platform.allTenants}

@@ -14,6 +14,7 @@ export const account = bilingual(
     theme: 'Tema',
     dark: 'Gelap',
     light: 'Terang',
+    system: 'Sistem',
     appTitle: 'Aplikasi & notifikasi',
     appDescription:
       'Pasang Xrostr di layar utama HP agar terbuka seperti aplikasi dan bisa menerima pemberitahuan jadwal.',
@@ -75,6 +76,7 @@ export const account = bilingual(
     theme: 'Theme',
     dark: 'Dark',
     light: 'Light',
+    system: 'System',
     appTitle: 'App & notifications',
     appDescription:
       'Add Xrostr to your home screen so it opens like an app and can receive schedule alerts.',

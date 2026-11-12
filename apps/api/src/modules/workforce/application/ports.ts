@@ -1,4 +1,9 @@
-import type { EmployeeStatus, EmploymentType, LocationStatus } from '@xrostr/contracts';
+import type {
+  AssignmentType,
+  EmployeeStatus,
+  EmploymentType,
+  LocationStatus,
+} from '@xrostr/contracts';
 
 export interface Location {
   id: string;
@@ -41,11 +46,23 @@ export interface Employee {
   employmentType: EmploymentType;
   startDate: string;
   status: EmployeeStatus;
+  assignmentType: AssignmentType;
+  canRelieve: boolean;
 }
 
 export type NewEmployee = Omit<Employee, 'id' | 'status'>;
 export type EmployeeChanges = Partial<
-  Pick<Employee, 'fullName' | 'phone' | 'jobTitle' | 'locationId' | 'employmentType' | 'status'>
+  Pick<
+    Employee,
+    | 'fullName'
+    | 'phone'
+    | 'jobTitle'
+    | 'locationId'
+    | 'employmentType'
+    | 'status'
+    | 'assignmentType'
+    | 'canRelieve'
+  >
 >;
 
 /** All methods require a tenant unit of work. */

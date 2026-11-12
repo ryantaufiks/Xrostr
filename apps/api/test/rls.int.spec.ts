@@ -102,4 +102,21 @@ describe('Row Level Security', () => {
       /permission denied/,
     );
   });
+
+  it('protects every tenant table, so a new table cannot ship without isolation', async () => {
+    // Platform tables carry a tenant_id for reference only; the app reads them in platform scope.
+    const platformTables = ['outbox_events', 'platform_audit_log', 'sessions'];
+    const unprotected = await owner.query<{ table_name: string }>(
+      `select c.table_name
+       from information_schema.columns c
+       join pg_tables t on t.schemaname = 'public' and t.tablename = c.table_name
+       where c.table_schema = 'public' and c.column_name = 'tenant_id'
+         and (not t.rowsecurity
+              or not exists (select 1 from pg_policies p
+                             where p.tablename = c.table_name
+                               and p.policyname = c.table_name || '_tenant_isolation'))
+       order by 1`,
+    );
+    expect(unprotected.rows.map((r) => r.table_name)).toEqual(platformTables);
+  });
 });

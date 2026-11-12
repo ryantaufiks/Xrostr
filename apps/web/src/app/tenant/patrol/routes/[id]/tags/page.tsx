@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import QRCode from 'qrcode';
 import { useCallback, useEffect, useState } from 'react';
 import { Logo } from '@/components/brand';
+import { useConfirm } from '@/components/confirm-dialog';
 import { Alert, Button, PageHeader, Spinner } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -25,6 +26,7 @@ type Tag = PatrolTag & { url: string; image: string };
 /** Printable QR tags for a route's checkpoints, with the same links ready for NFC stickers. */
 export default function PatrolTagsPage() {
   const t = useT();
+  const { confirm, confirmDialog } = useConfirm();
   const { id } = useParams<{ id: string }>();
   const [route, setRoute] = useState<PatrolRouteView | null>(null);
   const [tags, setTags] = useState<Tag[] | null>(null);
@@ -71,7 +73,13 @@ export default function PatrolTagsPage() {
   }
 
   async function rotate(tag: Tag) {
-    if (!confirm(t.patrol.rotateConfirm(tag.name))) return;
+    if (
+      !(await confirm({
+        message: t.patrol.rotateConfirm(tag.name),
+        confirmLabel: t.patrol.rotateTag,
+      }))
+    )
+      return;
     try {
       const fresh = await withImage(
         await api<PatrolTag>(`/tenant/patrol/checkpoints/${tag.checkpointId}/tag/rotate`, {
@@ -91,6 +99,7 @@ export default function PatrolTagsPage() {
 
   return (
     <div className="space-y-6">
+      {confirmDialog}
       <div className="space-y-4 print:hidden">
         <PageHeader
           title={t.patrol.tagsTitle(route.name)}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Alert, Badge, Card, PageHeader, Spinner } from '@/components/ui';
+import { Alert, Badge, Card, PageHeader, Skeleton } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { useT } from '@/lib/i18n';
@@ -75,7 +75,20 @@ function LegalEntities() {
     <section>
       <h2 className="label mb-3 text-muted">{t.home.legalEntities}</h2>
       {error && <Alert>{error}</Alert>}
-      {!data && !error && <Spinner />}
+      {!data && !error && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Card key={i} className="p-5">
+              <Skeleton className="h-5 w-1/3" />
+              <div className="mt-4 grid grid-cols-2 gap-2.5">
+                {[0, 1, 2, 3].map((j) => (
+                  <Skeleton key={j} className="h-4 w-full" />
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
       {data && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.map((entity) => (
@@ -113,7 +126,18 @@ function AuditLog() {
     <section>
       <h2 className="label mb-3 text-muted">{t.home.recentActivity}</h2>
       {error && <Alert>{error}</Alert>}
-      {!data && !error && <Spinner />}
+      {!data && !error && (
+        <Card>
+          <ul className="divide-y divide-line">
+            {[0, 1, 2, 3].map((i) => (
+              <li key={i} className="flex flex-col gap-2 px-5 py-4">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-1/2" />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
       {data && (
         <Card>
           {/* Phones: a stacked list, so nothing has to be scrolled sideways. */}

@@ -99,6 +99,41 @@
       "when": 1794482346467,
       "tag": "0013_safety_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794491114620,
+      "tag": "0014_spicy_killer_shrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794497938727,
+      "tag": "0015_hesitant_hardball",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794498265886,
+      "tag": "0016_glossy_harrier",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794501454343,
+      "tag": "0017_shift_place",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794501462553,
+      "tag": "0018_shift_timezone_and_standby",
+      "breakpoints": true
     }
   ]
 }

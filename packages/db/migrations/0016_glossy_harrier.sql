@@ -1,0 +1,1 @@
+ALTER TABLE "shifts" ADD COLUMN "timezone" text DEFAULT 'UTC' NOT NULL;

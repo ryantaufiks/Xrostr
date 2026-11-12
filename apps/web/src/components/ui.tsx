@@ -1,11 +1,13 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
+import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type {
   ButtonHTMLAttributes,
   HTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
+  Ref,
   SelectHTMLAttributes,
 } from 'react';
 import { useT } from '@/lib/i18n';
@@ -14,7 +16,7 @@ function cx(...classes: (string | false | null | undefined)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type IconButtonSize = 'sm' | 'md';
 type IconButtonTone = 'neutral' | 'danger';
 
@@ -22,6 +24,8 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-fg text-bg hover:opacity-85 disabled:opacity-40',
   secondary: 'border border-control text-fg hover:border-fg disabled:text-faint',
   ghost: 'text-muted hover:text-fg',
+  // Destructive: the single accent, with the opposite surface for readable text in both themes.
+  danger: 'bg-accent text-bg hover:opacity-85 disabled:opacity-40',
 };
 
 /** Button look for links that act as buttons. */
@@ -39,10 +43,20 @@ export function Button({
   className,
   children,
   disabled,
+  ref,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; loading?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant;
+  loading?: boolean;
+  ref?: Ref<HTMLButtonElement>;
+}) {
   return (
-    <button className={buttonStyles(variant, className)} disabled={disabled || loading} {...props}>
+    <button
+      ref={ref}
+      className={buttonStyles(variant, className)}
+      disabled={disabled || loading}
+      {...props}
+    >
       {loading && <Loader2 className="size-5 animate-spin" aria-hidden />}
       {children}
     </button>
@@ -96,8 +110,57 @@ export function SegmentedControl({
   children,
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const radios = () =>
+    Array.from(ref.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]') ?? []);
+
+  // Roving tabindex: only the checked radio is in the Tab order; arrows move between them.
+  useEffect(() => {
+    for (const radio of radios()) {
+      radio.tabIndex = radio.getAttribute('aria-checked') === 'true' ? 0 : -1;
+    }
+  });
+
+  // Arrow keys move focus and select, matching the native radio-group behaviour.
+  function onKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const items = radios();
+    if (items.length < 2) return;
+    const active = document.activeElement;
+    const currentIndex = items.indexOf(active as HTMLButtonElement);
+    const checkedIndex = items.findIndex((r) => r.getAttribute('aria-checked') === 'true');
+    const from = currentIndex >= 0 ? currentIndex : checkedIndex >= 0 ? checkedIndex : 0;
+    let next: number;
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        next = (from + 1) % items.length;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        next = (from - 1 + items.length) % items.length;
+        break;
+      case 'Home':
+        next = 0;
+        break;
+      case 'End':
+        next = items.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    items[next]!.focus();
+    items[next]!.click();
+  }
+
   return (
-    <div className={cx('gap-1 rounded-full border border-control p-1', className)} {...props}>
+    <div
+      ref={ref}
+      className={cx('gap-1 rounded-full border border-control p-1', className)}
+      onKeyDown={onKeyDown}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -224,6 +287,11 @@ export function Spinner({ label }: { label?: string }) {
       {label ?? t.common.loading}
     </div>
   );
+}
+
+/** A shimmering placeholder block, used to build skeleton screens for lists and cards. */
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cx('animate-pulse rounded-lg bg-sunken', className)} aria-hidden />;
 }
 
 export function PageHeader({

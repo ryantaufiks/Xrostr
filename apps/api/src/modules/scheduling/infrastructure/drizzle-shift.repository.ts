@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { ShiftKind, ShiftStatus } from '@xrostr/contracts';
-import { shifts } from '@xrostr/db';
-import { and, asc, eq, gt, gte, lt, lte, ne } from 'drizzle-orm';
+import { shifts, zoneLocations } from '@xrostr/db';
+import { and, asc, eq, gt, gte, inArray, lt, lte, ne, or } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import {
   causeCode,
@@ -14,11 +14,13 @@ type Row = typeof shifts.$inferSelect;
 const toShift = (r: Row): Shift => ({
   id: r.id,
   locationId: r.locationId,
+  zoneId: r.zoneId,
   employeeId: r.employeeId,
   kind: r.kind as ShiftKind,
   status: r.status as ShiftStatus,
   startsAt: r.startsAt,
   endsAt: r.endsAt,
+  timezone: r.timezone,
   notes: r.notes,
 });
 
@@ -52,7 +54,12 @@ export class DrizzleShiftRepository extends ShiftRepository {
     return row ? toShift(row) : null;
   }
 
-  async overlaps(employeeId: string, startsAt: Date, endsAt: Date): Promise<boolean> {
+  async overlaps(
+    employeeId: string,
+    startsAt: Date,
+    endsAt: Date,
+    standby: boolean,
+  ): Promise<boolean> {
     const [row] = await this.ctx
       .executor()
       .select({ id: shifts.id })
@@ -61,6 +68,7 @@ export class DrizzleShiftRepository extends ShiftRepository {
         and(
           eq(shifts.employeeId, employeeId),
           ne(shifts.status, 'cancelled'),
+          standby ? eq(shifts.kind, 'standby') : ne(shifts.kind, 'standby'),
           lt(shifts.startsAt, endsAt),
           gt(shifts.endsAt, startsAt),
         ),
@@ -103,19 +111,31 @@ export class DrizzleShiftRepository extends ShiftRepository {
     return rows.map(toShift);
   }
 
-  async publishDrafts(locationId: string, start: Date, end: Date, at: Date): Promise<Shift[]> {
+  async forEmployees(employeeIds: readonly string[], start: Date, end: Date): Promise<Shift[]> {
+    if (employeeIds.length === 0) return [];
     const rows = await this.ctx
       .executor()
-      .update(shifts)
-      .set({ status: 'published', publishedAt: at })
+      .select()
+      .from(shifts)
       .where(
         and(
-          eq(shifts.locationId, locationId),
-          eq(shifts.status, 'draft'),
+          inArray(shifts.employeeId, [...employeeIds]),
+          ne(shifts.status, 'cancelled'),
           gte(shifts.startsAt, start),
           lt(shifts.startsAt, end),
         ),
       )
+      .orderBy(asc(shifts.startsAt));
+    return rows.map(toShift);
+  }
+
+  async publishByIds(ids: readonly string[], at: Date): Promise<Shift[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.ctx
+      .executor()
+      .update(shifts)
+      .set({ status: 'published', publishedAt: at })
+      .where(and(inArray(shifts.id, [...ids]), eq(shifts.status, 'draft')))
       .returning();
     return rows.map(toShift);
   }
@@ -134,7 +154,20 @@ export class DrizzleShiftRepository extends ShiftRepository {
       .where(
         and(
           eq(shifts.employeeId, employeeId),
-          eq(shifts.locationId, locationId),
+          // The site's own shifts, or roving shifts of a zone that contains the site.
+          or(
+            eq(shifts.locationId, locationId),
+            inArray(
+              shifts.zoneId,
+              this.ctx
+                .executor()
+                .select({ id: zoneLocations.zoneId })
+                .from(zoneLocations)
+                .where(eq(zoneLocations.locationId, locationId)),
+            ),
+          ),
+          // On-call at home is never checked in.
+          ne(shifts.kind, 'standby'),
           eq(shifts.status, 'published'),
           lte(shifts.startsAt, new Date(at.getTime() + opensBeforeMs)),
           gt(shifts.endsAt, new Date(at.getTime() - closesAfterMs)),

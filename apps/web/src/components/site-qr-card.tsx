@@ -6,12 +6,14 @@ import Link from 'next/link';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { useConfirm } from './confirm-dialog';
 import { Alert, Button, Card, buttonStyles } from './ui';
 import { useT } from '@/lib/i18n';
 
 /** The site's check-in QR: preview, printable poster, and rotation to void old posters. */
 export function SiteQrCard({ locationId, hasPoint }: { locationId: string; hasPoint: boolean }) {
   const t = useT();
+  const { confirm, confirmDialog } = useConfirm();
   const [image, setImage] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'error' | 'success'; text: string } | null>(null);
   const [rotating, setRotating] = useState(false);
@@ -34,7 +36,7 @@ export function SiteQrCard({ locationId, hasPoint }: { locationId: string; hasPo
   }, [locationId]);
 
   async function rotate() {
-    if (!window.confirm(t.sites.rotateConfirm)) return;
+    if (!(await confirm({ message: t.sites.rotateConfirm, confirmLabel: t.sites.rotate }))) return;
     setRotating(true);
     setMessage(null);
     try {
@@ -53,6 +55,7 @@ export function SiteQrCard({ locationId, hasPoint }: { locationId: string; hasPo
 
   return (
     <Card className="space-y-4 p-5 sm:p-6">
+      {confirmDialog}
       <div>
         <h2 className="label font-bold text-fg">{t.sites.qrTitle}</h2>
         <p className="mt-1 text-sm text-muted">{t.sites.qrHint}</p>

@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import {
@@ -14,15 +15,23 @@ import {
   type AttendanceResult,
   type RecordAttendanceRequest,
   createShiftSchema,
+  copyRosterSchema,
   myShiftsQuerySchema,
   publishRosterSchema,
   rosterQuerySchema,
+  setStaffingSchema,
+  type CopyResult,
+  type CopyRosterRequest,
   type CreateShiftRequest,
   type MyShiftsQuery,
   type PublishResult,
   type PublishRosterRequest,
+  type RosterAuxiliaryView,
+  type RosterConflictsView,
   type RosterQuery,
+  type SetStaffingRequest,
   type ShiftView,
+  type StaffingView,
 } from '@xrostr/contracts';
 import { unwrap } from '../../../../shared/interface/http/domain-error.exception.js';
 import { ZodValidationPipe } from '../../../../shared/interface/http/zod-validation.pipe.js';
@@ -78,6 +87,53 @@ export class SchedulingController {
     @Body(new ZodValidationPipe(publishRosterSchema)) body: PublishRosterRequest,
   ): Promise<PublishResult> {
     return unwrap(await this.scheduling.publish(actor, body));
+  }
+
+  @RequirePermissions('schedules.manage')
+  @Post('tenant/roster/copy')
+  @HttpCode(200)
+  async copy(
+    @CurrentPrincipal() actor: Principal,
+    @Body(new ZodValidationPipe(copyRosterSchema)) body: CopyRosterRequest,
+  ): Promise<CopyResult> {
+    return unwrap(await this.scheduling.copyWeek(actor, body));
+  }
+
+  @RequirePermissions('schedules.read')
+  @Get('tenant/roster/conflicts')
+  async conflicts(
+    @CurrentPrincipal() actor: Principal,
+    @Query(new ZodValidationPipe(rosterQuerySchema)) query: RosterQuery,
+  ): Promise<RosterConflictsView> {
+    return unwrap(await this.scheduling.conflicts(actor, query));
+  }
+
+  @RequirePermissions('schedules.read')
+  @Get('tenant/roster/aux')
+  async auxiliary(
+    @CurrentPrincipal() actor: Principal,
+    @Query(new ZodValidationPipe(rosterQuerySchema)) query: RosterQuery,
+  ): Promise<RosterAuxiliaryView> {
+    return unwrap(await this.scheduling.auxiliary(actor, query));
+  }
+
+  @RequirePermissions('schedules.read')
+  @Get('tenant/locations/:id/staffing')
+  async staffing(
+    @CurrentPrincipal() actor: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<StaffingView> {
+    return unwrap(await this.scheduling.staffing(actor, id));
+  }
+
+  @RequirePermissions('schedules.manage')
+  @Put('tenant/locations/:id/staffing')
+  async setStaffing(
+    @CurrentPrincipal() actor: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(setStaffingSchema)) body: SetStaffingRequest,
+  ): Promise<StaffingView> {
+    return unwrap(await this.scheduling.setStaffing(actor, id, body));
   }
 
   @TenantUser()

@@ -65,6 +65,8 @@ export class EmployeesService {
         jobTitle: input.jobTitle ?? null,
         employmentType: input.employmentType,
         startDate: input.startDate,
+        assignmentType: input.assignmentType ?? 'fixed',
+        canRelieve: input.canRelieve ?? false,
       });
       await this.record(actor, 'employee.created', employeeId, {
         employeeNo: input.employeeNo,
@@ -170,6 +172,8 @@ function toView(
     status: employee.status,
     accountStatus: account?.status ?? 'disabled',
     role: account?.roleKey ?? null,
+    assignmentType: employee.assignmentType,
+    canRelieve: employee.canRelieve,
     legalEntity: {
       id: employee.legalEntityId,
       name: entity?.name ?? '',

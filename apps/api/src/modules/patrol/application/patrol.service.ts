@@ -61,7 +61,9 @@ export class PatrolService {
       if (!checkpoint || checkpoint.status !== 'active' || !route || route.status !== 'active')
         return err(PatrolErrors.invalidTag());
       const shift = await this.scheduling.runningShift(me.id, now, PATROL_GRACE_MS);
-      if (!shift || shift.locationId !== route.locationId) return err(PatrolErrors.outsideShift());
+      // A site shift covers its site; a roving shift covers every site of its zone.
+      if (!shift || !shift.siteIds.includes(route.locationId))
+        return err(PatrolErrors.outsideShift());
 
       const checkpoints = active(await this.routes.checkpoints([route.id]));
       const round = await this.roundFor(route, me.id, shift.id, checkpoints.length, now);
@@ -111,40 +113,51 @@ export class PatrolService {
     });
   }
 
-  /** The routes at the site of the shift the officer is on now, with any round in progress. */
+  /**
+   * The routes at the sites of the shift the officer is on now, with any round in progress. A
+   * roving officer sees the routes of every site in the zone, each labelled with its site.
+   */
   mine(actor: Principal): Promise<Result<MyPatrol>> {
     return this.uow.runInTenant(tenantOf(actor), async () => {
       const me = await this.workforce.employeeOfUser(actor.subject.id);
       if (!me) return err(PatrolErrors.notAnEmployee());
       const shift = await this.scheduling.runningShift(me.id, this.clock.now(), PATROL_GRACE_MS);
-      const location = shift && (await this.workforce.location(shift.locationId));
-      if (!shift || !location) return ok({ shift: null, routes: [] });
+      const sites = shift ? await this.workforce.locationsById(shift.siteIds) : new Map();
+      if (!shift || sites.size === 0) return ok({ shift: null, routes: [] });
+      const roving = shift.zoneId !== null;
 
-      const routes = (await this.routes.forLocation(location.id)).filter(
-        (r) => r.status === 'active',
-      );
-      const checkpoints = await this.routes.checkpoints(routes.map((r) => r.id));
       const finished = await this.rounds.lastFinished(me.id, shift.id);
       const result: MyPatrol['routes'] = [];
-      for (const route of routes) {
-        const own = active(checkpoints.filter((c) => c.routeId === route.id));
-        const open = await this.rounds.openRound(route.id, me.id);
-        const round = open?.shiftId === shift.id ? open : null;
-        const scans = round ? await this.rounds.scans([round.id]) : [];
-        result.push({
-          route: { id: route.id, name: route.name, intervalMinutes: route.intervalMinutes },
-          checkpoints: own.map((c) => ({ id: c.id, name: c.name, position: c.position })),
-          round: round ? progress(round, route, location.name, own, scans) : null,
-          lastFinishedAt: finished.get(route.id)?.toISOString() ?? null,
-        });
+      for (const site of sites.values()) {
+        const routes = (await this.routes.forLocation(site.id)).filter(
+          (r) => r.status === 'active',
+        );
+        const checkpoints = await this.routes.checkpoints(routes.map((r) => r.id));
+        for (const route of routes) {
+          const own = active(checkpoints.filter((c) => c.routeId === route.id));
+          const open = await this.rounds.openRound(route.id, me.id);
+          const round = open?.shiftId === shift.id ? open : null;
+          const scans = round ? await this.rounds.scans([round.id]) : [];
+          result.push({
+            route: {
+              id: route.id,
+              name: roving ? `${site.name} · ${route.name}` : route.name,
+              intervalMinutes: route.intervalMinutes,
+            },
+            checkpoints: own.map((c) => ({ id: c.id, name: c.name, position: c.position })),
+            round: round ? progress(round, route, site.name, own, scans) : null,
+            lastFinishedAt: finished.get(route.id)?.toISOString() ?? null,
+          });
+        }
       }
+      const placeName = shift.zoneName ?? [...sites.values()][0]!.name;
       return ok({
         shift: {
           id: shift.id,
-          locationName: location.name,
-          localStart: utcToLocal(shift.startsAt, location.timezone).time,
-          localEnd: utcToLocal(shift.endsAt, location.timezone).time,
-          timezone: location.timezone,
+          locationName: placeName,
+          localStart: utcToLocal(shift.startsAt, shift.timezone).time,
+          localEnd: utcToLocal(shift.endsAt, shift.timezone).time,
+          timezone: shift.timezone,
         },
         routes: result,
       });

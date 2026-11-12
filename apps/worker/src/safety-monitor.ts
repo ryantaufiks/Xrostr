@@ -90,11 +90,13 @@ export class SafetyMonitor {
     const rows = (
       await tx.execute<Prompted>(sql`
         with due as (
-          select s.id as shift_id, s.employee_id, s.location_id, e.user_id, l.name as site
+          -- The site comes from the check-in, so a roving officer is asked at the site where
+          -- they checked in, under that site's welfare interval.
+          select s.id as shift_id, s.employee_id, ci.location_id, e.user_id, l.name as site
           from shifts s
-          join locations l on l.id = s.location_id
-          join employees e on e.id = s.employee_id
           join attendance_events ci on ci.shift_id = s.id and ci.kind = 'check_in'
+          join locations l on l.id = ci.location_id
+          join employees e on e.id = s.employee_id
           where s.status = 'published'
             and s.starts_at <= now() and s.ends_at > now()
             and l.welfare_interval_minutes is not null

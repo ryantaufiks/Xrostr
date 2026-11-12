@@ -1,5 +1,5 @@
 import { localeForRegion, type Locale } from '@xrostr/contracts';
-import { employees, locations, tenants, TENANT_SETTING, type Database } from '@xrostr/db';
+import { employees, tenants, TENANT_SETTING, type Database } from '@xrostr/db';
 import { eq, inArray, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import { localClock, notifyUsers, usersWithPermission } from './notify.js';
@@ -10,8 +10,10 @@ export const NO_SHOW_GRACE_MINUTES = 15;
 type DueShift = {
   id: string;
   employee_id: string;
-  location_id: string;
   starts_at: Date;
+  /** The site's name, or the zone's for a roving shift. */
+  place: string;
+  timezone: string;
 };
 
 /**
@@ -56,10 +58,20 @@ export class NoShowMonitor {
             and s.no_show_alerted_at is null
             and s.starts_at <= now() - make_interval(mins => ${NO_SHOW_GRACE_MINUTES})
             and s.ends_at > now()
+            -- On-call at home is never checked in.
+            and s.kind <> 'standby'
             and not exists (
               select 1 from attendance_events a where a.shift_id = s.id and a.kind = 'check_in'
             )
-          returning s.id, s.employee_id, s.location_id, s.starts_at`)
+          -- A roving shift has no site: name its zone and read the time in the shift's zone.
+          returning s.id, s.employee_id, s.starts_at,
+            coalesce(
+              (select l.name from locations l where l.id = s.location_id),
+              (select z.name from zones z where z.id = s.zone_id),
+              ''
+            ) as place,
+            coalesce((select l.timezone from locations l where l.id = s.location_id), s.timezone)
+              as timezone`)
       ).rows;
       if (due.length === 0) return 0;
 
@@ -68,16 +80,11 @@ export class NoShowMonitor {
         .select({ id: employees.id, userId: employees.userId, fullName: employees.fullName })
         .from(employees)
         .where(inArray(employees.id, [...new Set(due.map((d) => d.employee_id))]));
-      const sites = await tx
-        .select({ id: locations.id, name: locations.name, timezone: locations.timezone })
-        .from(locations)
-        .where(inArray(locations.id, [...new Set(due.map((d) => d.location_id))]));
 
       for (const shift of due) {
         const person = people.find((p) => p.id === shift.employee_id);
-        const site = sites.find((s) => s.id === shift.location_id);
-        if (!person || !site) continue;
-        const start = localClock(new Date(shift.starts_at), site.timezone);
+        if (!person) continue;
+        const start = localClock(new Date(shift.starts_at), shift.timezone);
 
         await notifyUsers(tx, tenantId, tenantLocale, planners, {
           kind: 'attendance.no_show',
@@ -85,11 +92,11 @@ export class NoShowMonitor {
           text: {
             en: {
               title: 'Officer has not checked in',
-              body: `${person.fullName}, ${start} shift at ${site.name}, has not checked in.`,
+              body: `${person.fullName}, ${start} shift at ${shift.place}, has not checked in.`,
             },
             id: {
               title: 'Officer belum absen',
-              body: `${person.fullName}, shift ${start} di ${site.name}, belum absen masuk.`,
+              body: `${person.fullName}, shift ${start} di ${shift.place}, belum absen masuk.`,
             },
           },
         });
@@ -99,11 +106,11 @@ export class NoShowMonitor {
           text: {
             en: {
               title: 'You have not checked in',
-              body: `Your ${start} shift at ${site.name} has started. Scan the QR code on site to check in.`,
+              body: `Your ${start} shift at ${shift.place} has started. Scan the QR code on site to check in.`,
             },
             id: {
               title: 'Anda belum absen masuk',
-              body: `Shift ${start} di ${site.name} sudah dimulai. Pindai QR di lokasi untuk absen.`,
+              body: `Shift ${start} di ${shift.place} sudah dimulai. Pindai QR di lokasi untuk absen.`,
             },
           },
         });

@@ -4,6 +4,7 @@ import type { CountryCode, HolidayView } from '@xrostr/contracts';
 import { Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Alert, Button, Card, Field, Input, Select, Spinner } from '@/components/ui';
+import { useConfirm } from '@/components/confirm-dialog';
 import { api, ApiError } from '@/lib/api';
 import { dayLabel } from '@/lib/dates';
 import { useData } from '@/lib/use-data';
@@ -23,6 +24,7 @@ export function HolidayCalendar({
   canManage: boolean;
 }) {
   const t = useT();
+  const { confirm, confirmDialog } = useConfirm();
   const [country, setCountry] = useState<CountryCode>(countries[0]!);
   const list = useData<HolidayView[]>(`/tenant/holidays?countryCode=${country}&year=${year}`);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,13 @@ export function HolidayCalendar({
   }
 
   async function remove(holiday: HolidayView) {
-    if (!confirm(t.leave.removeHolidayConfirm(holiday.name))) return;
+    if (
+      !(await confirm({
+        message: t.leave.removeHolidayConfirm(holiday.name),
+        confirmLabel: t.common.delete,
+      }))
+    )
+      return;
     try {
       await api(`/tenant/holidays/${holiday.id}`, { method: 'DELETE' });
       await list.reload();
@@ -56,6 +64,7 @@ export function HolidayCalendar({
 
   return (
     <section className="space-y-4" aria-labelledby="holidays">
+      {confirmDialog}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h2 id="holidays" className="font-display text-2xl font-bold">
           {t.leave.holidaysTitle(year)}

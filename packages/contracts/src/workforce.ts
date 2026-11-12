@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SYSTEM_ROLES } from './permissions.js';
+import { ASSIGNMENT_TYPES, type AssignmentType } from './scheduling.js';
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const optionalText = (max: number) =>
@@ -88,6 +89,8 @@ export const createEmployeeSchema = z.object({
   employmentType: z.enum(EMPLOYMENT_TYPES),
   startDate: isoDate,
   role: z.enum(SYSTEM_ROLES),
+  assignmentType: z.enum(ASSIGNMENT_TYPES).optional(),
+  canRelieve: z.boolean().optional(),
 });
 export type CreateEmployeeRequest = z.infer<typeof createEmployeeSchema>;
 
@@ -99,6 +102,8 @@ export const updateEmployeeSchema = z
     jobTitle: optionalText(100),
     employmentType: z.enum(EMPLOYMENT_TYPES),
     status: z.enum(EMPLOYEE_STATUSES),
+    assignmentType: z.enum(ASSIGNMENT_TYPES),
+    canRelieve: z.boolean(),
   })
   .partial();
 export type UpdateEmployeeRequest = z.infer<typeof updateEmployeeSchema>;
@@ -117,6 +122,8 @@ export interface EmployeeView {
   status: EmployeeStatus;
   accountStatus: AccountStatus;
   role: string | null;
+  assignmentType: AssignmentType;
+  canRelieve: boolean;
   legalEntity: { id: string; name: string; countryCode: string };
   location: { id: string; name: string } | null;
 }

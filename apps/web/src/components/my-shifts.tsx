@@ -1,13 +1,13 @@
 'use client';
 
 import type { ShiftView } from '@xrostr/contracts';
-import { CalendarCheck, MapPin, Moon, ScanLine, Sun } from 'lucide-react';
+import { CalendarCheck, Home, MapPin, Moon, ScanLine, Sun } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { addDays, dayLabel, todayLocal } from '@/lib/dates';
 import { attendanceOpen, attendanceSummary, shiftHours, shiftKindLabel } from '@/lib/shifts';
-import { Alert, Card, Spinner, buttonStyles, cx } from './ui';
+import { Alert, Card, Skeleton, buttonStyles, cx } from './ui';
 import { useT } from '@/lib/i18n';
 
 const DAYS_AHEAD = 14;
@@ -32,7 +32,25 @@ export function MyShifts() {
 
   if (notEmployee) return null;
   if (error) return <Alert>{error}</Alert>;
-  if (!shifts) return <Spinner label={t.schedule.loadingSchedule} />;
+  if (!shifts) {
+    return (
+      <section className="space-y-3" aria-label={t.schedule.loadingSchedule}>
+        {[0, 1, 2].map((i) => (
+          <Card key={i} className="p-5">
+            <Skeleton className="h-4 w-24" />
+            <div className="mt-4 flex items-center gap-4">
+              <Skeleton className="size-8 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
+            <Skeleton className="mt-4 h-4 w-40" />
+          </Card>
+        ))}
+      </section>
+    );
+  }
 
   if (shifts.length === 0) {
     return (
@@ -53,7 +71,7 @@ export function MyShifts() {
           : s.localDate === tomorrow
             ? t.schedule.tomorrow
             : null;
-        const Icon = s.kind === 'night' ? Moon : Sun;
+        const Icon = s.kind === 'night' ? Moon : s.kind === 'standby' ? Home : Sun;
         return (
           <Card key={s.id} className={cx('p-5', isToday && 'border-fg')}>
             <p className="label font-bold text-muted">
@@ -72,7 +90,7 @@ export function MyShifts() {
             </div>
             <p className="mt-3 flex items-center gap-2 text-base text-fg">
               <MapPin className="size-5 shrink-0 text-muted" aria-hidden />
-              {s.location.name}
+              {s.location?.name ?? s.zone?.name ?? shiftKindLabel(s.kind)}
             </p>
             <ShiftAttendanceLine shift={s} />
           </Card>
@@ -85,6 +103,8 @@ export function MyShifts() {
 /** What the officer has done for this shift, and the one button they need next. */
 function ShiftAttendanceLine({ shift }: { shift: ShiftView }) {
   const t = useT();
+  // On-call at home: no QR scan, no attendance.
+  if (shift.kind === 'standby') return null;
   const summary = attendanceSummary(shift);
   const done = !!shift.attendance?.checkOutAt;
   const action = shift.attendance?.checkInAt ? t.schedule.checkOut : t.schedule.checkIn;

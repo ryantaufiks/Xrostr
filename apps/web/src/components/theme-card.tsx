@@ -1,9 +1,9 @@
 'use client';
 
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, SunMoon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useT } from '@/lib/i18n';
-import { applyTheme, currentTheme, type Theme } from '@/lib/theme';
+import { applyTheme, themePreference, type Theme } from '@/lib/theme';
 import { AccountSection } from './account-section';
 import { SegmentedControl, segmentedOptionStyles } from './ui';
 
@@ -12,9 +12,10 @@ export function ThemeCard() {
   const options: { value: Theme; label: string; Icon: typeof Moon }[] = [
     { value: 'dark', label: t.account.dark, Icon: Moon },
     { value: 'light', label: t.account.light, Icon: Sun },
+    { value: 'system', label: t.account.system, Icon: SunMoon },
   ];
-  const [theme, setTheme] = useState<Theme>('dark');
-  useEffect(() => setTheme(currentTheme()), []);
+  const [theme, setTheme] = useState<Theme>('system');
+  useEffect(() => setTheme(themePreference()), []);
 
   function choose(next: Theme) {
     applyTheme(next);
@@ -24,7 +25,7 @@ export function ThemeCard() {
   return (
     <AccountSection title={t.account.themeTitle} description={t.account.themeDescription}>
       <SegmentedControl
-        className="grid max-w-md grid-cols-2"
+        className="grid max-w-md grid-cols-3"
         role="radiogroup"
         aria-label={t.account.theme}
       >

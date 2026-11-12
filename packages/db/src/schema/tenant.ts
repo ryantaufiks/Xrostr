@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   boolean,
+  check,
   date,
   doublePrecision,
   index,
@@ -216,6 +217,10 @@ export const employees = pgTable(
       .notNull()
       .references(() => legalEntities.id),
     locationId: uuid('location_id').references(() => locations.id, { onDelete: 'set null' }),
+    /** How this officer is deployed: tied to one site, or roving across a zone. */
+    assignmentType: text('assignment_type').notNull().default('fixed'),
+    /** Whether they can be offered a relief shift; roving officers are treated as relievers. */
+    canRelieve: boolean('can_relieve').notNull().default(false),
     employeeNo: text('employee_no').notNull(),
     fullName: text('full_name').notNull(),
     phone: text('phone'),
@@ -233,6 +238,84 @@ export const employees = pgTable(
   ],
 ).enableRLS();
 
+/** Sites a fixed officer is cleared to guard; a roving officer's sites come from their zone. */
+export const employeeLocations = pgTable(
+  'employee_locations',
+  {
+    tenantId: tenantId(),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id, { onDelete: 'cascade' }),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.employeeId, t.locationId] }),
+    tenantIsolation('employee_locations'),
+  ],
+).enableRLS();
+
+/** A roving zone: a named set of sites an officer covers in one shift. */
+export const zones = pgTable(
+  'zones',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    name: text('name').notNull(),
+    status: text('status').notNull().default('active'),
+    ...timestamps,
+    version: version(),
+  },
+  (t) => [unique('zones_tenant_name_uq').on(t.tenantId, t.name), tenantIsolation('zones')],
+).enableRLS();
+
+export const zoneLocations = pgTable(
+  'zone_locations',
+  {
+    tenantId: tenantId(),
+    zoneId: uuid('zone_id')
+      .notNull()
+      .references(() => zones.id, { onDelete: 'cascade' }),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.zoneId, t.locationId] }),
+    index('zone_locations_location_idx').on(t.locationId),
+    tenantIsolation('zone_locations'),
+  ],
+).enableRLS();
+
+/**
+ * How many people a site needs per day of the week, by shift kind. `weekday` is ISO: 1 = Monday
+ * … 7 = Sunday, matching the Monday-first roster grid. Rows are optional; a site with no row
+ * for a weekday has no staffing target yet.
+ */
+export const locationStaffing = pgTable(
+  'location_staffing',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id, { onDelete: 'cascade' }),
+    weekday: integer('weekday').notNull(),
+    dayCount: integer('day_count').notNull().default(1),
+    nightCount: integer('night_count').notNull().default(1),
+    ...timestamps,
+    version: version(),
+  },
+  (t) => [
+    unique('location_staffing_day_uq').on(t.locationId, t.weekday),
+    index('location_staffing_location_idx').on(t.locationId),
+    tenantIsolation('location_staffing'),
+  ],
+).enableRLS();
+
 /**
  * One person on one site for one stretch of time. Times are UTC; the site's time zone turns
  * them into local dates. An exclusion constraint (migration 0005) stops overlapping shifts
@@ -243,9 +326,10 @@ export const shifts = pgTable(
   {
     id: id(),
     tenantId: tenantId(),
-    locationId: uuid('location_id')
-      .notNull()
-      .references(() => locations.id),
+    /** Null for roving (zone) and standby shifts, which are not tied to one site. */
+    locationId: uuid('location_id').references(() => locations.id),
+    /** Set for roving shifts; the officer covers every site in this zone. */
+    zoneId: uuid('zone_id').references(() => zones.id),
     employeeId: uuid('employee_id')
       .notNull()
       .references(() => employees.id),
@@ -253,6 +337,8 @@ export const shifts = pgTable(
     status: text('status').notNull().default('draft'),
     startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
     endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
+    /** Timezone used to interpret the shift's local date; matters when there is no site. */
+    timezone: text('timezone').notNull().default('UTC'),
     notes: text('notes'),
     createdBy: uuid('created_by'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
@@ -264,6 +350,11 @@ export const shifts = pgTable(
   (t) => [
     index('shifts_location_starts_idx').on(t.locationId, t.startsAt),
     index('shifts_employee_starts_idx').on(t.employeeId, t.startsAt),
+    // A working shift has exactly one place, a site or a zone; standby may have either or none.
+    check(
+      'shifts_place_ck',
+      sql`${t.kind} = 'standby' or ((${t.locationId} is null) <> (${t.zoneId} is null))`,
+    ),
     tenantIsolation('shifts'),
   ],
 ).enableRLS();

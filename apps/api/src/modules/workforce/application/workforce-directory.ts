@@ -28,6 +28,12 @@ export class WorkforceDirectory {
     return new Map(all.filter((e) => wanted.has(e.id)).map((e) => [e.id, e]));
   }
 
+  /** Active and inactive employees of one legal entity, for roster planning. */
+  async employeesByLegalEntity(legalEntityId: string): Promise<Employee[]> {
+    const all = await this.employees.list();
+    return all.filter((e) => e.legalEntityId === legalEntityId);
+  }
+
   location(id: string): Promise<Location | null> {
     return this.locations.findById(id);
   }

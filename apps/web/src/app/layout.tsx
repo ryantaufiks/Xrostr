@@ -4,6 +4,7 @@ import { isLocale, type Locale } from '@xrostr/contracts';
 import { cookies, headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { PwaRegister } from '@/components/pwa-register';
+import { ToastProvider } from '@/components/toast';
 import { I18nProvider } from '@/lib/i18n';
 import { LOCALE_COOKIE } from '@/lib/i18n/state';
 import { THEME_BOOT_SCRIPT } from '@/lib/theme';
@@ -56,8 +57,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <I18nProvider initial={locale}>
-          {children}
-          <PwaRegister />
+          <ToastProvider>
+            {children}
+            <PwaRegister />
+          </ToastProvider>
         </I18nProvider>
       </body>
     </html>

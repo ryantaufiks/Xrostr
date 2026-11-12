@@ -40,6 +40,7 @@ describe('attendance: QR + GPS check-in and check-out', () => {
   let siteId: string;
   let code: string;
   let officerId: string;
+  let shiftDate: string;
 
   const scan = (token: string, body: Record<string, unknown>) =>
     http
@@ -99,6 +100,7 @@ describe('attendance: QR + GPS check-in and check-out', () => {
 
     // A published shift that began 20 minutes ago.
     const started = siteClock(-20);
+    shiftDate = started.date;
     await http
       .post('/tenant/shifts')
       .set(bearer(admin))
@@ -162,16 +164,15 @@ describe('attendance: QR + GPS check-in and check-out', () => {
   });
 
   it('shows the check-in on the roster and on my shifts', async () => {
-    const today = siteClock(0).date;
     const roster = await http
-      .get(`/tenant/roster?locationId=${siteId}&from=${today}&to=${today}`)
+      .get(`/tenant/roster?locationId=${siteId}&from=${shiftDate}&to=${shiftDate}`)
       .set(bearer(admin))
       .expect(200);
     expect(roster.body[0].attendance).toMatchObject({ checkOutAt: null });
     expect(roster.body[0].attendance.checkInAt).toBeTruthy();
 
     const mine = await http
-      .get(`/me/shifts?from=${today}&to=${today}`)
+      .get(`/me/shifts?from=${shiftDate}&to=${shiftDate}`)
       .set(bearer(officerToken))
       .expect(200);
     expect(mine.body[0].attendance.lateMinutes).toBeGreaterThanOrEqual(19);

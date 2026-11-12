@@ -7,6 +7,7 @@ import { messageFor } from './messages';
 /**
  * Loads `path` from the API; `reload` fetches it again after a change. With `refreshMs`, it also
  * refetches on that interval, for screens that must stay current such as the alert desk.
+ * `mutate` applies an optimistic change to the loaded data before the server confirms it.
  */
 export function useData<T>(path: string | null, refreshMs?: number) {
   const [data, setData] = useState<T | null>(null);
@@ -28,5 +29,5 @@ export function useData<T>(path: string | null, refreshMs?: number) {
     const timer = setInterval(() => void reload(), refreshMs);
     return () => clearInterval(timer);
   }, [reload, refreshMs]);
-  return { data, error, reload };
+  return { data, error, reload, mutate: setData };
 }

@@ -6,6 +6,12 @@ const texts = () => schedule[currentLocale()];
 
 export const shiftKindLabel = (kind: ShiftKind) => texts().kinds[kind] ?? kind;
 
+/** One-letter marker for a grid cell: P / M / K. */
+export const shiftKindShort = (kind: ShiftKind): string => {
+  const s = texts();
+  return kind === 'day' ? s.shortDay : kind === 'night' ? s.shortNight : s.shortCustom;
+};
+
 /** Indonesian writes times as 20.00, English as 20:00. */
 const clock = (hhmm: string) => (currentLocale() === 'id' ? hhmm.replace(':', '.') : hhmm);
 
