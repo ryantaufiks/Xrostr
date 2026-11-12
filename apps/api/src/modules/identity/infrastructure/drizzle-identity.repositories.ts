@@ -11,7 +11,7 @@ import {
   type NewSession,
   type Session,
 } from '../application/ports.js';
-import type { SubjectType } from '../domain/account.js';
+import type { SubjectRef, SubjectType } from '../domain/account.js';
 
 @Injectable()
 export class DrizzleRoleRepository extends RoleRepository {
@@ -143,5 +143,18 @@ export class DrizzleSessionRepository extends SessionRepository {
       .update(sessions)
       .set({ revokedAt: at })
       .where(and(eq(sessions.familyId, familyId), isNull(sessions.revokedAt)));
+  }
+  async revokeAllForSubject(subject: SubjectRef, at: Date): Promise<void> {
+    await this.ctx
+      .executor()
+      .update(sessions)
+      .set({ revokedAt: at })
+      .where(
+        and(
+          eq(sessions.subjectType, subject.type),
+          eq(sessions.subjectId, subject.id),
+          isNull(sessions.revokedAt),
+        ),
+      );
   }
 }

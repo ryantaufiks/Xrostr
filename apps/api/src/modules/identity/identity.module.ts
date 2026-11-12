@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { APP_CONFIG, type AppConfig } from '../../shared/config/app-config.js';
 import { AcceptInviteUseCase } from './application/accept-invite.use-case.js';
+import { ChangePasswordUseCase } from './application/change-password.use-case.js';
 import { LoginUseCase } from './application/login.use-case.js';
 import { LogoutUseCase } from './application/logout.use-case.js';
 import { ConfirmMfaSetupUseCase, StartMfaSetupUseCase } from './application/mfa.use-cases.js';
@@ -69,6 +70,7 @@ import { AuthGuard } from './interface/http/auth.guard.js';
     AcceptInviteUseCase,
     StartMfaSetupUseCase,
     ConfirmMfaSetupUseCase,
+    ChangePasswordUseCase,
     TenantIdentityProvisioner,
     // Every route is authenticated unless marked @Public.
     { provide: APP_GUARD, useClass: AuthGuard },

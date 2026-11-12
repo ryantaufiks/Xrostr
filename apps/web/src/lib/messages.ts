@@ -11,6 +11,7 @@ const MESSAGES: Record<string, string> = {
   mfa_enrollment_required: 'Aktifkan autentikasi dua faktor terlebih dahulu.',
   invalid_refresh_token: 'Sesi berakhir. Silakan masuk kembali.',
   unauthenticated: 'Silakan masuk untuk melanjutkan.',
+  invalid_current_password: 'Password saat ini salah.',
   invalid_invite: 'Undangan tidak valid, sudah dipakai, atau kedaluwarsa.',
   platform_only: 'Halaman ini khusus Superadmin.',
   missing_permission: 'Anda tidak memiliki izin untuk tindakan ini.',

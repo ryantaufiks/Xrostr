@@ -53,6 +53,7 @@ export abstract class AccountRepository {
   ): Promise<void>;
   abstract setPendingMfaSecret(ref: SubjectRef, secretEnc: string): Promise<void>;
   abstract enableMfa(ref: SubjectRef, at: Date): Promise<void>;
+  abstract setPassword(ref: SubjectRef, passwordHash: string): Promise<void>;
   /** Requires a tenant unit of work. */
   abstract insertInvitedUser(email: string, fullName: string): Promise<string>;
   /** Requires a tenant unit of work. */
@@ -105,4 +106,6 @@ export abstract class SessionRepository {
   abstract findById(id: string): Promise<Session | null>;
   abstract markRotated(id: string, replacedBy: string, at: Date): Promise<void>;
   abstract revokeFamily(familyId: string, at: Date): Promise<void>;
+  /** Signs the subject out everywhere. */
+  abstract revokeAllForSubject(subject: SubjectRef, at: Date): Promise<void>;
 }

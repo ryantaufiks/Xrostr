@@ -29,6 +29,9 @@ export const IdentityErrors = {
       'invalid_refresh_token',
       'The session has expired. Sign in again.',
     ),
+  // Not 401: a 401 would make the web proxy refresh and retry the same wrong password.
+  invalidCurrentPassword: () =>
+    new DomainError('forbidden', 'invalid_current_password', 'The current password is incorrect.'),
   invalidInvite: () =>
     new DomainError('not_found', 'invalid_invite', 'This invitation is invalid, used or expired.'),
 };

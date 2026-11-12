@@ -14,14 +14,14 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-fg text-bg hover:opacity-85 disabled:opacity-40',
-  secondary: 'border border-line text-fg hover:border-fg disabled:text-faint',
+  secondary: 'border border-control text-fg hover:border-fg disabled:text-faint',
   ghost: 'text-muted hover:text-fg',
 };
 
 /** Button look for links that act as buttons. */
 export function buttonStyles(variant: ButtonVariant = 'primary', className?: string): string {
   return cx(
-    'label inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 font-bold transition disabled:cursor-not-allowed',
+    'label inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 font-bold transition disabled:cursor-not-allowed',
     BUTTON_VARIANTS[variant],
     className,
   );
@@ -37,14 +37,14 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; loading?: boolean }) {
   return (
     <button className={buttonStyles(variant, className)} disabled={disabled || loading} {...props}>
-      {loading && <Loader2 className="size-4 animate-spin" aria-hidden />}
+      {loading && <Loader2 className="size-5 animate-spin" aria-hidden />}
       {children}
     </button>
   );
 }
 
 const CONTROL =
-  'block h-10 w-full rounded-lg border border-line bg-transparent px-3 text-sm text-fg placeholder:text-faint focus:border-fg focus:outline-none aria-invalid:border-accent';
+  'block h-12 w-full rounded-lg border border-control bg-transparent px-4 text-base text-fg placeholder:text-faint focus:border-fg focus:ring-1 focus:ring-fg focus:outline-none aria-invalid:border-accent aria-invalid:ring-1 aria-invalid:ring-accent';
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cx(CONTROL, className)} {...props} />;
@@ -72,15 +72,17 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="label block text-muted">
+    <div className="space-y-2">
+      <label htmlFor={htmlFor} className="label block font-bold text-muted">
         {label}
       </label>
       {children}
       {error ? (
-        <p className="text-xs text-accent">{error}</p>
+        <p className="text-sm text-accent" role="alert">
+          {error}
+        </p>
       ) : (
-        hint && <p className="text-xs text-muted">{hint}</p>
+        hint && <p className="text-sm text-muted">{hint}</p>
       )}
     </div>
   );
@@ -90,7 +92,7 @@ export function Field({
 export function Dot({ tone = 'accent' }: { tone?: 'accent' | 'fg' | 'faint' }) {
   const tones = { accent: 'bg-accent', fg: 'bg-fg', faint: 'bg-faint' };
   return (
-    <span className={cx('inline-block size-1.5 shrink-0 rounded-full', tones[tone])} aria-hidden />
+    <span className={cx('inline-block size-2 shrink-0 rounded-full', tones[tone])} aria-hidden />
   );
 }
 
@@ -105,11 +107,11 @@ export function Alert({
     <div
       role={tone === 'error' ? 'alert' : 'status'}
       className={cx(
-        'flex gap-3 rounded-lg border px-3.5 py-3 text-sm',
+        'flex gap-3 rounded-lg border px-4 py-3.5 text-base',
         tone === 'error' ? 'border-accent text-accent' : 'border-line text-fg',
       )}
     >
-      <span className="mt-[7px]">
+      <span className="mt-[10px]">
         <Dot tone={tone === 'error' ? 'accent' : 'fg'} />
       </span>
       <div>{children}</div>
@@ -131,7 +133,7 @@ export function Badge({
   children: ReactNode;
 }) {
   return (
-    <span className="label inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 text-fg">
+    <span className="label inline-flex items-center gap-1.5 rounded-full border border-control px-3 py-1 text-fg">
       {tone !== 'neutral' && <Dot tone={tone === 'active' ? 'fg' : 'accent'} />}
       {children}
     </span>
@@ -159,8 +161,8 @@ export function PageHeader({
   return (
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight text-fg">{title}</h1>
-        {description && <p className="mt-1.5 text-sm text-muted">{description}</p>}
+        <h1 className="font-display text-4xl font-bold tracking-tight text-fg">{title}</h1>
+        {description && <p className="mt-2 text-base text-muted">{description}</p>}
       </div>
       {actions && <div className="flex gap-2">{actions}</div>}
     </div>

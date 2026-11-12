@@ -57,18 +57,18 @@ export default function MfaSetupPage() {
       {!setup && !error && <Spinner label="Menyiapkan kode…" />}
       {setup && (
         <div className="space-y-5">
-          <ol className="list-decimal space-y-1 pl-5 text-sm text-muted">
+          <ol className="list-decimal space-y-1.5 pl-5 text-base text-muted">
             <li>Buka Google Authenticator, Microsoft Authenticator, atau Authy.</li>
             <li>Pindai kode QR di bawah, atau masukkan kunci secara manual.</li>
             <li>Ketik 6 digit kode yang muncul.</li>
           </ol>
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-line p-4">
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-control p-4">
             <img
               src={setup.qr}
               alt="Kode QR autentikasi dua faktor"
               className="size-52 rounded-lg bg-white p-2"
             />
-            <code className="rounded-md border border-line px-2 py-1 font-mono text-xs break-all text-fg">
+            <code className="rounded-md border border-control px-3 py-1.5 font-mono text-base break-all text-fg">
               {setup.secret.match(/.{1,4}/g)?.join(' ')}
             </code>
           </div>
@@ -88,7 +88,7 @@ export default function MfaSetupPage() {
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                 autoComplete="one-time-code"
                 required
-                className="font-mono tracking-[0.4em]"
+                className="font-mono text-2xl tracking-[0.4em]"
               />
             </Field>
             <Button type="submit" loading={loading} className="w-full">

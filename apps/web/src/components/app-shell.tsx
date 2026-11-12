@@ -26,6 +26,10 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  // The most specific match wins, so /tenant/account does not also light up /tenant.
+  const activeHref = nav
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .sort((x, y) => y.href.length - x.href.length)[0]?.href;
 
   async function signOut() {
     setSigningOut(true);
@@ -36,22 +40,22 @@ export function AppShell({
   return (
     <div className="min-h-screen">
       <header className="border-b border-line">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
-          <Link href="/" className="text-fg">
-            <Logo />
+        <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:gap-6 sm:px-6">
+          <Link href="/" className="text-fg" aria-label="Xrostr, beranda">
+            <Logo compact />
           </Link>
-          <span className="label hidden items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 text-muted sm:inline-flex">
+          <span className="label hidden items-center gap-1.5 rounded-full border border-control px-3 py-1 text-muted md:inline-flex">
             <Dot />
             {areaLabel}
           </span>
-          <nav className="flex flex-1 gap-4">
+          <nav className="flex flex-1 gap-2 sm:gap-4">
             {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cx(
-                  'label border-b-2 px-1 py-1',
-                  pathname.startsWith(item.href)
+                  'label inline-flex min-h-11 items-center border-b-2 px-2 font-bold',
+                  item.href === activeHref
                     ? 'border-fg text-fg'
                     : 'border-transparent text-muted hover:text-fg',
                 )}
@@ -63,10 +67,11 @@ export function AppShell({
           <button
             onClick={signOut}
             disabled={signingOut}
-            className="label inline-flex items-center gap-1.5 text-muted hover:text-fg"
+            aria-label="Keluar"
+            className="label inline-flex min-h-11 items-center gap-2 px-2 font-bold text-muted hover:text-fg"
           >
-            <LogOut className="size-4" aria-hidden />
-            Keluar
+            <LogOut className="size-5" aria-hidden />
+            <span className="hidden sm:inline">Keluar</span>
           </button>
         </div>
       </header>
@@ -87,13 +92,13 @@ export function AuthLayout({
 }) {
   return (
     <div className="dot-grid flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-lg">
         <div className="mb-8 flex justify-center text-fg">
           <Logo />
         </div>
         <div className="rounded-2xl border border-line bg-surface p-6 sm:p-8">
-          <h1 className="font-display text-2xl font-bold tracking-tight">{title}</h1>
-          {subtitle && <p className="mt-1.5 text-sm text-muted">{subtitle}</p>}
+          <h1 className="font-display text-3xl font-bold tracking-tight">{title}</h1>
+          {subtitle && <p className="mt-2 text-base text-muted">{subtitle}</p>}
           <div className="mt-6">{children}</div>
         </div>
         <p className="label mt-6 text-center text-faint">

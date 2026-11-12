@@ -63,7 +63,7 @@ function LoginForm() {
       subtitle="Gunakan akun perusahaan Anda atau akun Superadmin platform."
     >
       <div
-        className="mb-6 grid grid-cols-2 gap-1 rounded-full border border-line p-1"
+        className="mb-6 grid grid-cols-2 gap-1 rounded-full border border-control p-1"
         role="tablist"
       >
         {(
@@ -79,11 +79,11 @@ function LoginForm() {
             aria-selected={mode === value}
             onClick={() => switchMode(value)}
             className={cx(
-              'label inline-flex items-center justify-center gap-1.5 rounded-full py-1.5 font-bold transition',
+              'label inline-flex min-h-11 items-center justify-center gap-2 rounded-full font-bold transition',
               mode === value ? 'bg-fg text-bg' : 'text-muted hover:text-fg',
             )}
           >
-            <Icon className="size-4" aria-hidden />
+            <Icon className="size-5" aria-hidden />
             {label}
           </button>
         ))}
@@ -142,7 +142,7 @@ function LoginForm() {
               autoComplete="one-time-code"
               autoFocus
               required
-              className="font-mono tracking-[0.4em]"
+              className="font-mono text-2xl tracking-[0.4em]"
             />
           </Field>
         )}

@@ -11,7 +11,13 @@ export default function TenantLayout({ children }: { children: ReactNode }) {
   if (!principal) return <Spinner />;
   return (
     <PrincipalContext.Provider value={principal}>
-      <AppShell areaLabel="Perusahaan" nav={[{ href: '/tenant', label: 'Ringkasan' }]}>
+      <AppShell
+        areaLabel="Perusahaan"
+        nav={[
+          { href: '/tenant', label: 'Ringkasan' },
+          { href: '/tenant/account', label: 'Akun' },
+        ]}
+      >
         {children}
       </AppShell>
     </PrincipalContext.Provider>

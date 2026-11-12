@@ -75,6 +75,10 @@ export class DrizzleAccountRepository extends AccountRepository {
     await this.update(ref, { mfaEnabledAt: at });
   }
 
+  async setPassword(ref: SubjectRef, passwordHash: string): Promise<void> {
+    await this.update(ref, { passwordHash });
+  }
+
   async insertInvitedUser(email: string, fullName: string): Promise<string> {
     const [row] = await this.ctx
       .executor()

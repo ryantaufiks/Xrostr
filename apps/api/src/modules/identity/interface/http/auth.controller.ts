@@ -2,11 +2,13 @@ import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
   acceptInviteRequestSchema,
+  changePasswordRequestSchema,
   enableMfaRequestSchema,
   loginRequestSchema,
   platformLoginRequestSchema,
   refreshRequestSchema,
   type AcceptInviteRequest,
+  type ChangePasswordRequest,
   type EnableMfaRequest,
   type LoginRequest,
   type MfaSetupResponse,
@@ -21,6 +23,7 @@ import {
 import { unwrap } from '../../../../shared/interface/http/domain-error.exception.js';
 import { ZodValidationPipe } from '../../../../shared/interface/http/zod-validation.pipe.js';
 import { AcceptInviteUseCase } from '../../application/accept-invite.use-case.js';
+import { ChangePasswordUseCase } from '../../application/change-password.use-case.js';
 import { LoginUseCase } from '../../application/login.use-case.js';
 import { LogoutUseCase } from '../../application/logout.use-case.js';
 import { ConfirmMfaSetupUseCase, StartMfaSetupUseCase } from '../../application/mfa.use-cases.js';
@@ -40,6 +43,7 @@ export class AuthController {
     private readonly acceptInvite: AcceptInviteUseCase,
     private readonly startMfa: StartMfaSetupUseCase,
     private readonly confirmMfa: ConfirmMfaSetupUseCase,
+    private readonly changePassword: ChangePasswordUseCase,
   ) {}
 
   @Public()
@@ -115,5 +119,17 @@ export class AuthController {
     @Client() client: ClientInfo,
   ): Promise<TokenPair> {
     return unwrap(await this.confirmMfa.execute(principal, body.code, client));
+  }
+
+  /** Requires a full session: users enrol in 2FA before they can change the password. */
+  @Throttle(AUTH_THROTTLE)
+  @Post('auth/change-password')
+  @HttpCode(200)
+  async changeOwnPassword(
+    @CurrentPrincipal() principal: Principal,
+    @Body(new ZodValidationPipe(changePasswordRequestSchema)) body: ChangePasswordRequest,
+    @Client() client: ClientInfo,
+  ): Promise<TokenPair> {
+    return unwrap(await this.changePassword.execute(principal, body, client));
   }
 }

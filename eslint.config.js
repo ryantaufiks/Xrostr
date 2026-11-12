@@ -13,6 +13,7 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/coverage/**',
       '**/.next/**',
+      '**/.next-*/**',
       '**/next-env.d.ts',
       'packages/db/migrations/**',
     ],

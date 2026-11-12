@@ -9,4 +9,5 @@ coverage/
 .DS_Store
 *.tsbuildinfo
 .next/
+.next-*/
 next-env.d.ts

@@ -16,6 +16,8 @@ const contentSecurityPolicy = [
 ].join('; ');
 
 const config: NextConfig = {
+  // Lets tests build into a separate folder without touching the running portal's build.
+  distDir: process.env.NEXT_DIST_DIR ?? '.next',
   poweredByHeader: false,
   async headers() {
     return [

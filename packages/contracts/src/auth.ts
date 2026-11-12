@@ -35,6 +35,17 @@ export const acceptInviteRequestSchema = z.object({
 });
 export type AcceptInviteRequest = z.infer<typeof acceptInviteRequestSchema>;
 
+export const changePasswordRequestSchema = z
+  .object({
+    currentPassword: z.string().min(1).max(128),
+    newPassword: passwordSchema,
+  })
+  .refine((v) => v.newPassword !== v.currentPassword, {
+    path: ['newPassword'],
+    message: 'New password must differ from the current one',
+  });
+export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>;
+
 export const enableMfaRequestSchema = z.object({ code: totpCode });
 export type EnableMfaRequest = z.infer<typeof enableMfaRequestSchema>;
 

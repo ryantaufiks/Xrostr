@@ -3,16 +3,20 @@
 /*
  * Monochrome theme: ash gray in light mode, black in dark mode (follows the system),
  * with one flat accent. Surfaces are separated by hairlines, never by shadows.
+ *
+ * Built for older users too: every text colour meets WCAG AA (4.5:1) on both surfaces,
+ * and control borders meet the 3:1 non-text contrast minimum.
  */
 :root {
   --bg: #dcdeda;
   --surface: #e9eae7;
   --sunken: #d0d3ce;
   --line: #b4b8b1;
+  --control: #6f746c;
   --fg: #0b0b0b;
-  --muted: #5d615b;
-  --faint: #8b9088;
-  --accent: #d71921;
+  --muted: #41453f;
+  --faint: #565b53;
+  --accent: #b0121a;
   --dot: rgb(11 11 11 / 0.1);
 }
 
@@ -22,10 +26,11 @@
     --surface: #0c0c0c;
     --sunken: #161616;
     --line: #2b2b2b;
+    --control: #7a7a76;
     --fg: #f1f1ef;
-    --muted: #9a9a96;
-    --faint: #62625f;
-    --accent: #ff3b41;
+    --muted: #b9b9b4;
+    --faint: #94948f;
+    --accent: #ff5157;
     --dot: rgb(255 255 255 / 0.12);
   }
 }
@@ -39,10 +44,19 @@
   --color-surface: var(--surface);
   --color-sunken: var(--sunken);
   --color-line: var(--line);
+  --color-control: var(--control);
   --color-fg: var(--fg);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
   --color-accent: var(--accent);
+
+  /* One step larger than Tailwind's defaults: the smallest text is 14px, body text 16px. */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.375rem;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1.125rem;
+  --text-base--line-height: 1.75rem;
 }
 
 @layer base {
@@ -65,8 +79,8 @@
 /* Small uppercase monospace caption used for labels, table heads and badges. */
 @utility label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  font-size: 13px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 

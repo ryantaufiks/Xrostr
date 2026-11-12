@@ -30,7 +30,12 @@ const ACTION_LABELS: Record<string, string> = {
   'auth.mfa_setup_started': 'Mulai mengatur 2FA',
   'auth.mfa_enabled': '2FA diaktifkan',
   'user.invite_accepted': 'Undangan diterima',
+  'auth.password_changed': 'Password diganti',
+  'auth.password_change_failed': 'Gagal mengganti password',
 };
+
+const actionLabel = (action: string) => ACTION_LABELS[action] ?? action;
+const actorLabel = (actorType: string) => (actorType === 'user' ? 'Pengguna' : actorType);
 
 export default function TenantHome() {
   const principal = usePrincipal();
@@ -47,7 +52,7 @@ export default function TenantHome() {
         {canReadEntities && <LegalEntities />}
         {canReadAudit && <AuditLog />}
         {!canReadEntities && !canReadAudit && (
-          <Card className="p-6 text-sm text-muted">
+          <Card className="p-6 text-base text-muted">
             Fitur untuk peran Anda (jadwal, absensi, cuti) hadir di Fase 1.
           </Card>
         )}
@@ -79,10 +84,10 @@ function LegalEntities() {
           {data.map((entity) => (
             <Card key={entity.id} className="p-5">
               <div className="flex items-start justify-between gap-3">
-                <p className="font-medium text-fg">{entity.name}</p>
+                <p className="text-lg font-semibold text-fg">{entity.name}</p>
                 <Badge>{entity.countryCode}</Badge>
               </div>
-              <dl className="mt-4 grid grid-cols-2 gap-y-2 text-sm">
+              <dl className="mt-4 grid grid-cols-2 gap-y-2.5 text-base">
                 <dt className="text-muted">Negara</dt>
                 <dd className="text-fg">
                   {COUNTRY_LABELS[entity.countryCode] ?? entity.countryCode}
@@ -110,27 +115,34 @@ function AuditLog() {
       {error && <Alert>{error}</Alert>}
       {!data && !error && <Spinner />}
       {data && (
-        <Card className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-line label text-muted">
+        <Card>
+          {/* Phones: a stacked list, so nothing has to be scrolled sideways. */}
+          <ul className="divide-y divide-line sm:hidden">
+            {data.map((record) => (
+              <li key={record.id} className="px-5 py-4">
+                <p className="text-base font-semibold text-fg">{actionLabel(record.action)}</p>
+                <p className="mt-1 text-sm text-muted">
+                  {formatDateTime(record.createdAt)} · {actorLabel(record.actorType)}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <table className="hidden w-full text-left text-base sm:table">
+            <thead className="label border-b border-line text-muted">
               <tr>
-                <th className="px-5 py-3 font-medium">Waktu</th>
-                <th className="px-5 py-3 font-medium">Aktivitas</th>
-                <th className="px-5 py-3 font-medium">Pelaku</th>
+                <th className="px-5 py-3 font-bold">Waktu</th>
+                <th className="px-5 py-3 font-bold">Aktivitas</th>
+                <th className="px-5 py-3 font-bold">Pelaku</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {data.map((record) => (
                 <tr key={record.id}>
-                  <td className="px-5 py-3 whitespace-nowrap text-muted">
+                  <td className="px-5 py-3.5 whitespace-nowrap text-muted">
                     {formatDateTime(record.createdAt)}
                   </td>
-                  <td className="px-5 py-3 text-fg">
-                    {ACTION_LABELS[record.action] ?? record.action}
-                  </td>
-                  <td className="px-5 py-3 text-muted">
-                    {record.actorType === 'user' ? 'Pengguna' : record.actorType}
-                  </td>
+                  <td className="px-5 py-3.5 text-fg">{actionLabel(record.action)}</td>
+                  <td className="px-5 py-3.5 text-muted">{actorLabel(record.actorType)}</td>
                 </tr>
               ))}
             </tbody>

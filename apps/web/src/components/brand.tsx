@@ -10,7 +10,14 @@ const DOTS: [number, number][] = [
   [4, 4],
 ];
 
-export function Logo({ className = '' }: { className?: string }) {
+/** `compact` hides the wordmark on phones, leaving the dot-matrix mark. */
+export function Logo({
+  className = '',
+  compact = false,
+}: {
+  className?: string;
+  compact?: boolean;
+}) {
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <svg viewBox="0 0 22 22" className="size-6" aria-hidden>
@@ -19,7 +26,11 @@ export function Logo({ className = '' }: { className?: string }) {
         ))}
         <circle cx="11" cy="11" r="1.7" className="fill-accent" />
       </svg>
-      <span className="font-display text-xl font-black tracking-wide uppercase">Xrostr</span>
+      <span
+        className={`font-display text-xl font-black tracking-wide uppercase ${compact ? 'hidden sm:inline' : ''}`}
+      >
+        Xrostr
+      </span>
     </span>
   );
 }

@@ -3,4 +3,5 @@ node_modules
 pnpm-lock.yaml
 packages/db/migrations/meta
 .next
+.next-*
 next-env.d.ts
