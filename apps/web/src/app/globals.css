@@ -89,3 +89,17 @@
   background-image: radial-gradient(var(--dot) 1px, transparent 1px);
   background-size: 14px 14px;
 }
+
+/* Printing (QR posters): only the page content, black on white. */
+@media print {
+  header,
+  nav {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+}

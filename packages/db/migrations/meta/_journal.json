@@ -43,6 +43,13 @@
       "when": 1794463556466,
       "tag": "0005_shift_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794464157008,
+      "tag": "0006_attendance",
+      "breakpoints": true
     }
   ]
 }

@@ -21,6 +21,27 @@ export function homeFor(principal: Principal): string {
   return principal.subject.type === 'platform_admin' ? '/platform/tenants' : '/tenant';
 }
 
+/**
+ * A return path is honoured only when it stays on this site: a single leading slash, no
+ * scheme and no protocol-relative `//host`, so a crafted link cannot redirect elsewhere.
+ */
+export function safeNext(value: string | null): string | null {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\'))
+    return null;
+  return value;
+}
+
+/** Where to go after signing in: the page that sent the visitor to /login, if it is theirs. */
+export function destinationAfterLogin(principal: Principal, next: string | null): string {
+  const home = homeFor(principal);
+  const target = safeNext(next);
+  if (!target || principal.stage !== 'full') return home;
+  const area = principal.subject.type === 'platform_admin' ? '/platform' : '/tenant';
+  return target.startsWith(area) || (area === '/tenant' && target.startsWith('/checkin'))
+    ? target
+    : home;
+}
+
 export function fetchPrincipal(): Promise<Principal> {
   return api<Principal>('/auth/me');
 }
@@ -44,7 +65,10 @@ export function useSession(area: Area): Principal | null {
         else router.replace(home);
       })
       .catch((error: unknown) => {
-        if (active && error instanceof ApiError && error.status === 401) router.replace('/login');
+        if (active && error instanceof ApiError && error.status === 401) {
+          const here = window.location.pathname + window.location.search;
+          router.replace(`/login?next=${encodeURIComponent(here)}`);
+        }
       });
     return () => {
       active = false;

@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   boolean,
   date,
@@ -183,6 +184,12 @@ export const locations = pgTable(
     latitude: doublePrecision('latitude'),
     longitude: doublePrecision('longitude'),
     geofenceRadiusM: integer('geofence_radius_m').notNull().default(150),
+    /** Secret printed in the site's check-in QR code; rotating it voids old posters. */
+    checkinSecret: text('checkin_secret')
+      .notNull()
+      .default(
+        sql`replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '')`,
+      ),
     status: text('status').notNull().default('active'),
     ...timestamps,
     version: version(),
@@ -244,6 +251,8 @@ export const shifts = pgTable(
     notes: text('notes'),
     createdBy: uuid('created_by'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
+    /** Set once supervisors were told nobody checked in for this shift. */
+    noShowAlertedAt: timestamp('no_show_alerted_at', { withTimezone: true }),
     ...timestamps,
     version: version(),
   },
@@ -251,5 +260,39 @@ export const shifts = pgTable(
     index('shifts_location_starts_idx').on(t.locationId, t.startsAt),
     index('shifts_employee_starts_idx').on(t.employeeId, t.startsAt),
     tenantIsolation('shifts'),
+  ],
+).enableRLS();
+
+/**
+ * Check-ins and check-outs, one of each per shift at most. Position and the distance to the
+ * site are kept as evidence.
+ */
+export const attendanceEvents = pgTable(
+  'attendance_events',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    shiftId: uuid('shift_id')
+      .notNull()
+      .references(() => shifts.id),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id),
+    kind: text('kind').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    latitude: doublePrecision('latitude').notNull(),
+    longitude: doublePrecision('longitude').notNull(),
+    accuracyM: integer('accuracy_m'),
+    distanceM: integer('distance_m').notNull(),
+    lateMinutes: integer('late_minutes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('attendance_shift_kind_uq').on(t.shiftId, t.kind),
+    index('attendance_employee_idx').on(t.employeeId, t.occurredAt),
+    tenantIsolation('attendance_events'),
   ],
 ).enableRLS();

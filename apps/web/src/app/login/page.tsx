@@ -6,7 +6,7 @@ import { Suspense, useState, type FormEvent } from 'react';
 import { AuthLayout } from '@/components/app-shell';
 import { Alert, Button, Field, Input, cx } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
-import { fetchPrincipal, homeFor } from '@/lib/session';
+import { destinationAfterLogin, fetchPrincipal } from '@/lib/session';
 
 type Mode = 'tenant' | 'platform';
 
@@ -39,7 +39,7 @@ function LoginForm() {
       await api(mode === 'platform' ? '/platform/auth/login' : '/auth/login', {
         body: mode === 'platform' ? credentials : { ...credentials, tenantSlug },
       });
-      router.replace(homeFor(await fetchPrincipal()));
+      router.replace(destinationAfterLogin(await fetchPrincipal(), params.get('next')));
     } catch (e) {
       if (e instanceof ApiError && e.code === 'mfa_required') {
         setNeedsCode(true);

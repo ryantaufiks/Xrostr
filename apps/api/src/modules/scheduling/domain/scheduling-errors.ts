@@ -24,6 +24,37 @@ export const SchedulingErrors = {
     new DomainError('conflict', 'shift_already_cancelled', 'This shift is already cancelled.'),
   rangeTooLong: () =>
     new DomainError('validation', 'range_too_long', 'Choose at most 62 days at a time.'),
+  invalidCheckinCode: () =>
+    new DomainError(
+      'validation',
+      'invalid_checkin_code',
+      'This QR code is not valid for this site. Scan the poster on site again.',
+    ),
+  siteWithoutPoint: () =>
+    new DomainError(
+      'validation',
+      'site_without_point',
+      'This site has no GPS point yet. Ask your supervisor to set it.',
+    ),
+  outsideGeofence: (distanceM: number, radiusM: number) =>
+    new DomainError(
+      'validation',
+      'outside_geofence',
+      `You are ${distanceM} m from the site; check-in works within ${radiusM} m.`,
+      { distanceM, radiusM },
+    ),
+  noActiveShift: () =>
+    new DomainError(
+      'validation',
+      'no_active_shift',
+      'You have no shift at this site right now. Check-in opens 2 hours before a shift.',
+    ),
+  alreadyCheckedOut: () =>
+    new DomainError(
+      'conflict',
+      'already_checked_out',
+      'You have already checked out of this shift.',
+    ),
   notAnEmployee: () =>
     new DomainError('forbidden', 'not_an_employee', 'Your account is not linked to an employee.'),
 };

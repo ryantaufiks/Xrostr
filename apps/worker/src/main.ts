@@ -2,10 +2,12 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { createDatabase } from '@xrostr/db';
 import { pino } from 'pino';
 import { buildHandlers } from './handlers.js';
+import { NoShowMonitor } from './no-show-monitor.js';
 import { OutboxRelay } from './outbox-relay.js';
 import { WebPushSender } from './push-delivery.js';
 
 const IDLE_DELAY_MS = 1000;
+const NO_SHOW_INTERVAL_MS = 60_000;
 
 const logger = pino({ name: 'worker', level: process.env.LOG_LEVEL ?? 'info' });
 const databaseUrl = process.env.DATABASE_URL;
@@ -30,6 +32,19 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     controller.abort();
   });
 }
+
+// Missed check-ins are looked for once a minute, beside the relay loop.
+const monitor = new NoShowMonitor(handle.db, logger);
+let monitoring = false;
+const monitorTimer = setInterval(() => {
+  if (monitoring) return;
+  monitoring = true;
+  monitor
+    .tick()
+    .catch((error: unknown) => logger.error({ err: error }, 'no-show monitor failed'))
+    .finally(() => (monitoring = false));
+}, NO_SHOW_INTERVAL_MS);
+controller.signal.addEventListener('abort', () => clearInterval(monitorTimer));
 
 logger.info('outbox relay started');
 while (!controller.signal.aborted) {

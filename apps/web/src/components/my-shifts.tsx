@@ -1,12 +1,13 @@
 'use client';
 
 import type { ShiftView } from '@xrostr/contracts';
-import { CalendarCheck, MapPin, Moon, Sun } from 'lucide-react';
+import { CalendarCheck, MapPin, Moon, ScanLine, Sun } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { addDays, dayLabel, todayLocal } from '@/lib/dates';
-import { SHIFT_LABELS, shiftHours } from '@/lib/shifts';
-import { Alert, Card, Spinner, cx } from './ui';
+import { attendanceOpen, attendanceSummary, SHIFT_LABELS, shiftHours } from '@/lib/shifts';
+import { Alert, Card, Spinner, buttonStyles, cx } from './ui';
 
 const DAYS_AHEAD = 14;
 
@@ -68,9 +69,32 @@ export function MyShifts() {
               <MapPin className="size-5 shrink-0 text-muted" aria-hidden />
               {s.location.name}
             </p>
+            <ShiftAttendanceLine shift={s} />
           </Card>
         );
       })}
     </section>
+  );
+}
+
+/** What the officer has done for this shift, and the one button they need next. */
+function ShiftAttendanceLine({ shift }: { shift: ShiftView }) {
+  const summary = attendanceSummary(shift);
+  const done = !!shift.attendance?.checkOutAt;
+  const action = shift.attendance?.checkInAt ? 'Absen pulang' : 'Absen masuk';
+  return (
+    <div className="mt-4 space-y-3 border-t border-line pt-4">
+      {summary && (
+        <p className={cx('text-base font-semibold', summary.late ? 'text-accent' : 'text-fg')}>
+          {summary.text}
+        </p>
+      )}
+      {!done && attendanceOpen(shift) && (
+        <Link href="/tenant/scan" className={buttonStyles('primary', 'w-full text-base')}>
+          <ScanLine className="size-6" aria-hidden />
+          {action}
+        </Link>
+      )}
+    </div>
   );
 }

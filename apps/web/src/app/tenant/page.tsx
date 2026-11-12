@@ -40,6 +40,7 @@ const ACTION_LABELS: Record<string, string> = {
   'location.updated': 'Data site diubah',
   'shift.cancelled': 'Shift dibatalkan',
   'schedule.published': 'Jadwal diterbitkan',
+  'location.checkin_code_rotated': 'Kode QR site diganti',
   'auth.password_change_failed': 'Gagal mengganti password',
 };
 

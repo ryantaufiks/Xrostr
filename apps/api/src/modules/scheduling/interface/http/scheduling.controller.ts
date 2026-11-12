@@ -10,6 +10,9 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  recordAttendanceSchema,
+  type AttendanceResult,
+  type RecordAttendanceRequest,
   createShiftSchema,
   myShiftsQuerySchema,
   publishRosterSchema,
@@ -29,11 +32,15 @@ import {
   TenantUser,
   type Principal,
 } from '../../../identity/public-api.js';
+import { AttendanceService } from '../../application/attendance.service.js';
 import { SchedulingService } from '../../application/scheduling.service.js';
 
 @Controller()
 export class SchedulingController {
-  constructor(private readonly scheduling: SchedulingService) {}
+  constructor(
+    private readonly scheduling: SchedulingService,
+    private readonly attendance: AttendanceService,
+  ) {}
 
   @RequirePermissions('schedules.read')
   @Get('tenant/roster')
@@ -80,5 +87,16 @@ export class SchedulingController {
     @Query(new ZodValidationPipe(myShiftsQuerySchema)) query: MyShiftsQuery,
   ): Promise<ShiftView[]> {
     return unwrap(await this.scheduling.myShifts(actor, query));
+  }
+
+  /** Scan of a site QR code: checks in, or out when a check-in is open. */
+  @TenantUser()
+  @Post('me/attendance')
+  @HttpCode(200)
+  async record(
+    @CurrentPrincipal() actor: Principal,
+    @Body(new ZodValidationPipe(recordAttendanceSchema)) body: RecordAttendanceRequest,
+  ): Promise<AttendanceResult> {
+    return unwrap(await this.attendance.record(actor, body));
   }
 }

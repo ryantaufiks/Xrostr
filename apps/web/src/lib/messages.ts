@@ -29,6 +29,13 @@ const MESSAGES: Record<string, string> = {
   location_archived: 'Site ini sudah diarsipkan.',
   range_too_long: 'Pilih paling lama 62 hari sekaligus.',
   not_an_employee: 'Akun Anda belum terhubung ke data karyawan.',
+  invalid_checkin_code:
+    'QR ini bukan QR absensi site ini, atau sudah diganti. Pindai poster QR terbaru di lokasi.',
+  site_without_point: 'Titik lokasi site ini belum diisi. Hubungi supervisor Anda.',
+  outside_geofence: 'Anda berada di luar area site.',
+  no_active_shift:
+    'Tidak ada shift Anda di site ini sekarang. Absen dibuka 2 jam sebelum shift dimulai.',
+  already_checked_out: 'Anda sudah absen pulang untuk shift ini.',
   invalid_invite: 'Undangan tidak valid, sudah dipakai, atau kedaluwarsa.',
   platform_only: 'Halaman ini khusus Superadmin.',
   missing_permission: 'Anda tidak memiliki izin untuk tindakan ini.',

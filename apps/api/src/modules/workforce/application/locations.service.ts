@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { CreateLocationRequest, LocationView, UpdateLocationRequest } from '@xrostr/contracts';
+import { randomBytes } from 'node:crypto';
+import type {
+  CheckinCode,
+  CreateLocationRequest,
+  LocationView,
+  UpdateLocationRequest,
+} from '@xrostr/contracts';
 import { AuditLogger, UnitOfWork } from '../../../shared/application/ports.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import type { Principal } from '../../identity/public-api.js';
@@ -76,6 +82,27 @@ export class LocationsService {
     });
   }
 
+  /** What the site's QR code contains: the check-in page with the site and its secret. */
+  checkinCode(actor: Principal, id: string): Promise<Result<CheckinCode>> {
+    return this.uow.runInTenant(tenantOf(actor), async () => {
+      const location = await this.locations.findById(id);
+      if (!location) return err(WorkforceErrors.locationNotFound());
+      return ok({ path: checkinPath(location) });
+    });
+  }
+
+  /** New secret for a site: posters printed before stop working at once. */
+  rotateCheckinCode(actor: Principal, id: string): Promise<Result<CheckinCode>> {
+    return this.uow.runInTenant(tenantOf(actor), async () => {
+      const location = await this.locations.findById(id);
+      if (!location) return err(WorkforceErrors.locationNotFound());
+      const secret = randomBytes(32).toString('hex');
+      await this.locations.setCheckinSecret(id, secret);
+      await this.record(actor, 'location.checkin_code_rotated', id, {});
+      return ok({ path: checkinPath({ ...location, checkinSecret: secret }) });
+    });
+  }
+
   private record(actor: Principal, action: string, id: string, metadata: Record<string, unknown>) {
     return this.audit.recordTenant({
       actorType: 'user',
@@ -107,3 +134,6 @@ function toView(location: Location, entities: LegalEntityWithPack[]): LocationVi
     },
   };
 }
+
+const checkinPath = (location: Pick<Location, 'id' | 'checkinSecret'>) =>
+  `/checkin?l=${location.id}&c=${location.checkinSecret}`;

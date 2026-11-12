@@ -4,6 +4,7 @@ import type {
   MyShiftsQuery,
   PublishResult,
   RosterQuery,
+  ShiftAttendance,
   ShiftView,
 } from '@xrostr/contracts';
 import { AuditLogger, UnitOfWork } from '../../../shared/application/ports.js';
@@ -17,7 +18,7 @@ import {
 } from '../../workforce/public-api.js';
 import { addDays, localDaysToUtcRange, localToUtc, utcToLocal } from '../domain/local-time.js';
 import { SchedulingErrors } from '../domain/scheduling-errors.js';
-import { ShiftRepository, type Shift } from './ports.js';
+import { AttendanceRepository, ShiftRepository, type Shift } from './ports.js';
 
 const MAX_RANGE_DAYS = 62;
 const tenantOf = (actor: Principal) => actor.subject.tenantId!;
@@ -40,6 +41,7 @@ export class SchedulingService {
   constructor(
     private readonly uow: UnitOfWork,
     private readonly shifts: ShiftRepository,
+    private readonly attendance: AttendanceRepository,
     private readonly workforce: WorkforceDirectory,
     private readonly notifier: Notifier,
     private readonly audit: AuditLogger,
@@ -173,12 +175,15 @@ export class SchedulingService {
   }
 
   private async views(shifts: Shift[]): Promise<ShiftView[]> {
-    const [employees, locations] = await Promise.all([
+    const [employees, locations, attendance] = await Promise.all([
       this.workforce.employeesById(shifts.map((s) => s.employeeId)),
       this.workforce.locationsById(shifts.map((s) => s.locationId)),
+      this.attendance.forShifts(shifts.map((s) => s.id)),
     ]);
     return shifts
-      .map((s) => toView(s, employees.get(s.employeeId), locations.get(s.locationId)))
+      .map((s) =>
+        toView(s, employees.get(s.employeeId), locations.get(s.locationId), attendance.get(s.id)),
+      )
       .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   }
 
@@ -198,6 +203,7 @@ function toView(
   shift: Shift,
   employee?: WorkforceEmployee,
   location?: WorkforceLocation,
+  attendance?: ShiftAttendance,
 ): ShiftView {
   const timezone = location?.timezone ?? 'UTC';
   const start = utcToLocal(shift.startsAt, timezone);
@@ -219,5 +225,6 @@ function toView(
       fullName: employee?.fullName ?? '',
       employeeNo: employee?.employeeNo ?? '',
     },
+    attendance: attendance ?? null,
   };
 }

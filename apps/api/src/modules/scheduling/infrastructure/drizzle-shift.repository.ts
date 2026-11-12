@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { ShiftKind, ShiftStatus } from '@xrostr/contracts';
 import { shifts } from '@xrostr/db';
-import { and, asc, eq, gt, gte, lt, ne } from 'drizzle-orm';
+import { and, asc, eq, gt, gte, lt, lte, ne } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import { ShiftRepository, type NewShift, type Shift } from '../application/ports.js';
 
@@ -117,6 +117,30 @@ export class DrizzleShiftRepository extends ShiftRepository {
     return rows.map(toShift);
   }
 
+  async attendanceCandidates(
+    employeeId: string,
+    locationId: string,
+    at: Date,
+    opensBeforeMs: number,
+    closesAfterMs: number,
+  ): Promise<Shift[]> {
+    const rows = await this.ctx
+      .executor()
+      .select()
+      .from(shifts)
+      .where(
+        and(
+          eq(shifts.employeeId, employeeId),
+          eq(shifts.locationId, locationId),
+          eq(shifts.status, 'published'),
+          lte(shifts.startsAt, new Date(at.getTime() + opensBeforeMs)),
+          gt(shifts.endsAt, new Date(at.getTime() - closesAfterMs)),
+        ),
+      )
+      .orderBy(asc(shifts.startsAt));
+    return rows.map(toShift);
+  }
+
   async remove(id: string): Promise<void> {
     await this.ctx.executor().delete(shifts).where(eq(shifts.id, id));
   }
@@ -126,7 +150,7 @@ export class DrizzleShiftRepository extends ShiftRepository {
   }
 }
 
-function causeCode(error: unknown): string | undefined {
+export function causeCode(error: unknown): string | undefined {
   for (let e: unknown = error; e && typeof e === 'object'; e = (e as { cause?: unknown }).cause) {
     if ('code' in e && typeof e.code === 'string') return e.code;
   }

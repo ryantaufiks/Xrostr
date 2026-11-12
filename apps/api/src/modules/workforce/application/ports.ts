@@ -11,10 +11,12 @@ export interface Location {
   longitude: number | null;
   geofenceRadiusM: number;
   status: LocationStatus;
+  /** Printed in the site's check-in QR code. Never sent to the portal as part of a site. */
+  checkinSecret: string;
 }
 
-export type NewLocation = Omit<Location, 'id' | 'status'>;
-export type LocationChanges = Partial<Omit<Location, 'id' | 'legalEntityId'>>;
+export type NewLocation = Omit<Location, 'id' | 'status' | 'checkinSecret'>;
+export type LocationChanges = Partial<Omit<Location, 'id' | 'legalEntityId' | 'checkinSecret'>>;
 
 /** All methods require a tenant unit of work. */
 export abstract class LocationRepository {
@@ -23,6 +25,7 @@ export abstract class LocationRepository {
   abstract codeExists(code: string, exceptId?: string): Promise<boolean>;
   abstract insert(location: NewLocation): Promise<string>;
   abstract update(id: string, changes: LocationChanges): Promise<void>;
+  abstract setCheckinSecret(id: string, secret: string): Promise<void>;
 }
 
 export interface Employee {

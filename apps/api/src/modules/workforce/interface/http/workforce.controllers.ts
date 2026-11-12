@@ -5,6 +5,7 @@ import {
   updateEmployeeSchema,
   updateLocationSchema,
   type CreateEmployeeRequest,
+  type CheckinCode,
   type CreateEmployeeResponse,
   type CreateLocationRequest,
   type EmployeeView,
@@ -40,6 +41,25 @@ export class LocationsController {
     @Body(new ZodValidationPipe(createLocationSchema)) body: CreateLocationRequest,
   ): Promise<LocationView> {
     return unwrap(await this.service.create(actor, body));
+  }
+
+  @RequirePermissions('locations.manage')
+  @Get(':id/checkin-code')
+  async checkinCode(
+    @CurrentPrincipal() actor: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CheckinCode> {
+    return unwrap(await this.service.checkinCode(actor, id));
+  }
+
+  @RequirePermissions('locations.manage')
+  @Post(':id/checkin-code/rotate')
+  @HttpCode(200)
+  async rotateCheckinCode(
+    @CurrentPrincipal() actor: Principal,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CheckinCode> {
+    return unwrap(await this.service.rotateCheckinCode(actor, id));
   }
 
   @RequirePermissions('locations.manage')

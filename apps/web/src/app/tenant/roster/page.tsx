@@ -34,7 +34,7 @@ import {
 import { api, ApiError } from '@/lib/api';
 import { addDays, dayLabel, mondayOf, todayLocal, weekLabel } from '@/lib/dates';
 import { usePrincipal } from '@/lib/principal-context';
-import { SHIFT_LABELS, shiftHours } from '@/lib/shifts';
+import { attendanceSummary, SHIFT_LABELS, shiftHours } from '@/lib/shifts';
 import { useData } from '@/lib/use-data';
 
 const SITE_KEY = 'xr-roster-site';
@@ -253,21 +253,23 @@ function DayCard({
       {shifts.length > 0 && (
         <ul className="mt-3 divide-y divide-line">
           {shifts.map((s) => (
-            <li key={s.id} className="flex items-center gap-3 py-3">
+            <li key={s.id} className="flex items-start gap-3 py-3">
               {s.kind === 'night' ? (
-                <Moon className="size-5 shrink-0 text-muted" aria-hidden />
+                <Moon className="mt-0.5 size-5 shrink-0 text-muted" aria-hidden />
               ) : (
-                <Sun className="size-5 shrink-0 text-muted" aria-hidden />
+                <Sun className="mt-0.5 size-5 shrink-0 text-muted" aria-hidden />
               )}
-              <div className="min-w-0 flex-1">
+              {/* Everything stacks in one column so names and statuses never wrap word by word. */}
+              <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-base font-semibold break-words text-fg">{s.employee.fullName}</p>
                 <p className="text-sm text-muted">
                   {SHIFT_LABELS[s.kind]} · {shiftHours(s)}
                 </p>
+                <AttendanceNote shift={s} />
+                <Badge tone={s.status === 'draft' ? 'warn' : 'active'}>
+                  {s.status === 'draft' ? 'Draft' : 'Terbit'}
+                </Badge>
               </div>
-              <Badge tone={s.status === 'draft' ? 'warn' : 'active'}>
-                {s.status === 'draft' ? 'Draft' : 'Terbit'}
-              </Badge>
               {employees && (
                 <button
                   type="button"
@@ -433,4 +435,19 @@ function AddShift({
       </div>
     </div>
   );
+}
+
+/** Check-in status of a published shift: present, late, left, or not yet arrived. */
+function AttendanceNote({ shift }: { shift: ShiftView }) {
+  if (shift.status !== 'published') return null;
+  const summary = attendanceSummary(shift);
+  if (summary) {
+    return (
+      <p className={cx('text-sm font-semibold', summary.late ? 'text-accent' : 'text-fg')}>
+        {summary.text}
+      </p>
+    );
+  }
+  const started = Date.parse(shift.startsAt) <= Date.now();
+  return started ? <p className="text-sm font-semibold text-accent">Belum absen masuk</p> : null;
 }

@@ -28,6 +28,7 @@ const toLocation = (r: LocationRow): Location => ({
   longitude: r.longitude,
   geofenceRadiusM: r.geofenceRadiusM,
   status: r.status as LocationStatus,
+  checkinSecret: r.checkinSecret,
 });
 
 const toEmployee = (r: EmployeeRow): Employee => ({
@@ -87,6 +88,14 @@ export class DrizzleLocationRepository extends LocationRepository {
   async update(id: string, changes: LocationChanges): Promise<void> {
     if (Object.keys(changes).length === 0) return;
     await this.ctx.executor().update(locations).set(changes).where(eq(locations.id, id));
+  }
+
+  async setCheckinSecret(id: string, secret: string): Promise<void> {
+    await this.ctx
+      .executor()
+      .update(locations)
+      .set({ checkinSecret: secret })
+      .where(eq(locations.id, id));
   }
 }
 

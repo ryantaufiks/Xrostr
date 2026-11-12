@@ -4,6 +4,7 @@ import type { LocationView } from '@xrostr/contracts';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LocationForm } from '@/components/location-form';
+import { SiteQrCard } from '@/components/site-qr-card';
 import { Alert, Button, PageHeader, Spinner } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { useData } from '@/lib/use-data';
@@ -50,12 +51,15 @@ export default function EditLocationPage() {
       {(!locations || !entities) && !failure && <Spinner />}
       {locations && !location && <Alert>Site tidak ditemukan.</Alert>}
       {location && entities && (
-        <LocationForm
-          key={location.id + location.status}
-          entities={entities}
-          location={location}
-          onSaved={() => router.push('/tenant/locations')}
-        />
+        <div className="space-y-6">
+          <SiteQrCard locationId={location.id} hasPoint={location.latitude != null} />
+          <LocationForm
+            key={location.id + location.status}
+            entities={entities}
+            location={location}
+            onSaved={() => router.push('/tenant/locations')}
+          />
+        </div>
       )}
     </>
   );

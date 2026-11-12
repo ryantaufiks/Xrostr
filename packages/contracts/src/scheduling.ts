@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ShiftAttendance } from './attendance.js';
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:MM');
@@ -58,6 +59,7 @@ export interface ShiftView {
   notes: string | null;
   location: { id: string; name: string };
   employee: { id: string; fullName: string; employeeNo: string };
+  attendance: ShiftAttendance | null;
 }
 
 export interface PublishResult {

@@ -1,4 +1,4 @@
-import type { ShiftKind, ShiftStatus } from '@xrostr/contracts';
+import type { AttendanceKind, ShiftAttendance, ShiftKind, ShiftStatus } from '@xrostr/contracts';
 
 export interface Shift {
   id: string;
@@ -25,6 +25,34 @@ export abstract class ShiftRepository {
   abstract publishedForEmployee(employeeId: string, start: Date, end: Date): Promise<Shift[]>;
   /** Publishes the site's drafts starting within [start, end); returns what changed. */
   abstract publishDrafts(locationId: string, start: Date, end: Date, at: Date): Promise<Shift[]>;
+  /** The employee's published shifts at a site whose attendance window contains `at`. */
+  abstract attendanceCandidates(
+    employeeId: string,
+    locationId: string,
+    at: Date,
+    opensBeforeMs: number,
+    closesAfterMs: number,
+  ): Promise<Shift[]>;
   abstract remove(id: string): Promise<void>;
   abstract cancel(id: string): Promise<void>;
+}
+
+export interface NewAttendanceEvent {
+  employeeId: string;
+  shiftId: string;
+  locationId: string;
+  kind: AttendanceKind;
+  occurredAt: Date;
+  latitude: number;
+  longitude: number;
+  accuracyM: number | null;
+  distanceM: number;
+  lateMinutes: number | null;
+}
+
+/** All methods require a tenant unit of work. */
+export abstract class AttendanceRepository {
+  /** Null when this shift already has an event of that kind (a double tap or a race). */
+  abstract insert(event: NewAttendanceEvent): Promise<string | null>;
+  abstract forShifts(shiftIds: readonly string[]): Promise<Map<string, ShiftAttendance>>;
 }
