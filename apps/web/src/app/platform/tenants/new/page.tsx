@@ -185,7 +185,7 @@ export default function NewTenantPage() {
             {entities.map((entity, index) => (
               <div
                 key={index}
-                className="grid gap-3 rounded-lg bg-ink-50 p-3 sm:grid-cols-[1fr_160px_180px_auto] sm:items-start"
+                className="grid gap-3 rounded-xl border border-line p-3 sm:grid-cols-[1fr_160px_180px_auto] sm:items-start"
               >
                 <Field
                   label="Nama badan hukum"
@@ -237,7 +237,7 @@ export default function NewTenantPage() {
                 </Button>
               </div>
             ))}
-            {errors.legalEntities && <p className="text-xs text-red-600">{errors.legalEntities}</p>}
+            {errors.legalEntities && <p className="text-xs text-accent">{errors.legalEntities}</p>}
             <Button
               type="button"
               variant="secondary"
@@ -304,8 +304,8 @@ function Section({
   return (
     <Card className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[240px_1fr]">
       <div>
-        <h2 className="text-sm font-semibold text-ink-900">{title}</h2>
-        <p className="mt-1 text-sm text-ink-500">{description}</p>
+        <h2 className="label font-bold text-fg">{title}</h2>
+        <p className="mt-1 text-sm text-muted">{description}</p>
       </div>
       <div>{children}</div>
     </Card>
@@ -335,7 +335,7 @@ function TenantCreated({
           kedaluwarsa pada <strong>{formatDateTime(created.inviteExpiresAt)}</strong>.
         </Alert>
         <div>
-          <p className="mb-1.5 text-sm font-medium text-ink-700">Tautan undangan</p>
+          <p className="mb-1.5 text-sm font-medium text-fg">Tautan undangan</p>
           <div className="flex gap-2">
             <Input
               readOnly
@@ -352,7 +352,7 @@ function TenantCreated({
               {copied ? 'Tersalin' : 'Salin'}
             </Button>
           </div>
-          <p className="mt-1.5 text-xs text-ink-500">
+          <p className="mt-1.5 text-xs text-muted">
             Tautan ini hanya ditampilkan sekarang. Pengiriman email otomatis menyusul di Fase 1.
           </p>
         </div>

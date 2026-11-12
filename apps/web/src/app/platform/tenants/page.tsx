@@ -34,9 +34,9 @@ export default function TenantsPage() {
       {!tenants && !error && <Spinner />}
       {tenants?.length === 0 && (
         <Card className="flex flex-col items-center px-6 py-16 text-center">
-          <Building2 className="size-10 text-ink-300" aria-hidden />
-          <h2 className="mt-4 text-sm font-semibold">Belum ada tenant</h2>
-          <p className="mt-1 max-w-sm text-sm text-ink-500">
+          <Building2 className="size-10 text-faint" aria-hidden />
+          <h2 className="mt-4 font-display text-xl font-bold">Belum ada tenant</h2>
+          <p className="mt-1 max-w-sm text-sm text-muted">
             Buat tenant pertama untuk mengundang administrator perusahaan klien.
           </p>
           <Link href="/platform/tenants/new" className={buttonStyles('primary', 'mt-6')}>
@@ -47,7 +47,7 @@ export default function TenantsPage() {
       {tenants && tenants.length > 0 && (
         <Card className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-ink-100 text-xs tracking-wide text-ink-500 uppercase">
+            <thead className="border-b border-line label text-muted">
               <tr>
                 <th className="px-5 py-3 font-medium">Nama</th>
                 <th className="px-5 py-3 font-medium">Slug</th>
@@ -57,21 +57,21 @@ export default function TenantsPage() {
                 <th className="px-5 py-3 font-medium">Dibuat</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink-100">
+            <tbody className="divide-y divide-line">
               {tenants.map((t) => (
-                <tr key={t.id} className="hover:bg-ink-50/60">
-                  <td className="px-5 py-3.5 font-medium text-ink-900">{t.name}</td>
-                  <td className="px-5 py-3.5 font-mono text-xs text-ink-600">{t.slug}</td>
-                  <td className="px-5 py-3.5 text-ink-600">
+                <tr key={t.id} className="hover:bg-sunken">
+                  <td className="px-5 py-3.5 font-medium text-fg">{t.name}</td>
+                  <td className="px-5 py-3.5 font-mono text-xs text-muted">{t.slug}</td>
+                  <td className="px-5 py-3.5 text-muted">
                     {REGION_LABELS[t.dataRegion] ?? t.dataRegion}
                   </td>
-                  <td className="px-5 py-3.5 text-ink-600">{PLAN_LABELS[t.plan] ?? t.plan}</td>
+                  <td className="px-5 py-3.5 text-muted">{PLAN_LABELS[t.plan] ?? t.plan}</td>
                   <td className="px-5 py-3.5">
-                    <Badge tone={t.status === 'active' ? 'brand' : 'warn'}>
+                    <Badge tone={t.status === 'active' ? 'active' : 'warn'}>
                       {t.status === 'active' ? 'Aktif' : t.status}
                     </Badge>
                   </td>
-                  <td className="px-5 py-3.5 text-ink-500">{formatDate(t.createdAt)}</td>
+                  <td className="px-5 py-3.5 text-muted">{formatDate(t.createdAt)}</td>
                 </tr>
               ))}
             </tbody>

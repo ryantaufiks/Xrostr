@@ -62,7 +62,10 @@ function LoginForm() {
       title="Masuk ke Xrostr"
       subtitle="Gunakan akun perusahaan Anda atau akun Superadmin platform."
     >
-      <div className="mb-6 grid grid-cols-2 gap-1 rounded-lg bg-ink-100 p-1" role="tablist">
+      <div
+        className="mb-6 grid grid-cols-2 gap-1 rounded-full border border-line p-1"
+        role="tablist"
+      >
         {(
           [
             ['tenant', 'Perusahaan', Building2],
@@ -76,10 +79,8 @@ function LoginForm() {
             aria-selected={mode === value}
             onClick={() => switchMode(value)}
             className={cx(
-              'inline-flex items-center justify-center gap-1.5 rounded-md py-1.5 text-sm font-medium transition',
-              mode === value
-                ? 'bg-white text-ink-900 shadow-sm'
-                : 'text-ink-500 hover:text-ink-800',
+              'label inline-flex items-center justify-center gap-1.5 rounded-full py-1.5 font-bold transition',
+              mode === value ? 'bg-fg text-bg' : 'text-muted hover:text-fg',
             )}
           >
             <Icon className="size-4" aria-hidden />

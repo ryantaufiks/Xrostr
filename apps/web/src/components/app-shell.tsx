@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { logout } from '@/lib/session';
 import { Logo } from './brand';
-import { cx } from './ui';
+import { cx, Dot } from './ui';
 
 export interface NavItem {
   href: string;
@@ -35,24 +35,25 @@ export function AppShell({
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-ink-200 bg-white">
+      <header className="border-b border-line">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
-          <Link href="/" className="text-ink-900">
+          <Link href="/" className="text-fg">
             <Logo />
           </Link>
-          <span className="hidden rounded-md bg-ink-100 px-2 py-0.5 text-xs font-medium text-ink-600 sm:inline">
+          <span className="label hidden items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 text-muted sm:inline-flex">
+            <Dot />
             {areaLabel}
           </span>
-          <nav className="flex flex-1 gap-1">
+          <nav className="flex flex-1 gap-4">
             {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cx(
-                  'rounded-md px-3 py-1.5 text-sm font-medium',
+                  'label border-b-2 px-1 py-1',
                   pathname.startsWith(item.href)
-                    ? 'bg-ink-100 text-ink-900'
-                    : 'text-ink-500 hover:text-ink-900',
+                    ? 'border-fg text-fg'
+                    : 'border-transparent text-muted hover:text-fg',
                 )}
               >
                 {item.label}
@@ -62,14 +63,14 @@ export function AppShell({
           <button
             onClick={signOut}
             disabled={signingOut}
-            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-ink-500 hover:bg-ink-100 hover:text-ink-900"
+            className="label inline-flex items-center gap-1.5 text-muted hover:text-fg"
           >
             <LogOut className="size-4" aria-hidden />
             Keluar
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">{children}</main>
     </div>
   );
 }
@@ -85,17 +86,17 @@ export function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+    <div className="dot-grid flex min-h-screen flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex justify-center text-ink-900">
+        <div className="mb-8 flex justify-center text-fg">
           <Logo />
         </div>
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-ink-200/70 sm:p-8">
-          <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
-          {subtitle && <p className="mt-1 text-sm text-ink-500">{subtitle}</p>}
+        <div className="rounded-2xl border border-line bg-surface p-6 sm:p-8">
+          <h1 className="font-display text-2xl font-bold tracking-tight">{title}</h1>
+          {subtitle && <p className="mt-1.5 text-sm text-muted">{subtitle}</p>}
           <div className="mt-6">{children}</div>
         </div>
-        <p className="mt-6 text-center text-xs text-ink-400">
+        <p className="label mt-6 text-center text-faint">
           Xrostr · HRMS otonom untuk tenaga kerja shift
         </p>
       </div>

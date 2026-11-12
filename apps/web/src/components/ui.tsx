@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
@@ -13,15 +13,15 @@ function cx(...classes: (string | false | null | undefined)[]): string {
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-600 text-white shadow-sm hover:bg-brand-700 disabled:bg-brand-600/60',
-  secondary: 'bg-white text-ink-800 ring-1 ring-ink-200 hover:bg-ink-50 disabled:text-ink-400',
-  ghost: 'text-ink-600 hover:bg-ink-100 hover:text-ink-900',
+  primary: 'bg-fg text-bg hover:opacity-85 disabled:opacity-40',
+  secondary: 'border border-line text-fg hover:border-fg disabled:text-faint',
+  ghost: 'text-muted hover:text-fg',
 };
 
 /** Button look for links that act as buttons. */
 export function buttonStyles(variant: ButtonVariant = 'primary', className?: string): string {
   return cx(
-    'inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed',
+    'label inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 font-bold transition disabled:cursor-not-allowed',
     BUTTON_VARIANTS[variant],
     className,
   );
@@ -44,7 +44,7 @@ export function Button({
 }
 
 const CONTROL =
-  'block h-10 w-full rounded-lg border-0 bg-white px-3 text-sm text-ink-900 ring-1 ring-ink-200 placeholder:text-ink-400 focus:ring-2 focus:ring-brand-500 focus:outline-none aria-invalid:ring-red-400';
+  'block h-10 w-full rounded-lg border border-line bg-transparent px-3 text-sm text-fg placeholder:text-faint focus:border-fg focus:outline-none aria-invalid:border-accent';
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cx(CONTROL, className)} {...props} />;
@@ -73,16 +73,24 @@ export function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-ink-700">
+      <label htmlFor={htmlFor} className="label block text-muted">
         {label}
       </label>
       {children}
       {error ? (
-        <p className="text-xs text-red-600">{error}</p>
+        <p className="text-xs text-accent">{error}</p>
       ) : (
-        hint && <p className="text-xs text-ink-500">{hint}</p>
+        hint && <p className="text-xs text-muted">{hint}</p>
       )}
     </div>
+  );
+}
+
+/** The single accent in the interface: a small flat dot marking state. */
+export function Dot({ tone = 'accent' }: { tone?: 'accent' | 'fg' | 'faint' }) {
+  const tones = { accent: 'bg-accent', fg: 'bg-fg', faint: 'bg-faint' };
+  return (
+    <span className={cx('inline-block size-1.5 shrink-0 rounded-full', tones[tone])} aria-hidden />
   );
 }
 
@@ -93,18 +101,17 @@ export function Alert({
   tone?: 'error' | 'success';
   children: ReactNode;
 }) {
-  const Icon = tone === 'error' ? AlertCircle : CheckCircle2;
   return (
     <div
       role={tone === 'error' ? 'alert' : 'status'}
       className={cx(
-        'flex gap-2.5 rounded-lg px-3.5 py-3 text-sm',
-        tone === 'error'
-          ? 'bg-red-50 text-red-800 ring-1 ring-red-200'
-          : 'bg-brand-50 text-brand-800 ring-1 ring-brand-200',
+        'flex gap-3 rounded-lg border px-3.5 py-3 text-sm',
+        tone === 'error' ? 'border-accent text-accent' : 'border-line text-fg',
       )}
     >
-      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <span className="mt-[7px]">
+        <Dot tone={tone === 'error' ? 'accent' : 'fg'} />
+      </span>
       <div>{children}</div>
     </div>
   );
@@ -112,9 +119,7 @@ export function Alert({
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={cx('rounded-xl bg-white shadow-sm ring-1 ring-ink-200/70', className)}>
-      {children}
-    </div>
+    <div className={cx('rounded-2xl border border-line bg-surface', className)}>{children}</div>
   );
 }
 
@@ -122,21 +127,12 @@ export function Badge({
   tone = 'neutral',
   children,
 }: {
-  tone?: 'neutral' | 'brand' | 'warn';
+  tone?: 'neutral' | 'active' | 'warn';
   children: ReactNode;
 }) {
-  const tones = {
-    neutral: 'bg-ink-100 text-ink-700',
-    brand: 'bg-brand-50 text-brand-700 ring-1 ring-brand-200',
-    warn: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200',
-  };
   return (
-    <span
-      className={cx(
-        'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium',
-        tones[tone],
-      )}
-    >
+    <span className="label inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 text-fg">
+      {tone !== 'neutral' && <Dot tone={tone === 'active' ? 'fg' : 'accent'} />}
       {children}
     </span>
   );
@@ -144,10 +140,7 @@ export function Badge({
 
 export function Spinner({ label = 'Memuat…' }: { label?: string }) {
   return (
-    <div
-      className="flex items-center justify-center gap-2 py-16 text-sm text-ink-500"
-      role="status"
-    >
+    <div className="label flex items-center justify-center gap-2 py-16 text-muted" role="status">
       <Loader2 className="size-4 animate-spin" aria-hidden />
       {label}
     </div>
@@ -164,14 +157,17 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-ink-900">{title}</h1>
-        {description && <p className="mt-1 text-sm text-ink-500">{description}</p>}
+        <h1 className="font-display text-3xl font-bold tracking-tight text-fg">{title}</h1>
+        {description && <p className="mt-1.5 text-sm text-muted">{description}</p>}
       </div>
       {actions && <div className="flex gap-2">{actions}</div>}
     </div>
   );
 }
+
+/** Table head row styling shared by data tables. */
+export const TABLE_HEAD = 'label border-b border-line text-muted';
 
 export { cx };
