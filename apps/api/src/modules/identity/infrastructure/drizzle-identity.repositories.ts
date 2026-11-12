@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { SystemRoleDefinition } from '@xrostr/contracts';
 import { roles, sessions, userInvites, userRoles } from '@xrostr/db';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, gt, isNull } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import {
   InviteRepository,
@@ -40,6 +40,16 @@ export class DrizzleRoleRepository extends RoleRepository {
     return new Map(rows.map((r) => [r.key, r.id]));
   }
 
+  async findIdByKey(key: string): Promise<string | null> {
+    const [row] = await this.ctx
+      .executor()
+      .select({ id: roles.id })
+      .from(roles)
+      .where(eq(roles.key, key))
+      .limit(1);
+    return row?.id ?? null;
+  }
+
   async assign(userId: string, roleId: string): Promise<void> {
     await this.ctx
       .executor()
@@ -74,6 +84,20 @@ export class DrizzleInviteRepository extends InviteRepository {
       .where(eq(userInvites.tokenHash, tokenHash))
       .limit(1);
     return row ?? null;
+  }
+
+  async expireOpenForUser(userId: string, at: Date): Promise<void> {
+    await this.ctx
+      .executor()
+      .update(userInvites)
+      .set({ expiresAt: at })
+      .where(
+        and(
+          eq(userInvites.userId, userId),
+          isNull(userInvites.acceptedAt),
+          gt(userInvites.expiresAt, at),
+        ),
+      );
   }
 
   async markAccepted(id: string, at: Date): Promise<void> {

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PERMISSIONS, type Permission } from '@xrostr/contracts';
 import { platformAdmins, roles, userRoles, users } from '@xrostr/db';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
-import { AccountRepository } from '../application/ports.js';
+import { AccountRepository, type UserSummary } from '../application/ports.js';
 import type { Account, AccountStatus, LoginAttemptState, SubjectRef } from '../domain/account.js';
 
 type UserRow = typeof users.$inferSelect;
@@ -94,6 +94,33 @@ export class DrizzleAccountRepository extends AccountRepository {
       .update(users)
       .set({ passwordHash, status: 'active' })
       .where(eq(users.id, userId));
+  }
+
+  async setUserStatus(userId: string, status: AccountStatus): Promise<void> {
+    await this.ctx.executor().update(users).set({ status }).where(eq(users.id, userId));
+  }
+
+  async summarize(userIds: readonly string[]): Promise<Map<string, UserSummary>> {
+    if (userIds.length === 0) return new Map();
+    const rows = await this.ctx
+      .executor()
+      .select({ id: users.id, email: users.email, status: users.status, roleKey: roles.key })
+      .from(users)
+      .leftJoin(userRoles, eq(userRoles.userId, users.id))
+      .leftJoin(roles, eq(roles.id, userRoles.roleId))
+      .where(inArray(users.id, [...userIds]));
+    const summaries = new Map<string, UserSummary>();
+    for (const row of rows) {
+      // One role per user today; keep the first if that ever changes.
+      if (!summaries.has(row.id)) {
+        summaries.set(row.id, {
+          email: row.email,
+          status: row.status as AccountStatus,
+          roleKey: row.roleKey,
+        });
+      }
+    }
+    return summaries;
   }
 
   private async update(ref: SubjectRef, values: Partial<AdminRow & UserRow>): Promise<void> {

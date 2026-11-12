@@ -113,16 +113,21 @@ All errors are `application/problem+json` (RFC 9457) with a stable `code`.
 
 ## API (Phase 0)
 
-| Method    | Path                                                  | Access          |
-| --------- | ----------------------------------------------------- | --------------- |
-| GET       | `/health`                                             | public          |
-| POST      | `/platform/auth/login`                                | public          |
-| POST      | `/auth/login`, `/auth/refresh`, `/auth/accept-invite` | public, 10/min  |
-| GET       | `/auth/me`                                            | any session     |
-| POST      | `/auth/mfa/setup`, `/auth/mfa/enable`, `/auth/logout` | any session     |
-| GET, POST | `/platform/tenants`                                   | superadmin      |
-| GET       | `/tenant/legal-entities`                              | `entities.read` |
-| GET       | `/tenant/audit-log?limit=`                            | `audit.read`    |
+| Method    | Path                                                  | Access             |
+| --------- | ----------------------------------------------------- | ------------------ |
+| GET       | `/health`                                             | public             |
+| POST      | `/platform/auth/login`                                | public             |
+| POST      | `/auth/login`, `/auth/refresh`, `/auth/accept-invite` | public, 10/min     |
+| GET       | `/auth/me`                                            | any session        |
+| POST      | `/auth/mfa/setup`, `/auth/mfa/enable`, `/auth/logout` | any session        |
+| GET, POST | `/platform/tenants`                                   | superadmin         |
+| GET       | `/tenant/legal-entities`                              | `entities.read`    |
+| GET       | `/tenant/profile`                                     | tenant user        |
+| GET, POST | `/tenant/locations`, PATCH `/tenant/locations/:id`    | `locations.*`      |
+| GET, POST | `/tenant/employees`, PATCH `/tenant/employees/:id`    | `employees.*`      |
+| POST      | `/tenant/employees/:id/invite`                        | `employees.manage` |
+| GET, POST | `/notifications`, `/notifications/push/*`             | tenant user        |
+| GET       | `/tenant/audit-log?limit=`                            | `audit.read`       |
 
 ## Quality gates
 

@@ -32,6 +32,11 @@ const ACTION_LABELS: Record<string, string> = {
   'user.invite_accepted': 'Undangan diterima',
   'auth.password_changed': 'Password diganti',
   'tenant.created': 'Perusahaan dibuat',
+  'employee.created': 'Karyawan ditambahkan',
+  'employee.updated': 'Data karyawan diubah',
+  'employee.invite_reissued': 'Undangan dikirim ulang',
+  'location.created': 'Site ditambahkan',
+  'location.updated': 'Data site diubah',
   'auth.password_change_failed': 'Gagal mengganti password',
 };
 
@@ -43,6 +48,22 @@ export default function TenantHome() {
   const canReadEntities = principal.permissions.includes('entities.read');
   const canReadAudit = principal.permissions.includes('audit.read');
 
+  // Officers have no company-wide data to see; their home is about their own work.
+  if (!canReadEntities && !canReadAudit) {
+    return (
+      <>
+        <PageHeader title="Beranda" description="Selamat bertugas." />
+        <Card className="space-y-2 p-6">
+          <p className="text-lg font-semibold text-fg">Jadwal Anda akan tampil di sini</p>
+          <p className="text-base text-muted">
+            Shift, absensi, dan pengajuan cuti sedang disiapkan. Aktifkan notifikasi di menu Akun
+            agar Anda mendapat kabar saat jadwal terbit.
+          </p>
+        </Card>
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader
@@ -52,11 +73,6 @@ export default function TenantHome() {
       <div className="space-y-6">
         {canReadEntities && <LegalEntities />}
         {canReadAudit && <AuditLog />}
-        {!canReadEntities && !canReadAudit && (
-          <Card className="p-6 text-base text-muted">
-            Fitur untuk peran Anda (jadwal, absensi, cuti) hadir di Fase 1.
-          </Card>
-        )}
       </div>
     </>
   );

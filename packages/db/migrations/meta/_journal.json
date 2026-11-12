@@ -15,6 +15,20 @@
       "when": 1794461411003,
       "tag": "0001_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794462321253,
+      "tag": "0002_workforce",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794462321706,
+      "tag": "0003_sync_system_roles",
+      "breakpoints": true
     }
   ]
 }

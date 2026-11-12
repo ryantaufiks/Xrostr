@@ -12,6 +12,7 @@ export abstract class TenantRepository {
   abstract slugExists(slug: string): Promise<boolean>;
   abstract insert(tenant: TenantDraft): Promise<string>;
   abstract list(): Promise<TenantSummary[]>;
+  abstract findById(id: string): Promise<TenantSummary | null>;
   /** Requires a tenant unit of work. */
   abstract insertLegalEntities(entities: readonly LegalEntityDraft[]): Promise<void>;
   /** Requires a tenant unit of work. */

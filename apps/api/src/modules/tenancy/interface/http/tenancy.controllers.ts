@@ -15,10 +15,12 @@ import {
   CurrentPrincipal,
   PlatformOnly,
   RequirePermissions,
+  TenantUser,
   type Principal,
 } from '../../../identity/public-api.js';
 import {
   CreateTenantUseCase,
+  GetTenantProfileUseCase,
   ListLegalEntitiesUseCase,
   ListTenantsUseCase,
   type LegalEntityView,
@@ -56,5 +58,16 @@ export class LegalEntitiesController {
   list(@CurrentPrincipal() principal: Principal): Promise<LegalEntityView[]> {
     // RequirePermissions admits tenant users only, so tenantId is always set here.
     return this.listEntities.execute(principal.subject.tenantId!);
+  }
+}
+
+@Controller('tenant/profile')
+export class TenantProfileController {
+  constructor(private readonly profile: GetTenantProfileUseCase) {}
+
+  @TenantUser()
+  @Get()
+  get(@CurrentPrincipal() principal: Principal): Promise<{ name: string; slug: string }> {
+    return this.profile.execute(principal.subject.tenantId!);
   }
 }

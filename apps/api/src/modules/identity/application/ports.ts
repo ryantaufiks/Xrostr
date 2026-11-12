@@ -1,5 +1,17 @@
 import type { Permission, SessionStage, SystemRoleDefinition } from '@xrostr/contracts';
-import type { Account, LoginAttemptState, SubjectRef, SubjectType } from '../domain/account.js';
+import type {
+  Account,
+  AccountStatus,
+  LoginAttemptState,
+  SubjectRef,
+  SubjectType,
+} from '../domain/account.js';
+
+export interface UserSummary {
+  email: string;
+  status: AccountStatus;
+  roleKey: string | null;
+}
 
 export abstract class PasswordHasher {
   abstract hash(password: string): Promise<string>;
@@ -58,6 +70,10 @@ export abstract class AccountRepository {
   abstract insertInvitedUser(email: string, fullName: string): Promise<string>;
   /** Requires a tenant unit of work. */
   abstract activateUser(userId: string, passwordHash: string): Promise<void>;
+  /** Requires a tenant unit of work. */
+  abstract setUserStatus(userId: string, status: AccountStatus): Promise<void>;
+  /** Email, status and role of tenant users, by id. Requires a tenant unit of work. */
+  abstract summarize(userIds: readonly string[]): Promise<Map<string, UserSummary>>;
 }
 
 export abstract class RoleRepository {
@@ -66,6 +82,8 @@ export abstract class RoleRepository {
     definitions: readonly SystemRoleDefinition[],
   ): Promise<Map<string, string>>;
   abstract assign(userId: string, roleId: string): Promise<void>;
+  /** Requires a tenant unit of work. */
+  abstract findIdByKey(key: string): Promise<string | null>;
 }
 
 export interface Invite {
@@ -79,6 +97,8 @@ export abstract class InviteRepository {
   abstract insert(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
   abstract findByTokenHash(tokenHash: string): Promise<Invite | null>;
   abstract markAccepted(id: string, at: Date): Promise<void>;
+  /** Expires every open invite of the user, so only the newest link works. */
+  abstract expireOpenForUser(userId: string, at: Date): Promise<void>;
 }
 
 export interface Session {

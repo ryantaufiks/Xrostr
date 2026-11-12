@@ -80,6 +80,20 @@ export class CreateTenantUseCase {
   }
 }
 
+/** Name and sign-in code of the caller's own company. */
+@Injectable()
+export class GetTenantProfileUseCase {
+  constructor(
+    private readonly uow: UnitOfWork,
+    private readonly tenants: TenantRepository,
+  ) {}
+
+  async execute(tenantId: string): Promise<{ name: string; slug: string }> {
+    const tenant = await this.uow.runInPlatform(() => this.tenants.findById(tenantId));
+    return { name: tenant?.name ?? '', slug: tenant?.slug ?? '' };
+  }
+}
+
 @Injectable()
 export class ListTenantsUseCase {
   constructor(
@@ -99,6 +113,8 @@ export interface LegalEntityView {
   registrationNumber: string | null;
   currency: string;
   defaultTimezone: string;
+  /** Time zones a site under this entity may use. */
+  timezones: readonly string[];
 }
 
 @Injectable()
@@ -112,7 +128,12 @@ export class ListLegalEntitiesUseCase {
     const entities = await this.uow.runInTenant(tenantId, () => this.tenants.listLegalEntities());
     return entities.map((e) => {
       const pack = countryPack(e.countryCode);
-      return { ...e, currency: pack.currency, defaultTimezone: pack.defaultTimezone };
+      return {
+        ...e,
+        currency: pack.currency,
+        defaultTimezone: pack.defaultTimezone,
+        timezones: pack.timezones,
+      };
     });
   }
 }

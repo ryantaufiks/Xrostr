@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut } from 'lucide-react';
+import { LogOut, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
@@ -11,9 +11,14 @@ import { cx, Dot } from './ui';
 export interface NavItem {
   href: string;
   label: string;
+  /** Shown in the bottom tab bar on phones. */
+  icon: LucideIcon;
 }
 
-/** Signed-in layout: top bar with the area name, navigation and sign-out. */
+/**
+ * Signed-in layout. Wide screens: navigation in the top bar. Phones: a bottom tab bar with
+ * large icon-and-label targets within thumb reach, as in a native app.
+ */
 export function AppShell({
   areaLabel,
   nav,
@@ -51,7 +56,7 @@ export function AppShell({
             <Dot />
             {areaLabel}
           </span>
-          <nav className="flex flex-1 gap-2 sm:gap-4">
+          <nav className="hidden flex-1 gap-4 sm:flex">
             {nav.map((item) => (
               <Link
                 key={item.href}
@@ -67,6 +72,7 @@ export function AppShell({
               </Link>
             ))}
           </nav>
+          <div className="flex-1 sm:hidden" />
           {actions}
           <button
             onClick={signOut}
@@ -79,7 +85,34 @@ export function AppShell({
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 pt-8 pb-32 sm:px-6 sm:py-10">{children}</main>
+      <nav
+        aria-label="Menu utama"
+        className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-bg pb-[env(safe-area-inset-bottom)] sm:hidden"
+      >
+        <div
+          className="grid"
+          style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}
+        >
+          {nav.map(({ href, label, icon: Icon }) => {
+            const active = href === activeHref;
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                className={cx(
+                  'flex min-h-16 flex-col items-center justify-center gap-1 text-[13px] font-semibold',
+                  active ? 'text-fg' : 'text-muted',
+                )}
+              >
+                <Icon className="size-6" aria-hidden strokeWidth={active ? 2.4 : 1.8} />
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

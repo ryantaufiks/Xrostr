@@ -32,6 +32,19 @@ export const IdentityErrors = {
   // Not 401: a 401 would make the web proxy refresh and retry the same wrong password.
   invalidCurrentPassword: () =>
     new DomainError('forbidden', 'invalid_current_password', 'The current password is incorrect.'),
+  emailTaken: () =>
+    new DomainError(
+      'conflict',
+      'email_taken',
+      'Another account in this company already uses this email.',
+    ),
+  userAlreadyActive: () =>
+    new DomainError(
+      'conflict',
+      'user_already_active',
+      'This person has already activated their account.',
+    ),
+  userNotFound: () => new DomainError('not_found', 'user_not_found', 'User not found.'),
   invalidInvite: () =>
     new DomainError('not_found', 'invalid_invite', 'This invitation is invalid, used or expired.'),
 };

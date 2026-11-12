@@ -1,5 +1,6 @@
 'use client';
 
+import { Building2, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { Spinner } from '@/components/ui';
@@ -12,8 +13,8 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
     <AppShell
       areaLabel="Superadmin"
       nav={[
-        { href: '/platform/tenants', label: 'Tenant' },
-        { href: '/platform/account', label: 'Akun' },
+        { href: '/platform/tenants', label: 'Tenant', icon: Building2 },
+        { href: '/platform/account', label: 'Akun', icon: UserRound },
       ]}
     >
       {children}

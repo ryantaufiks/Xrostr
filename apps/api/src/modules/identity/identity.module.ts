@@ -21,6 +21,7 @@ import { RefreshSessionUseCase } from './application/refresh-session.use-case.js
 import { SessionIssuer } from './application/session-issuer.js';
 import { SubjectScope } from './application/subject-scope.js';
 import { TenantIdentityProvisioner } from './application/tenant-identity-provisioner.js';
+import { TenantUserAccess } from './application/tenant-user-access.js';
 import {
   Argon2PasswordHasher,
   CryptoOpaqueTokens,
@@ -72,9 +73,10 @@ import { AuthGuard } from './interface/http/auth.guard.js';
     ConfirmMfaSetupUseCase,
     ChangePasswordUseCase,
     TenantIdentityProvisioner,
+    TenantUserAccess,
     // Every route is authenticated unless marked @Public.
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
-  exports: [TenantIdentityProvisioner],
+  exports: [TenantIdentityProvisioner, TenantUserAccess],
 })
 export class IdentityModule {}

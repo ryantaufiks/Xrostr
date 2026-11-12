@@ -3,6 +3,8 @@ export {
   TenantIdentityProvisioner,
   type ProvisionedAdmin,
 } from './application/tenant-identity-provisioner.js';
+export { TenantUserAccess, type IssuedInvite } from './application/tenant-user-access.js';
+export type { UserSummary } from './application/ports.js';
 export type { Principal } from './domain/principal.js';
 export {
   AllowMfaSetup,

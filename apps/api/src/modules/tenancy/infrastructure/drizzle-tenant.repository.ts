@@ -36,17 +36,19 @@ export class DrizzleTenantRepository extends TenantRepository {
     return row!.id;
   }
 
+  async findById(id: string): Promise<TenantSummary | null> {
+    const [row] = await this.ctx
+      .executor()
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, id))
+      .limit(1);
+    return row ? toSummary(row) : null;
+  }
+
   async list(): Promise<TenantSummary[]> {
     const rows = await this.ctx.executor().select().from(tenants).orderBy(desc(tenants.createdAt));
-    return rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      slug: r.slug,
-      dataRegion: r.dataRegion,
-      plan: r.plan,
-      status: r.status,
-      createdAt: r.createdAt.toISOString(),
-    }));
+    return rows.map(toSummary);
   }
 
   async insertLegalEntities(entities: readonly LegalEntityDraft[]): Promise<void> {
@@ -70,4 +72,16 @@ export class DrizzleTenantRepository extends TenantRepository {
       registrationNumber: r.registrationNumber,
     }));
   }
+}
+
+function toSummary(r: typeof tenants.$inferSelect): TenantSummary {
+  return {
+    id: r.id,
+    name: r.name,
+    slug: r.slug,
+    dataRegion: r.dataRegion,
+    plan: r.plan,
+    status: r.status,
+    createdAt: r.createdAt.toISOString(),
+  };
 }

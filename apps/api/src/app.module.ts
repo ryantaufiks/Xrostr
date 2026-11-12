@@ -6,6 +6,7 @@ import { AuditModule } from './modules/audit/audit.module.js';
 import { IdentityModule } from './modules/identity/identity.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { TenancyModule } from './modules/tenancy/tenancy.module.js';
+import { WorkforceModule } from './modules/workforce/workforce.module.js';
 import { APP_CONFIG, type AppConfig } from './shared/config/app-config.js';
 import { HealthController } from './health.controller.js';
 import { ProblemDetailsFilter } from './shared/interface/http/problem-details.filter.js';
@@ -37,6 +38,7 @@ export class AppModule {
         TenancyModule,
         AuditModule,
         NotificationsModule,
+        WorkforceModule,
       ],
       controllers: [HealthController],
       providers: [

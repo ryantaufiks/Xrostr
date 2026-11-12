@@ -1,11 +1,28 @@
 'use client';
 
+import type { Permission } from '@xrostr/contracts';
+import { Building2, House, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { AppShell } from '@/components/app-shell';
+import { AppShell, type NavItem } from '@/components/app-shell';
 import { NotificationBell } from '@/components/notification-bell';
 import { Spinner } from '@/components/ui';
 import { PrincipalContext } from '@/lib/principal-context';
 import { useSession } from '@/lib/session';
+
+/** Each person sees only the sections their role can use. */
+function navFor(permissions: readonly Permission[]): NavItem[] {
+  const can = (p: Permission) => permissions.includes(p);
+  return [
+    { href: '/tenant', label: 'Beranda', icon: House },
+    ...(can('employees.read')
+      ? [{ href: '/tenant/employees', label: 'Karyawan', icon: Users }]
+      : []),
+    ...(can('locations.read')
+      ? [{ href: '/tenant/locations', label: 'Site', icon: Building2 }]
+      : []),
+    { href: '/tenant/account', label: 'Akun', icon: UserRound },
+  ];
+}
 
 export default function TenantLayout({ children }: { children: ReactNode }) {
   const principal = useSession('tenant');
@@ -15,10 +32,7 @@ export default function TenantLayout({ children }: { children: ReactNode }) {
       <AppShell
         areaLabel="Perusahaan"
         actions={<NotificationBell href="/tenant/notifications" />}
-        nav={[
-          { href: '/tenant', label: 'Ringkasan' },
-          { href: '/tenant/account', label: 'Akun' },
-        ]}
+        nav={navFor(principal.permissions)}
       >
         {children}
       </AppShell>

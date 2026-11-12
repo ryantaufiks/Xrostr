@@ -1,5 +1,7 @@
 import {
   boolean,
+  date,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -162,5 +164,59 @@ export const notifications = pgTable(
   (t) => [
     index('notifications_user_created_idx').on(t.userId, t.createdAt),
     tenantIsolation('notifications'),
+  ],
+).enableRLS();
+
+/** Work sites (client premises). The legal entity sets the country rules that apply there. */
+export const locations = pgTable(
+  'locations',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    legalEntityId: uuid('legal_entity_id')
+      .notNull()
+      .references(() => legalEntities.id),
+    name: text('name').notNull(),
+    code: text('code').notNull(),
+    address: text('address'),
+    timezone: text('timezone').notNull(),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    geofenceRadiusM: integer('geofence_radius_m').notNull().default(150),
+    status: text('status').notNull().default('active'),
+    ...timestamps,
+    version: version(),
+  },
+  (t) => [unique('locations_tenant_code_uq').on(t.tenantId, t.code), tenantIsolation('locations')],
+).enableRLS();
+
+/** HR record of a person; `userId` is their login. One account per employee. */
+export const employees = pgTable(
+  'employees',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    userId: uuid('user_id')
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    legalEntityId: uuid('legal_entity_id')
+      .notNull()
+      .references(() => legalEntities.id),
+    locationId: uuid('location_id').references(() => locations.id, { onDelete: 'set null' }),
+    employeeNo: text('employee_no').notNull(),
+    fullName: text('full_name').notNull(),
+    phone: text('phone'),
+    jobTitle: text('job_title'),
+    employmentType: text('employment_type').notNull(),
+    startDate: date('start_date').notNull(),
+    status: text('status').notNull().default('active'),
+    ...timestamps,
+    version: version(),
+  },
+  (t) => [
+    unique('employees_tenant_no_uq').on(t.tenantId, t.employeeNo),
+    index('employees_location_idx').on(t.locationId),
+    tenantIsolation('employees'),
   ],
 ).enableRLS();

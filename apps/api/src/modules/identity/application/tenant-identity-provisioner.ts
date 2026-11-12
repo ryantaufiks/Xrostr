@@ -1,15 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { SYSTEM_ROLE_DEFINITIONS } from '@xrostr/contracts';
-import { Clock } from '../../../shared/application/ports.js';
-import { AccountRepository, InviteRepository, OpaqueTokens, RoleRepository } from './ports.js';
+import { RoleRepository } from './ports.js';
+import { TenantUserAccess, type IssuedInvite } from './tenant-user-access.js';
 
-export const INVITE_TTL_MS = 7 * 24 * 60 * 60_000;
-
-export interface ProvisionedAdmin {
-  userId: string;
-  inviteToken: string;
-  inviteExpiresAt: Date;
-}
+export type ProvisionedAdmin = IssuedInvite;
 
 /**
  * Public API of the identity module for onboarding: creates the built-in roles and
@@ -19,23 +13,17 @@ export interface ProvisionedAdmin {
 export class TenantIdentityProvisioner {
   constructor(
     private readonly roles: RoleRepository,
-    private readonly accounts: AccountRepository,
-    private readonly invites: InviteRepository,
-    private readonly opaque: OpaqueTokens,
-    private readonly clock: Clock,
+    private readonly access: TenantUserAccess,
   ) {}
 
   async provision(
     tenantId: string,
     admin: { email: string; fullName: string },
   ): Promise<ProvisionedAdmin> {
-    const roleIds = await this.roles.insertSystemRoles(SYSTEM_ROLE_DEFINITIONS);
-    const userId = await this.accounts.insertInvitedUser(admin.email, admin.fullName);
-    await this.roles.assign(userId, roleIds.get('tenant_admin')!);
-
-    const { token, hash } = this.opaque.generate();
-    const inviteExpiresAt = new Date(this.clock.now().getTime() + INVITE_TTL_MS);
-    await this.invites.insert(userId, hash, inviteExpiresAt);
-    return { userId, inviteToken: `${tenantId}.${token}`, inviteExpiresAt };
+    await this.roles.insertSystemRoles(SYSTEM_ROLE_DEFINITIONS);
+    const invited = await this.access.invite(tenantId, { ...admin, role: 'tenant_admin' });
+    // A brand-new tenant has no users, so the email cannot be taken.
+    if (!invited.ok) throw new Error(invited.error.message);
+    return invited.value;
   }
 }

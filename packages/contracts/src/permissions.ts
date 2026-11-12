@@ -9,11 +9,23 @@ export const PERMISSIONS = [
   'roles.read',
   'roles.manage',
   'audit.read',
+  'employees.read',
+  'employees.manage',
+  'locations.read',
+  'locations.manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
 export const SYSTEM_ROLES = ['tenant_admin', 'hr', 'supervisor', 'employee'] as const;
 export type SystemRole = (typeof SYSTEM_ROLES)[number];
+
+/** Indonesian labels for the built-in roles, shown in the portal. */
+export const ROLE_LABELS: Record<SystemRole, string> = {
+  tenant_admin: 'Admin perusahaan',
+  hr: 'HR / Payroll',
+  supervisor: 'Supervisor',
+  employee: 'Officer / Karyawan',
+};
 
 export interface SystemRoleDefinition {
   readonly key: SystemRole;
@@ -34,13 +46,16 @@ export const SYSTEM_ROLE_DEFINITIONS: readonly SystemRoleDefinition[] = [
       'users.read',
       'users.manage',
       'audit.read',
+      'employees.read',
+      'employees.manage',
+      'locations.read',
     ],
     mfaRequired: true,
   },
   {
     key: 'supervisor',
     name: 'Manager / Supervisor',
-    permissions: ['users.read'],
+    permissions: ['users.read', 'employees.read', 'locations.read'],
     mfaRequired: false,
   },
   { key: 'employee', name: 'Employee', permissions: [], mfaRequired: false },
