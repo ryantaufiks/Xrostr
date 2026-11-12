@@ -61,10 +61,7 @@ export default function TenantsPage() {
                       {t.status === 'active' ? 'Aktif' : 'Ditangguhkan'}
                     </Badge>
                   </div>
-                  <span className="label inline-flex items-center gap-1 font-bold text-fg">
-                    Kelola
-                    <ChevronRight className="size-5" aria-hidden />
-                  </span>
+                  <ChevronRight className="size-6 shrink-0 text-muted" aria-label="Kelola" />
                 </Card>
               </Link>
             </li>
@@ -110,12 +107,19 @@ export default function TenantsPage() {
                   </td>
                   <td className="px-5 py-3.5 text-muted">{formatDate(t.createdAt)}</td>
                   <td className="px-5 py-3.5 text-right">
+                    {/* Icon only; the label slides in on hover or keyboard focus. */}
                     <Link
                       href={`/platform/tenants/${t.id}`}
-                      className={buttonStyles('secondary', 'min-h-11 px-4')}
+                      aria-label={`Kelola ${t.name}`}
+                      className="group label inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full px-3 font-bold text-muted hover:bg-sunken hover:text-fg focus-visible:text-fg"
                     >
                       <Pencil className="size-4" aria-hidden />
-                      Kelola
+                      <span
+                        className="hidden group-hover:inline group-focus-visible:inline"
+                        aria-hidden
+                      >
+                        Kelola
+                      </span>
                     </Link>
                   </td>
                 </tr>
