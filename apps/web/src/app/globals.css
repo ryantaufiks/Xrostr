@@ -74,6 +74,23 @@
     background: var(--accent);
     color: #fff;
   }
+  /*
+   * Browsers paint saved-password fields in their own light blue, which ignores the theme.
+   * The background change is delayed indefinitely so the field keeps our transparent fill,
+   * and the text keeps the theme's colour.
+   */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--fg);
+    caret-color: var(--fg);
+    transition:
+      background-color 600000s 0s,
+      color 600000s 0s;
+  }
+  input:autofill {
+    background-color: transparent;
+  }
 }
 
 /* Small uppercase monospace caption used for labels, table heads and badges. */
