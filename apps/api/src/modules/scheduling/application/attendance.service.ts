@@ -5,8 +5,8 @@ import { Clock, UnitOfWork } from '../../../shared/application/ports.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import type { Principal } from '../../identity/public-api.js';
 import { WorkforceDirectory } from '../../workforce/public-api.js';
-import { distanceMeters, withinGeofence } from '../domain/geo.js';
-import { utcToLocal } from '../domain/local-time.js';
+import { distanceMeters, withinGeofence } from '../../../shared/domain/geo.js';
+import { utcToLocal } from '../../../shared/domain/local-time.js';
 import { SchedulingErrors } from '../domain/scheduling-errors.js';
 import { AttendanceRepository, ShiftRepository, type Shift } from './ports.js';
 

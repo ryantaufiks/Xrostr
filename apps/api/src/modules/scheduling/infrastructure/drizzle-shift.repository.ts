@@ -3,6 +3,10 @@ import type { ShiftKind, ShiftStatus } from '@xrostr/contracts';
 import { shifts } from '@xrostr/db';
 import { and, asc, eq, gt, gte, lt, lte, ne } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
+import {
+  causeCode,
+  PG_EXCLUSION_VIOLATION,
+} from '../../../shared/infrastructure/database/pg-errors.js';
 import { ShiftRepository, type NewShift, type Shift } from '../application/ports.js';
 
 type Row = typeof shifts.$inferSelect;
@@ -19,7 +23,6 @@ const toShift = (r: Row): Shift => ({
 });
 
 /** Postgres error for an exclusion-constraint violation (shifts_no_overlap). */
-const EXCLUSION_VIOLATION = '23P01';
 
 @Injectable()
 export class DrizzleShiftRepository extends ShiftRepository {
@@ -39,7 +42,7 @@ export class DrizzleShiftRepository extends ShiftRepository {
         return row!.id;
       });
     } catch (error) {
-      if (causeCode(error) === EXCLUSION_VIOLATION) return null;
+      if (causeCode(error) === PG_EXCLUSION_VIOLATION) return null;
       throw error;
     }
   }
@@ -165,11 +168,4 @@ export class DrizzleShiftRepository extends ShiftRepository {
   async cancel(id: string): Promise<void> {
     await this.ctx.executor().update(shifts).set({ status: 'cancelled' }).where(eq(shifts.id, id));
   }
-}
-
-export function causeCode(error: unknown): string | undefined {
-  for (let e: unknown = error; e && typeof e === 'object'; e = (e as { cause?: unknown }).cause) {
-    if ('code' in e && typeof e.code === 'string') return e.code;
-  }
-  return undefined;
 }

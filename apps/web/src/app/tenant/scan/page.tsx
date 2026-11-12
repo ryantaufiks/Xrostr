@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { buttonStyles, iconButtonStyles } from '@/components/ui';
-import { parseCheckinQr } from '@/lib/checkin';
+import { scanTarget } from '@/lib/checkin';
 import { useT } from '@/lib/i18n';
 
 interface Detector {
@@ -55,12 +55,10 @@ export default function ScanPage() {
       try {
         const text = await read();
         if (text) {
-          const target = parseCheckinQr(text);
+          const target = scanTarget(text);
           if (target) {
             stopped = true;
-            router.replace(
-              `/tenant/checkin?l=${encodeURIComponent(target.locationId)}&c=${encodeURIComponent(target.code)}`,
-            );
+            router.replace(target);
             return;
           }
           setHint(t.attendance.notXrostrQr);

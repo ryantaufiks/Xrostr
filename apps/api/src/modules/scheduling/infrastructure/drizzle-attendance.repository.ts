@@ -4,9 +4,10 @@ import { attendanceEvents } from '@xrostr/db';
 import { inArray } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import { AttendanceRepository, type NewAttendanceEvent } from '../application/ports.js';
-import { causeCode } from './drizzle-shift.repository.js';
-
-const UNIQUE_VIOLATION = '23505';
+import {
+  causeCode,
+  PG_UNIQUE_VIOLATION,
+} from '../../../shared/infrastructure/database/pg-errors.js';
 
 @Injectable()
 export class DrizzleAttendanceRepository extends AttendanceRepository {
@@ -25,7 +26,7 @@ export class DrizzleAttendanceRepository extends AttendanceRepository {
         return row!.id;
       });
     } catch (error) {
-      if (causeCode(error) === UNIQUE_VIOLATION) return null;
+      if (causeCode(error) === PG_UNIQUE_VIOLATION) return null;
       throw error;
     }
   }

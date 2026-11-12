@@ -11,6 +11,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 import { id, tenantIsolation, timestamps, version } from './columns.js';
@@ -358,5 +359,115 @@ export const leaveRequests = pgTable(
     index('leave_requests_employee_idx').on(t.employeeId, t.startDate),
     index('leave_requests_status_idx').on(t.status),
     tenantIsolation('leave_requests'),
+  ],
+).enableRLS();
+
+/** A patrol route at one site: an ordered set of checkpoints an officer walks. */
+export const patrolRoutes = pgTable(
+  'patrol_routes',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id),
+    name: text('name').notNull(),
+    /** Expected time between rounds during a shift; null when rounds are not scheduled. */
+    intervalMinutes: integer('interval_minutes'),
+    status: text('status').notNull().default('active'),
+    ...timestamps,
+    version: version(),
+  },
+  (t) => [
+    unique('patrol_routes_name_uq').on(t.locationId, t.name),
+    tenantIsolation('patrol_routes'),
+  ],
+).enableRLS();
+
+export const patrolCheckpoints = pgTable(
+  'patrol_checkpoints',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    routeId: uuid('route_id')
+      .notNull()
+      .references(() => patrolRoutes.id),
+    name: text('name').notNull(),
+    position: integer('position').notNull(),
+    /** Secret in the checkpoint's QR code or NFC sticker; rotating it voids the old tag. */
+    tagSecret: text('tag_secret')
+      .notNull()
+      .default(
+        sql`replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '')`,
+      ),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    radiusM: integer('radius_m').notNull().default(30),
+    status: text('status').notNull().default('active'),
+    ...timestamps,
+  },
+  (t) => [
+    unique('patrol_checkpoints_tag_uq').on(t.tenantId, t.tagSecret),
+    index('patrol_checkpoints_route_idx').on(t.routeId, t.position),
+    tenantIsolation('patrol_checkpoints'),
+  ],
+).enableRLS();
+
+/** One walk of a route by one officer during one shift. */
+export const patrolRounds = pgTable(
+  'patrol_rounds',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    routeId: uuid('route_id')
+      .notNull()
+      .references(() => patrolRoutes.id),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    shiftId: uuid('shift_id')
+      .notNull()
+      .references(() => shifts.id),
+    status: text('status').notNull().default('in_progress'),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    /** Active checkpoints when the round started; later edits to the route do not change it. */
+    checkpointCount: integer('checkpoint_count').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // One open round per officer per route, so two quick scans cannot start two rounds.
+    uniqueIndex('patrol_rounds_one_open_uq')
+      .on(t.routeId, t.employeeId)
+      .where(sql`status = 'in_progress'`),
+    index('patrol_rounds_route_idx').on(t.routeId, t.startedAt),
+    index('patrol_rounds_employee_idx').on(t.employeeId, t.startedAt),
+    tenantIsolation('patrol_rounds'),
+  ],
+).enableRLS();
+
+export const patrolScans = pgTable(
+  'patrol_scans',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    roundId: uuid('round_id')
+      .notNull()
+      .references(() => patrolRounds.id),
+    checkpointId: uuid('checkpoint_id')
+      .notNull()
+      .references(() => patrolCheckpoints.id),
+    scannedAt: timestamp('scanned_at', { withTimezone: true }).notNull(),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    accuracyM: integer('accuracy_m'),
+    distanceM: integer('distance_m'),
+    /** True inside the checkpoint radius, false outside, null when it could not be checked. */
+    locationVerified: boolean('location_verified'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('patrol_scans_once_uq').on(t.roundId, t.checkpointId),
+    tenantIsolation('patrol_scans'),
   ],
 ).enableRLS();

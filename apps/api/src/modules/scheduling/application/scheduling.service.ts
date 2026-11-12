@@ -17,7 +17,12 @@ import {
   type WorkforceEmployee,
   type WorkforceLocation,
 } from '../../workforce/public-api.js';
-import { addDays, localDaysToUtcRange, localToUtc, utcToLocal } from '../domain/local-time.js';
+import {
+  addDays,
+  localDaysToUtcRange,
+  localToUtc,
+  utcToLocal,
+} from '../../../shared/domain/local-time.js';
 import { SchedulingErrors } from '../domain/scheduling-errors.js';
 import { AttendanceRepository, ShiftRepository, type Shift } from './ports.js';
 

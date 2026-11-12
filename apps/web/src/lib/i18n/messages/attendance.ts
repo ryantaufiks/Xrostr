@@ -20,8 +20,8 @@ export const attendance = bilingual(
     backToSchedule: 'Kembali ke jadwal',
     scanTitle: 'Pindai QR',
     close: 'Tutup',
-    scanHint: 'Arahkan kamera ke poster QR di lokasi. Absen tercatat otomatis.',
-    notXrostrQr: 'Ini bukan QR absensi Xrostr. Arahkan ke poster QR di lokasi.',
+    scanHint: 'Arahkan kamera ke QR absensi atau QR checkpoint patroli. Tercatat otomatis.',
+    notXrostrQr: 'Ini bukan QR Xrostr. Arahkan ke QR absensi atau QR checkpoint.',
     cameraDenied:
       'Kamera tidak bisa dibuka. Izinkan kamera untuk Xrostr di pengaturan browser, lalu coba lagi.',
     noCamera: 'Browser ini tidak bisa membuka kamera.',
@@ -47,8 +47,9 @@ export const attendance = bilingual(
     backToSchedule: 'Back to schedule',
     scanTitle: 'Scan QR',
     close: 'Close',
-    scanHint: 'Point the camera at the QR poster on site. Attendance is recorded automatically.',
-    notXrostrQr: 'This is not an Xrostr attendance QR. Point at the QR poster on site.',
+    scanHint:
+      'Point the camera at the attendance QR or a patrol checkpoint QR. It records automatically.',
+    notXrostrQr: 'This is not an Xrostr QR. Point at the attendance QR or a checkpoint QR.',
     cameraDenied:
       'The camera could not open. Allow the camera for Xrostr in the browser settings, then try again.',
     noCamera: 'This browser cannot open the camera.',
