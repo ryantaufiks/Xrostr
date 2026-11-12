@@ -1,7 +1,7 @@
 'use client';
 
 import type { AttendanceResult } from '@xrostr/contracts';
-import { CheckCircle2, LogIn, LogOut, MapPinOff, ScanLine } from 'lucide-react';
+import { CheckCircle2, Footprints, LogIn, LogOut, MapPinOff, ScanLine } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
@@ -26,39 +26,45 @@ function Checkin() {
   const code = params.get('c');
   const [state, setState] = useState<State>({ step: 'locating' });
   const started = useRef(false);
+  /** Retry repeats what failed, a plain scan or an explicit check-out. */
+  const lastAction = useRef<'check_out' | undefined>(undefined);
 
-  const run = useCallback(async () => {
-    if (!locationId || !code) {
-      setState({ step: 'failed', message: t.attendance.incompleteQr });
-      return;
-    }
-    setState({ step: 'locating' });
-    try {
-      const position = await currentPosition();
-      setState({ step: 'sending' });
-      const result = await api<AttendanceResult>('/me/attendance', {
-        body: { locationId, code, ...position },
-      });
-      setState({ step: 'done', result });
-    } catch (e) {
-      if (e instanceof ApiError) {
-        const d = e.details as { distanceM?: number; radiusM?: number };
-        setState({
-          step: 'failed',
-          message: e.message,
-          distance:
-            d.distanceM != null && d.radiusM != null
-              ? { distanceM: d.distanceM, radiusM: d.radiusM }
-              : undefined,
-        });
-      } else {
-        setState({
-          step: 'failed',
-          message: e instanceof Error ? e.message : t.common.error,
-        });
+  const run = useCallback(
+    async (action?: 'check_out') => {
+      lastAction.current = action;
+      if (!locationId || !code) {
+        setState({ step: 'failed', message: t.attendance.incompleteQr });
+        return;
       }
-    }
-  }, [code, locationId]);
+      setState({ step: 'locating' });
+      try {
+        const position = await currentPosition();
+        setState({ step: 'sending' });
+        const result = await api<AttendanceResult>('/me/attendance', {
+          body: { locationId, code, ...position, ...(action && { action }) },
+        });
+        setState({ step: 'done', result });
+      } catch (e) {
+        if (e instanceof ApiError) {
+          const d = e.details as { distanceM?: number; radiusM?: number };
+          setState({
+            step: 'failed',
+            message: e.message,
+            distance:
+              d.distanceM != null && d.radiusM != null
+                ? { distanceM: d.distanceM, radiusM: d.radiusM }
+                : undefined,
+          });
+        } else {
+          setState({
+            step: 'failed',
+            message: e instanceof Error ? e.message : t.common.error,
+          });
+        }
+      }
+    },
+    [code, locationId],
+  );
 
   useEffect(() => {
     // One scan, one attempt: never record twice on a re-render.
@@ -87,7 +93,7 @@ function Checkin() {
           )}
         </Card>
         <div className="grid gap-3">
-          <Button onClick={() => void run()}>{t.common.retry}</Button>
+          <Button onClick={() => void run(lastAction.current)}>{t.common.retry}</Button>
           <Link href="/tenant/scan" className={buttonStyles('secondary')}>
             <ScanLine className="size-5" aria-hidden />
             {t.attendance.rescan}
@@ -99,13 +105,18 @@ function Checkin() {
 
   const { result } = state;
   const isIn = result.kind === 'check_in';
-  const Icon = isIn ? LogIn : LogOut;
+  const isVisit = result.kind === 'visit';
+  const Icon = isVisit ? Footprints : isIn ? LogIn : LogOut;
   return (
     <div className="space-y-6">
       <Card className="flex flex-col items-center px-6 py-10 text-center">
         <CheckCircle2 className="size-16 text-fg" aria-hidden />
         <h1 className="mt-4 text-2xl font-bold text-fg">
-          {isIn ? t.attendance.checkedIn : t.attendance.checkedOut}
+          {isVisit
+            ? t.visits.visitRecorded
+            : isIn
+              ? t.attendance.checkedIn
+              : t.attendance.checkedOut}
         </h1>
         <p className="mt-3 text-5xl font-bold tracking-tight text-fg tabular-nums">
           {localClock(result.occurredAt, result.shift.timezone)}
@@ -121,15 +132,24 @@ function Checkin() {
             {result.lateMinutes ? t.attendance.lateBy(result.lateMinutes) : t.attendance.onTime}
           </p>
         )}
+        {isVisit && <p className="mt-3 max-w-sm text-lg text-muted">{t.visits.visitHint}</p>}
         <div className="mt-6 flex items-center gap-2 text-base text-muted">
           <Icon className="size-5" aria-hidden />
           {result.shift.locationName} · {dayLabel(result.shift.localDate)} ·{' '}
           {shiftHours(result.shift)}
         </div>
       </Card>
-      <Link href="/tenant" className={buttonStyles('primary', 'w-full')}>
-        {t.attendance.backToSchedule}
-      </Link>
+      <div className="grid gap-3">
+        <Link href="/tenant" className={buttonStyles('primary', 'w-full')}>
+          {t.attendance.backToSchedule}
+        </Link>
+        {isVisit && (
+          <Button variant="secondary" onClick={() => void run('check_out')}>
+            <LogOut className="size-5" aria-hidden />
+            {t.visits.endShift}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

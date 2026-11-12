@@ -193,6 +193,7 @@ export class ReliefService {
         new Date(start.getTime() - DAY_MS),
         request.endsAt,
       );
+      let pulled: (typeof mine)[number] | null = null;
       for (const s of mine) {
         if (
           s.kind === 'standby' ||
@@ -202,6 +203,7 @@ export class ReliefService {
           continue;
         if (s.startsAt < start) await this.shifts.truncate(s.id, start);
         else await this.shifts.cancel(s.id);
+        if (s.zoneId) pulled = s;
       }
       // The original officer keeps the part they may already have worked.
       if (original.startsAt < start) await this.shifts.truncate(original.id, start);
@@ -228,6 +230,7 @@ export class ReliefService {
       await this.relief.close(request.id, 'filled', now, {
         employeeId: me.id,
         shiftId: newShiftId,
+        pulledShiftId: pulled?.id ?? null,
       });
 
       const originalOfficer = await this.workforce.employee(original.employeeId);
@@ -247,6 +250,7 @@ export class ReliefService {
           },
         },
       });
+      if (pulled?.zoneId) await this.warnZoneUnserved(tenantId, request, pulled.zoneId, me, start);
       if (originalOfficer) {
         await this.notifier.notify(tenantId, {
           userId: originalOfficer.userId,
@@ -395,6 +399,34 @@ export class ReliefService {
       weekStart: week.start,
       weekEnd: week.end,
       weeklyLimit: entity ? (WEEKLY_HOUR_LIMITS[entity.countryCode] ?? 44) : 44,
+    });
+  }
+
+  /** Tells the requester that the relief officer's zone has nobody from `since` on. */
+  private async warnZoneUnserved(
+    tenantId: string,
+    request: ReliefRequest,
+    zoneId: string,
+    officer: { fullName: string },
+    since: Date,
+  ) {
+    const zone = await this.zones.findById(zoneId);
+    if (!zone) return;
+    const at = utcToLocal(since, zone.locations[0]?.timezone ?? 'UTC').time;
+    await this.notifier.notify(tenantId, {
+      userId: request.requestedBy,
+      kind: 'zone.unserved',
+      url: '/tenant/roving',
+      text: {
+        en: {
+          title: 'Zone left unserved',
+          body: `${zone.name} has no roving officer from ${at}: ${officer.fullName} left it for the relief.`,
+        },
+        id: {
+          title: 'Zona tidak terlayani',
+          body: `${zone.name} tanpa officer roving sejak ${at.replace(':', '.')}: ${officer.fullName} ditarik menjadi pengganti.`,
+        },
+      },
     });
   }
 

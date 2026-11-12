@@ -4,6 +4,7 @@ import type { Permission } from '@xrostr/contracts';
 import {
   Building2,
   CalendarDays,
+  Footprints,
   House,
   Palmtree,
   Route,
@@ -28,7 +29,10 @@ function navFor(permissions: readonly Permission[], nav: Dictionary['home']['nav
       ? [{ href: '/tenant/employees', label: nav.employees, icon: Users }]
       : []),
     ...(can('schedules.read')
-      ? [{ href: '/tenant/roster', label: nav.roster, icon: CalendarDays }]
+      ? [
+          { href: '/tenant/roster', label: nav.roster, icon: CalendarDays },
+          { href: '/tenant/roving', label: nav.roving, icon: Footprints },
+        ]
       : []),
     // Officers patrol; planners and HR monitor. Everyone in a tenant has a reason to be here.
     { href: '/tenant/patrol', label: nav.patrol, icon: Route },

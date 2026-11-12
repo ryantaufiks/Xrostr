@@ -183,7 +183,7 @@ export class DrizzleReliefRepository extends ReliefRepository {
     id: string,
     status: Exclude<ReliefStatus, 'open'>,
     at: Date,
-    filled?: { employeeId: string; shiftId: string },
+    filled?: { employeeId: string; shiftId: string; pulledShiftId?: string | null },
   ): Promise<void> {
     await this.ctx
       .executor()
@@ -191,7 +191,11 @@ export class DrizzleReliefRepository extends ReliefRepository {
       .set({
         status,
         closedAt: at,
-        ...(filled && { filledEmployeeId: filled.employeeId, newShiftId: filled.shiftId }),
+        ...(filled && {
+          filledEmployeeId: filled.employeeId,
+          newShiftId: filled.shiftId,
+          pulledShiftId: filled.pulledShiftId ?? null,
+        }),
       })
       .where(eq(reliefRequests.id, id));
   }

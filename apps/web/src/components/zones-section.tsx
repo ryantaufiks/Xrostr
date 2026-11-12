@@ -1,10 +1,15 @@
 'use client';
 
-import type { LocationView, ZoneView } from '@xrostr/contracts';
+import { VISIT_GAP_CHOICES, type LocationView, type ZoneView } from '@xrostr/contracts';
+import { Footprints } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
+import { useToast } from '@/components/toast';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
-import { Button, Card, Field, Input, cx } from './ui';
+import { Button, Card, Field, Input, Select, buttonStyles, cx } from './ui';
+
+const VISIT_CHOICES = [0, 1, 2, 3, 4, 5, 6] as const;
 
 /** Lists roving zones and lets a planner create one by naming it and picking its sites. */
 export function ZonesSection({
@@ -63,12 +68,15 @@ export function ZonesSection({
       {zones.length > 0 && (
         <ul className="divide-y divide-line">
           {zones.map((z) => (
-            <li key={z.id} className="py-2">
-              <p className="font-semibold text-fg">{z.name}</p>
-              <p className="text-sm text-muted">{z.locations.map((l) => l.name).join(' · ')}</p>
-            </li>
+            <ZoneRow key={z.id} zone={z} onChanged={onChanged} />
           ))}
         </ul>
+      )}
+      {zones.length > 0 && (
+        <Link href="/tenant/roving" className={buttonStyles('ghost', 'min-h-11 px-0')}>
+          <Footprints className="size-5" aria-hidden />
+          {t.visits.viewVisits}
+        </Link>
       )}
 
       {open && (
@@ -105,5 +113,111 @@ export function ZonesSection({
         </div>
       )}
     </Card>
+  );
+}
+
+/** One zone: its sites with their visit targets, editable in place. */
+function ZoneRow({ zone, onChanged }: { zone: ZoneView; onChanged: () => Promise<void> }) {
+  const t = useT();
+  const toast = useToast();
+  const [editing, setEditing] = useState(false);
+  const [gap, setGap] = useState(zone.visitGapMinutes);
+  const [targets, setTargets] = useState<Record<string, number>>(() =>
+    Object.fromEntries(zone.locations.map((l) => [l.id, l.minVisits])),
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const gapChoices: readonly number[] = VISIT_GAP_CHOICES.includes(
+    zone.visitGapMinutes as (typeof VISIT_GAP_CHOICES)[number],
+  )
+    ? VISIT_GAP_CHOICES
+    : [...VISIT_GAP_CHOICES, zone.visitGapMinutes].sort((a, b) => a - b);
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      await api(`/tenant/zones/${zone.id}/targets`, {
+        method: 'PUT',
+        body: {
+          visitGapMinutes: gap,
+          targets: zone.locations.map((l) => ({ locationId: l.id, minVisits: targets[l.id] ?? 0 })),
+        },
+      });
+      toast.push('success', t.visits.saved);
+      setEditing(false);
+      await onChanged();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t.common.error);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <li className="space-y-2 py-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-semibold text-fg">{zone.name}</p>
+          <p className="text-sm text-muted">
+            {zone.locations
+              .map((l) => (l.minVisits > 0 ? `${l.name} (${l.minVisits}×)` : l.name))
+              .join(' · ')}
+          </p>
+        </div>
+        {!editing && (
+          <Button
+            variant="ghost"
+            className="min-h-11 shrink-0 px-0"
+            onClick={() => setEditing(true)}
+          >
+            {t.visits.editTargets}
+          </Button>
+        )}
+      </div>
+      {editing && (
+        <div className="space-y-3 rounded-xl border border-line p-4">
+          <p className="label font-bold text-fg">{t.visits.targetsTitle}</p>
+          <p className="text-sm text-muted">{t.visits.targetsHint}</p>
+          {error && <p className="text-sm text-accent">{error}</p>}
+          {zone.locations.map((l) => (
+            <Field key={l.id} label={l.name} htmlFor={`target-${zone.id}-${l.id}`}>
+              <Select
+                id={`target-${zone.id}-${l.id}`}
+                value={targets[l.id] ?? 0}
+                onChange={(e) => setTargets((v) => ({ ...v, [l.id]: Number(e.target.value) }))}
+              >
+                {VISIT_CHOICES.map((n) => (
+                  <option key={n} value={n}>
+                    {t.visits.perShift(n)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ))}
+          <Field label={t.visits.gapLabel} htmlFor={`gap-${zone.id}`}>
+            <Select
+              id={`gap-${zone.id}`}
+              value={gap}
+              onChange={(e) => setGap(Number(e.target.value))}
+            >
+              {gapChoices.map((m) => (
+                <option key={m} value={m}>
+                  {t.visits.minutes(m)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <div className="flex flex-wrap gap-3">
+            <Button loading={saving} onClick={save}>
+              {t.visits.saveTargets}
+            </Button>
+            <Button variant="ghost" onClick={() => setEditing(false)}>
+              {t.common.cancel}
+            </Button>
+          </div>
+        </div>
+      )}
+    </li>
   );
 }

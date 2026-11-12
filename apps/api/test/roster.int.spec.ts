@@ -247,6 +247,89 @@ describe('roster planning: zones, roving, standby, staffing, copy and conflicts'
         .expect(200);
       expect(scan.body.round).toMatchObject({ status: 'completed', scanned: 1 });
     });
+
+    it('sets visit targets only for the zone’s own sites, privately', async () => {
+      const outsider = await http
+        .put(`/tenant/zones/${zone}/targets`)
+        .set(bearer(admin))
+        .send({ visitGapMinutes: 60, targets: [{ locationId: siteC, minVisits: 1 }] })
+        .expect(404);
+      expect(outsider.body.code).toBe('location_not_found');
+      await http
+        .put(`/tenant/zones/${zone}/targets`)
+        .set(bearer(rivalAdmin))
+        .send({ visitGapMinutes: 60, targets: [{ locationId: siteA, minVisits: 1 }] })
+        .expect(404);
+
+      const saved = await http
+        .put(`/tenant/zones/${zone}/targets`)
+        .set(bearer(admin))
+        .send({
+          visitGapMinutes: 60,
+          targets: [
+            { locationId: siteA, minVisits: 2 },
+            { locationId: siteB, minVisits: 1 },
+          ],
+        })
+        .expect(200);
+      expect(saved.body.visitGapMinutes).toBe(60);
+      expect(saved.body.locations).toEqual([
+        { id: siteA, name: 'Site A-01', minVisits: 2 },
+        { id: siteB, name: 'Site B-01', minVisits: 1 },
+      ]);
+    });
+
+    it('records a visit, not a check-out, when the roving officer scans during the shift', async () => {
+      const visit = await http
+        .post('/me/attendance')
+        .set(bearer(rover.token))
+        .send({ locationId: siteA, code: await checkinCode(siteA), ...POINT, accuracy: 10 })
+        .expect(200);
+      expect(visit.body).toMatchObject({ kind: 'visit', roving: true });
+      // A second scan straight away is recorded, but counts as the same visit.
+      await http
+        .post('/me/attendance')
+        .set(bearer(rover.token))
+        .send({ locationId: siteA, code: await checkinCode(siteA), ...POINT, accuracy: 10 })
+        .expect(200);
+
+      const day = siteClock(-20).date;
+      const [view] = (
+        await http.get(`/tenant/roving/visits?date=${day}`).set(bearer(admin)).expect(200)
+      ).body;
+      expect(view).toMatchObject({
+        zone: { id: zone, name: 'Cluster Sudirman' },
+        phase: 'running',
+        unservedSince: null,
+        visitGapMinutes: 60,
+      });
+      expect(view.checkedInAt).not.toBeNull();
+      const bySite = Object.fromEntries(
+        view.sites.map((s: { location: { id: string } }) => [s.location.id, s]),
+      );
+      // Site B: the check-in and the patrol scan minutes apart make one visit.
+      expect(bySite[siteB]).toMatchObject({ visits: 1, minVisits: 1, state: 'met' });
+      expect(bySite[siteA]).toMatchObject({ visits: 1, minVisits: 2, state: 'pending' });
+      expect(
+        (await http.get(`/tenant/roving/visits?date=${day}`).set(bearer(rivalAdmin)).expect(200))
+          .body,
+      ).toEqual([]);
+    });
+
+    it('ends the roving shift when the officer asks to check out', async () => {
+      const out = await http
+        .post('/me/attendance')
+        .set(bearer(rover.token))
+        .send({
+          locationId: siteA,
+          code: await checkinCode(siteA),
+          ...POINT,
+          accuracy: 10,
+          action: 'check_out',
+        })
+        .expect(200);
+      expect(out.body.kind).toBe('check_out');
+    });
   });
 
   describe('standby', () => {

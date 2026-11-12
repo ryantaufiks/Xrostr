@@ -183,7 +183,79 @@ export type CreateZoneRequest = z.infer<typeof createZoneSchema>;
 export interface ZoneView {
   id: string;
   name: string;
-  locations: { id: string; name: string }[];
+  /** Touches at one site closer together than this count as one visit. */
+  visitGapMinutes: number;
+  /** `minVisits`: visits a roving officer owes the site per shift; 0 means no target. */
+  locations: { id: string; name: string; minVisits: number }[];
+}
+
+export const VISIT_GAP_CHOICES = [30, 60, 90, 120, 180] as const;
+export const MAX_MIN_VISITS = 12;
+
+export const updateZoneTargetsSchema = z.object({
+  visitGapMinutes: z.number().int().min(15).max(480),
+  targets: z
+    .array(
+      z.object({
+        locationId: z.uuid(),
+        minVisits: z.number().int().min(0).max(MAX_MIN_VISITS),
+      }),
+    )
+    .min(1),
+});
+export type UpdateZoneTargetsRequest = z.infer<typeof updateZoneTargetsSchema>;
+
+/**
+ * How many visits a list of touches at one site makes: a touch counts when it comes at least
+ * `gapMinutes` after the last counted one. Shared by the API and the worker.
+ */
+export function countVisits(times: readonly Date[], gapMinutes: number): number {
+  const gap = gapMinutes * 60_000;
+  let count = 0;
+  let last = -Infinity;
+  for (const t of [...times].map((d) => d.getTime()).sort((a, b) => a - b)) {
+    if (t - last >= gap) {
+      count++;
+      last = t;
+    }
+  }
+  return count;
+}
+
+/**
+ * - `met`: target reached. `behind`: running, and the time left is too short for the visits
+ *   still owed. `pending`: still owed, with time left. `missed`: the shift ended short.
+ *   `unserved`: the officer was pulled away as a relief before the target was met.
+ *   `none`: the site has no target.
+ */
+export const VISIT_STATES = ['met', 'pending', 'behind', 'missed', 'unserved', 'none'] as const;
+export type VisitState = (typeof VISIT_STATES)[number];
+
+export const rovingVisitsQuerySchema = z.object({ date: isoDate });
+export type RovingVisitsQuery = z.infer<typeof rovingVisitsQuerySchema>;
+
+export interface RovingShiftVisits {
+  shiftId: string;
+  employee: { id: string; fullName: string };
+  zone: { id: string; name: string };
+  timezone: string;
+  localDate: string;
+  localStart: string;
+  localEnd: string;
+  phase: 'upcoming' | 'running' | 'ended';
+  checkedInAt: string | null;
+  /** Set when the officer was pulled away as a relief: the zone is unserved from this time. */
+  unservedSince: string | null;
+  /** Where the officer went as a relief. */
+  pulledTo: { id: string; name: string } | null;
+  visitGapMinutes: number;
+  sites: {
+    location: { id: string; name: string };
+    minVisits: number;
+    visits: number;
+    lastVisitAt: string | null;
+    state: VisitState;
+  }[];
 }
 
 // ---------- Relief (replacement) ----------
@@ -259,4 +331,12 @@ export interface MyReliefOffer {
   localStart: string;
   localEnd: string;
   timezone: string;
+}
+
+/**
+ * Whether the time left in a running roving shift is too short for the visits still owed,
+ * allowing one visit gap per visit. Shared by the visit view and the worker's warning.
+ */
+export function visitsAtRisk(owed: number, remainingMs: number, gapMinutes: number): boolean {
+  return owed > 0 && remainingMs < owed * gapMinutes * 60_000;
 }

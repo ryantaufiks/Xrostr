@@ -6,6 +6,7 @@ export const home = bilingual(
       home: 'Beranda',
       employees: 'Karyawan',
       roster: 'Jadwal',
+      roving: 'Roving',
       patrol: 'Patroli',
       alerts: 'Peringatan',
       leave: 'Cuti',
@@ -65,6 +66,7 @@ export const home = bilingual(
       'relief.requested': 'Pengganti dicari',
       'relief.accepted': 'Pengganti menerima shift',
       'relief.cancelled': 'Pencarian pengganti dihentikan',
+      'zone.targets_updated': 'Target kunjungan zona diubah',
     } as Record<string, string>,
   },
   {
@@ -72,6 +74,7 @@ export const home = bilingual(
       home: 'Home',
       employees: 'Employees',
       roster: 'Roster',
+      roving: 'Roving',
       patrol: 'Patrol',
       alerts: 'Alerts',
       leave: 'Leave',
@@ -131,6 +134,7 @@ export const home = bilingual(
       'relief.requested': 'Relief requested',
       'relief.accepted': 'Relief accepted the shift',
       'relief.cancelled': 'Relief search stopped',
+      'zone.targets_updated': 'Zone visit targets changed',
     },
   },
 );

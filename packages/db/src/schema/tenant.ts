@@ -266,6 +266,8 @@ export const zones = pgTable(
     tenantId: tenantId(),
     name: text('name').notNull(),
     status: text('status').notNull().default('active'),
+    /** Two touches at one site closer together than this count as one visit. */
+    visitGapMinutes: integer('visit_gap_minutes').notNull().default(60),
     ...timestamps,
     version: version(),
   },
@@ -282,6 +284,8 @@ export const zoneLocations = pgTable(
     locationId: uuid('location_id')
       .notNull()
       .references(() => locations.id, { onDelete: 'cascade' }),
+    /** Visits a roving officer owes this site per shift; 0 means no target. */
+    minVisits: integer('min_visits').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -659,6 +663,8 @@ export const reliefRequests = pgTable(
     timeoutMinutes: integer('timeout_minutes').notNull(),
     filledEmployeeId: uuid('filled_employee_id').references(() => employees.id),
     newShiftId: uuid('new_shift_id').references(() => shifts.id),
+    /** The roving shift the relief officer left: its zone goes unserved from then on. */
+    pulledShiftId: uuid('pulled_shift_id').references(() => shifts.id),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     closedAt: timestamp('closed_at', { withTimezone: true }),
   },
@@ -696,4 +702,51 @@ export const reliefOffers = pgTable(
     index('relief_offers_employee_idx').on(t.employeeId, t.status),
     tenantIsolation('relief_offers'),
   ],
+).enableRLS();
+
+/**
+ * A roving officer's visit to a site of their zone, recorded by scanning the site's QR code
+ * again after checking in. Check-ins, check-outs and patrol scans count as visits too.
+ */
+export const siteVisits = pgTable(
+  'site_visits',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    shiftId: uuid('shift_id')
+      .notNull()
+      .references(() => shifts.id),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    latitude: doublePrecision('latitude').notNull(),
+    longitude: doublePrecision('longitude').notNull(),
+    accuracyM: integer('accuracy_m'),
+    distanceM: integer('distance_m').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('site_visits_shift_idx').on(t.shiftId, t.occurredAt),
+    tenantIsolation('site_visits'),
+  ],
+).enableRLS();
+
+/** Remembers that planners were warned a roving shift will miss a site's visit target. */
+export const visitAlerts = pgTable(
+  'visit_alerts',
+  {
+    tenantId: tenantId(),
+    shiftId: uuid('shift_id')
+      .notNull()
+      .references(() => shifts.id),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id),
+    alertedAt: timestamp('alerted_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.shiftId, t.locationId] }), tenantIsolation('visit_alerts')],
 ).enableRLS();

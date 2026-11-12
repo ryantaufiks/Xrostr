@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { locations, zoneLocations, zones } from '@xrostr/db';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import {
   causeCode,
@@ -24,17 +24,21 @@ export class DrizzleZoneRepository extends ZoneRepository {
         id: locations.id,
         name: locations.name,
         timezone: locations.timezone,
+        minVisits: zoneLocations.minVisits,
       })
       .from(zoneLocations)
-      .innerJoin(locations, eq(zoneLocations.locationId, locations.id));
+      .innerJoin(locations, eq(zoneLocations.locationId, locations.id))
+      .orderBy(asc(locations.name));
     const byZone = Map.groupBy(members, (m) => m.zoneId);
     return zoneRows.map((z) => ({
       id: z.id,
       name: z.name,
+      visitGapMinutes: z.visitGapMinutes,
       locations: (byZone.get(z.id) ?? []).map((l) => ({
         id: l.id,
         name: l.name,
         timezone: l.timezone,
+        minVisits: l.minVisits,
       })),
     }));
   }
@@ -48,15 +52,13 @@ export class DrizzleZoneRepository extends ZoneRepository {
         id: locations.id,
         name: locations.name,
         timezone: locations.timezone,
+        minVisits: zoneLocations.minVisits,
       })
       .from(zoneLocations)
       .innerJoin(locations, eq(zoneLocations.locationId, locations.id))
-      .where(eq(zoneLocations.zoneId, id));
-    return {
-      id: row.id,
-      name: row.name,
-      locations: members.map((l) => ({ id: l.id, name: l.name, timezone: l.timezone })),
-    };
+      .where(eq(zoneLocations.zoneId, id))
+      .orderBy(asc(locations.name));
+    return { id: row.id, name: row.name, visitGapMinutes: row.visitGapMinutes, locations: members };
   }
 
   async insert(name: string, locationIds: readonly string[]): Promise<string | null> {
@@ -94,5 +96,20 @@ export class DrizzleZoneRepository extends ZoneRepository {
       }
       return id;
     });
+  }
+
+  async updateTargets(
+    id: string,
+    visitGapMinutes: number,
+    targets: readonly { locationId: string; minVisits: number }[],
+  ): Promise<void> {
+    const db = this.ctx.executor();
+    await db.update(zones).set({ visitGapMinutes, updatedAt: new Date() }).where(eq(zones.id, id));
+    for (const t of targets) {
+      await db
+        .update(zoneLocations)
+        .set({ minVisits: t.minVisits })
+        .where(and(eq(zoneLocations.zoneId, id), eq(zoneLocations.locationId, t.locationId)));
+    }
   }
 }

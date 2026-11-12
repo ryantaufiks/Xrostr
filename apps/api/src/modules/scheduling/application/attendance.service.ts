@@ -8,13 +8,15 @@ import { WorkforceDirectory } from '../../workforce/public-api.js';
 import { distanceMeters, withinGeofence } from '../../../shared/domain/geo.js';
 import { utcToLocal } from '../../../shared/domain/local-time.js';
 import { SchedulingErrors } from '../domain/scheduling-errors.js';
-import { AttendanceRepository, ShiftRepository, type Shift } from './ports.js';
+import { AttendanceRepository, ShiftRepository, VisitRepository, type Shift } from './ports.js';
 
 const HOUR = 3_600_000;
 /** Check-in opens this long before the shift starts. */
 export const CHECKIN_OPENS_BEFORE_MS = 2 * HOUR;
 /** Check-out stays possible this long after the shift ends. */
 export const CHECKOUT_CLOSES_AFTER_MS = 4 * HOUR;
+/** On a roving shift, a scan this close to the end checks out instead of recording a visit. */
+export const ROVING_CHECKOUT_FROM_END_MS = 30 * 60_000;
 
 const sameSecret = (a: string, b: string) => {
   const x = Buffer.from(a);
@@ -25,7 +27,8 @@ const sameSecret = (a: string, b: string) => {
 /**
  * Check-in and check-out by scanning the site's QR code. Valid only with the site's current
  * code, a GPS position inside the geofence, and a published shift whose window is open.
- * The first scan of a shift checks in; the next one checks out.
+ * The first scan of a shift checks in; the next one checks out. On a roving shift, later scans
+ * at the zone's sites record visits until the last half hour, or until the officer asks to end.
  */
 @Injectable()
 export class AttendanceService {
@@ -33,6 +36,7 @@ export class AttendanceService {
     private readonly uow: UnitOfWork,
     private readonly shifts: ShiftRepository,
     private readonly attendance: AttendanceRepository,
+    private readonly visits: VisitRepository,
     private readonly workforce: WorkforceDirectory,
     private readonly clock: Clock,
   ) {}
@@ -76,6 +80,25 @@ export class AttendanceService {
         );
       }
 
+      const accuracyM = input.accuracy != null ? Math.round(input.accuracy) : null;
+      if (
+        open?.zoneId &&
+        input.action !== 'check_out' &&
+        now.getTime() < open.endsAt.getTime() - ROVING_CHECKOUT_FROM_END_MS
+      ) {
+        await this.visits.insert({
+          shiftId: open.id,
+          employeeId: me.id,
+          locationId: site.id,
+          occurredAt: now,
+          latitude: input.latitude,
+          longitude: input.longitude,
+          accuracyM,
+          distanceM,
+        });
+        return ok(toResult('visit', now, null, distanceM, open, site.timezone, site.name));
+      }
+
       const kind = open ? 'check_out' : 'check_in';
       const lateMinutes =
         kind === 'check_in'
@@ -89,7 +112,7 @@ export class AttendanceService {
         occurredAt: now,
         latitude: input.latitude,
         longitude: input.longitude,
-        accuracyM: input.accuracy != null ? Math.round(input.accuracy) : null,
+        accuracyM,
         distanceM,
         lateMinutes,
       });
@@ -102,7 +125,7 @@ export class AttendanceService {
 }
 
 function toResult(
-  kind: 'check_in' | 'check_out',
+  kind: AttendanceResult['kind'],
   at: Date,
   lateMinutes: number | null,
   distanceM: number,
@@ -113,6 +136,7 @@ function toResult(
   const start = utcToLocal(shift.startsAt, timezone);
   return {
     kind,
+    roving: shift.zoneId != null,
     occurredAt: at.toISOString(),
     lateMinutes,
     distanceM,

@@ -11,11 +11,19 @@ export const recordAttendanceSchema = z.object({
   longitude: z.number().min(-180).max(180),
   /** Reported GPS accuracy in metres. */
   accuracy: z.number().min(0).max(10_000).optional(),
+  /**
+   * On a roving shift a scan during the shift records a visit; send `check_out` to end the
+   * shift instead. Ignored for site shifts, where the second scan always checks out.
+   */
+  action: z.enum(['check_out']).optional(),
 });
 export type RecordAttendanceRequest = z.infer<typeof recordAttendanceSchema>;
 
 export interface AttendanceResult {
-  kind: AttendanceKind;
+  /** `visit`: a roving officer's scan at a site of their zone during the shift. */
+  kind: AttendanceKind | 'visit';
+  /** For a roving shift: whether the officer could end the shift with this scan instead. */
+  roving?: boolean;
   occurredAt: string;
   /** Minutes after the shift start; 0 when on time. Check-ins only. */
   lateMinutes: number | null;

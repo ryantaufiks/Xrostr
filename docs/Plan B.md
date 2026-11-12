@@ -91,12 +91,26 @@ berpindah otomatis, tanpa dua pengganti untuk satu kekosongan.
 
 ## B2 — Target kunjungan roving
 
-- Per zona per site: **minimal kunjungan per shift** (mis. 2). Kunjungan = absen di site itu atau
-  memindai checkpoint patroli site itu, dengan jeda minimal antar kunjungan.
-- Tampilan supervisor: per shift roving, site mana yang sudah/belum dikunjungi.
-- Worker: peringatan bila sisa waktu shift tidak cukup untuk memenuhi target.
-- Bila officer roving ditarik jadi pengganti (B1), site zonanya ditandai **tidak terlayani** sejak
-  saat itu.
+- Per zona per site: **minimal kunjungan per shift** (mis. 2), dan per zona **jeda minimal antar
+  kunjungan** (default 60 menit). Diatur di bagian Zona halaman Jadwal (_Atur target_).
+- **Kunjungan** = absen masuk/pulang, pindai QR site, atau pindai checkpoint patroli di site itu.
+  Sentuhan yang lebih dekat dari jeda dihitung satu kunjungan.
+- **Pindai QR site saat shift roving berjalan** mencatat kunjungan (`site_visits`), bukan absen
+  pulang. Absen pulang terjadi pada 30 menit terakhir shift, atau lewat tombol _Akhiri shift di sini_.
+- Tampilan supervisor **Roving** (`/tenant/roving`): per shift roving di satu tanggal, tiap site
+  zona dengan _kunjungan/target_, waktu kunjungan terakhir, dan status `Tercapai` / `Belum` /
+  `Tertinggal` / `Tidak tercapai` / `Tidak terlayani`.
+- Worker `VisitMonitor`: bila sisa waktu shift < jeda × kunjungan yang masih kurang, perencana dan
+  officer diberi tahu, sekali per shift per site (`visit_alerts`).
+- Bila officer roving ditarik jadi pengganti (B1), permintaan menyimpan shift roving yang
+  ditinggalkan (`relief_requests.pulled_shift_id`), peminta diberi tahu _Zona tidak terlayani_, dan
+  tampilan Roving menandai zona itu **tidak terlayani** sejak saat itu.
+
+| Method | Path                                    | Izin               |
+| ------ | --------------------------------------- | ------------------ |
+| PUT    | `/tenant/zones/:id/targets`             | `schedules.manage` |
+| GET    | `/tenant/roving/visits?date=YYYY-MM-DD` | `schedules.read`   |
+| POST   | `/me/attendance` (`action: check_out`)  | tenant user        |
 
 ## B3 — Pola rotasi dan isi otomatis
 

@@ -117,11 +117,14 @@ export interface ZoneLocation {
   id: string;
   name: string;
   timezone: string;
+  /** Visits owed per roving shift; 0 means no target. */
+  minVisits: number;
 }
 
 export interface Zone {
   id: string;
   name: string;
+  visitGapMinutes: number;
   locations: ZoneLocation[];
 }
 
@@ -131,6 +134,48 @@ export abstract class ZoneRepository {
   abstract findById(id: string): Promise<Zone | null>;
   /** Null when a zone with that name already exists. */
   abstract insert(name: string, locationIds: readonly string[]): Promise<string | null>;
+  /** Sets the visit gap and each listed site's target; sites not in the zone are ignored. */
+  abstract updateTargets(
+    id: string,
+    visitGapMinutes: number,
+    targets: readonly { locationId: string; minVisits: number }[],
+  ): Promise<void>;
+}
+
+export interface NewSiteVisit {
+  shiftId: string;
+  employeeId: string;
+  locationId: string;
+  occurredAt: Date;
+  latitude: number;
+  longitude: number;
+  accuracyM: number | null;
+  distanceM: number;
+}
+
+/** A roving shift with what the visit view needs about it. */
+export interface RovingShift extends Shift {
+  zoneId: string;
+  /** Set when a relief pulled this officer away: where to. */
+  pulledTo: { requestId: string; locationId: string } | null;
+}
+
+/** One touch at a site during a shift: check-in or -out, a visit scan, or a patrol scan. */
+export interface SiteTouch {
+  shiftId: string;
+  locationId: string;
+  at: Date;
+}
+
+/** All methods require a tenant unit of work. */
+export abstract class VisitRepository {
+  abstract insert(visit: NewSiteVisit): Promise<void>;
+  /**
+   * Roving shifts overlapping [start, end): published ones, plus cancelled ones that a relief
+   * pulled away before they began (their zone went unserved).
+   */
+  abstract rovingShifts(start: Date, end: Date): Promise<RovingShift[]>;
+  abstract touches(shiftIds: readonly string[]): Promise<SiteTouch[]>;
 }
 
 export interface ReliefRequest {
@@ -184,6 +229,6 @@ export abstract class ReliefRepository {
     id: string,
     status: Exclude<ReliefStatus, 'open'>,
     at: Date,
-    filled?: { employeeId: string; shiftId: string },
+    filled?: { employeeId: string; shiftId: string; pulledShiftId?: string | null },
   ): Promise<void>;
 }

@@ -1,13 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import type { CreateZoneRequest, ZoneView } from '@xrostr/contracts';
+import type { CreateZoneRequest, UpdateZoneTargetsRequest, ZoneView } from '@xrostr/contracts';
 import { AuditLogger, UnitOfWork } from '../../../shared/application/ports.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import type { Principal } from '../../identity/public-api.js';
 import { WorkforceDirectory } from '../../workforce/public-api.js';
 import { SchedulingErrors } from '../domain/scheduling-errors.js';
-import { ZoneRepository } from './ports.js';
+import { ZoneRepository, type Zone } from './ports.js';
 
 const tenantOf = (actor: Principal) => actor.subject.tenantId!;
+
+const toView = (z: Zone): ZoneView => ({
+  id: z.id,
+  name: z.name,
+  visitGapMinutes: z.visitGapMinutes,
+  locations: z.locations.map((l) => ({ id: l.id, name: l.name, minVisits: l.minVisits })),
+});
 
 /** Roving zones: a named set of sites an officer covers in one shift. */
 @Injectable()
@@ -21,12 +28,7 @@ export class ZonesService {
 
   list(actor: Principal): Promise<ZoneView[]> {
     return this.uow.runInTenant(tenantOf(actor), async () => {
-      const zones = await this.zones.list();
-      return zones.map((z) => ({
-        id: z.id,
-        name: z.name,
-        locations: z.locations.map((l) => ({ id: l.id, name: l.name })),
-      }));
+      return (await this.zones.list()).map(toView);
     });
   }
 
@@ -58,11 +60,35 @@ export class ZonesService {
         targetId: id,
         metadata: { name: input.name, sites: input.locationIds.length },
       });
-      return ok({
-        id: zone.id,
-        name: zone.name,
-        locations: zone.locations.map((l) => ({ id: l.id, name: l.name })),
+      return ok(toView(zone));
+    });
+  }
+
+  /** Visit targets of a zone's sites, and the gap that separates two visits. */
+  updateTargets(
+    actor: Principal,
+    id: string,
+    input: UpdateZoneTargetsRequest,
+  ): Promise<Result<ZoneView>> {
+    return this.uow.runInTenant(tenantOf(actor), async () => {
+      const zone = await this.zones.findById(id);
+      if (!zone) return err(SchedulingErrors.zoneNotFound());
+      const members = new Set(zone.locations.map((l) => l.id));
+      if (input.targets.some((t) => !members.has(t.locationId)))
+        return err(SchedulingErrors.locationNotFound());
+      await this.zones.updateTargets(id, input.visitGapMinutes, input.targets);
+      await this.audit.recordTenant({
+        actorType: 'user',
+        actorId: actor.subject.id,
+        action: 'zone.targets_updated',
+        targetType: 'zone',
+        targetId: id,
+        metadata: {
+          visitGapMinutes: input.visitGapMinutes,
+          targets: input.targets.map((t) => t.minVisits),
+        },
       });
+      return ok(toView((await this.zones.findById(id))!));
     });
   }
 }

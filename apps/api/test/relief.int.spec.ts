@@ -298,6 +298,19 @@ describe('relief: finding and offering a replacement', () => {
     );
     expect(relief.rows[0].kind).toBe('custom');
     expect(Math.abs(new Date(relief.rows[0].starts_at).getTime() - now)).toBeLessThan(2 * 60_000);
+
+    // The zone is left without its roving officer: the planner is told, and the visit view says so.
+    const warned = await notesOf(adminUserId, 'zone.unserved');
+    expect(warned.rows).toHaveLength(1);
+    expect(warned.rows[0].body).toContain('Cluster Sudirman');
+    const day = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(
+      new Date(Date.now() - 2 * HOUR),
+    );
+    const view = (
+      await http.get(`/tenant/roving/visits?date=${day}`).set(bearer(admin)).expect(200)
+    ).body.find((v: { shiftId: string }) => v.shiftId === rovingShift);
+    expect(view).toMatchObject({ pulledTo: { id: site, name: 'Menara Sudirman' }, phase: 'ended' });
+    expect(view.unservedSince).not.toBeNull();
   });
 
   it('refuses expired offers and cancelled searches', async () => {
