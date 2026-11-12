@@ -11,7 +11,8 @@ import { Alert, Button, Card, Spinner, buttonStyles } from '../ui';
 import { ProgressDots } from './progress-dots';
 
 /** The officer's patrol routes for the shift they are on, with the round in progress. */
-export function MyPatrolSection() {
+/** `onNotEmployee` tells the page this account has no officer view, e.g. a company admin. */
+export function MyPatrolSection({ onNotEmployee }: { onNotEmployee?: () => void }) {
   const t = useT();
   const [data, setData] = useState<MyPatrol | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,10 +22,12 @@ export function MyPatrolSection() {
     try {
       setData(await api<MyPatrol>('/me/patrol'));
     } catch (e) {
-      if (e instanceof ApiError && e.code === 'not_an_employee') setNotEmployee(true);
-      else setError(e instanceof ApiError ? e.message : t.common.error);
+      if (e instanceof ApiError && e.code === 'not_an_employee') {
+        setNotEmployee(true);
+        onNotEmployee?.();
+      } else setError(e instanceof ApiError ? e.message : t.common.error);
     }
-  }, [t]);
+  }, [t, onNotEmployee]);
   useEffect(() => void load(), [load]);
 
   async function finish(round: PatrolProgress) {

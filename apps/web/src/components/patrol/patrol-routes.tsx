@@ -100,7 +100,15 @@ export function PatrolRoutes({ site }: { site: LocationView }) {
       {routes.error && <Alert>{routes.error}</Alert>}
       {!routes.data && !routes.error && <Spinner />}
       {routes.data?.length === 0 && !adding && (
-        <p className="text-base text-muted">{t.patrol.noRoutesManage}</p>
+        <Card className="space-y-3 p-5 sm:p-6">
+          <p className="text-base text-muted">{t.patrol.noRoutesManage}</p>
+          <p className="label font-bold text-fg">{t.patrol.guideTitle}</p>
+          <ol className="list-decimal space-y-1.5 pl-5 text-base text-fg">
+            {t.patrol.guideSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        </Card>
       )}
       {routes.data && routes.data.length > 0 && (
         <Card>

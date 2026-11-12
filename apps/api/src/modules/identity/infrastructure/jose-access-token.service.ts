@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { PERMISSIONS, type Permission } from '@xrostr/contracts';
 import { jwtVerify, SignJWT } from 'jose';
 import { AccessTokenService, type AccessClaims } from '../application/ports.js';
@@ -5,12 +6,24 @@ import { AccessTokenService, type AccessClaims } from '../application/ports.js';
 const AUDIENCE = 'xrostr-api';
 const ALGORITHM = 'HS256';
 
+/**
+ * Fingerprint of the permission catalogue this server knows. A token minted by a server with a
+ * different catalogue (before an update that added permissions) is treated as expired, so the
+ * portal refreshes it at once and nobody works with a stale set of permissions after a deploy.
+ */
+export const PERMISSION_CATALOGUE = createHash('sha256')
+  .update(PERMISSIONS.join(','))
+  .digest('base64url')
+  .slice(0, 12);
+
 interface TokenPayload {
   typ: AccessClaims['subjectType'];
   tid: string | null;
   sid: string;
   stage: AccessClaims['stage'];
   perms: Permission[];
+  /** Permission catalogue the token was minted with. */
+  pcv: string;
 }
 
 export class JoseAccessTokenService extends AccessTokenService {
@@ -32,6 +45,7 @@ export class JoseAccessTokenService extends AccessTokenService {
       sid: claims.sessionId,
       stage: claims.stage,
       perms: [...claims.permissions],
+      pcv: PERMISSION_CATALOGUE,
     };
     return new SignJWT({ ...payload })
       .setProtectedHeader({ alg: ALGORITHM })
@@ -71,6 +85,7 @@ function isValidPayload(p: Partial<TokenPayload>): p is TokenPayload {
     (p.typ === 'platform_admin' ? p.tid === null : p.typ === 'user' && typeof p.tid === 'string') &&
     typeof p.sid === 'string' &&
     (p.stage === 'full' || p.stage === 'mfa_setup') &&
+    p.pcv === PERMISSION_CATALOGUE &&
     Array.isArray(p.perms) &&
     p.perms.every(knownPermission)
   );

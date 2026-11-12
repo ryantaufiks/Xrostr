@@ -1,11 +1,11 @@
 'use client';
 
 import type { LocationView } from '@xrostr/contracts';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MyPatrolSection } from '@/components/patrol/my-patrol';
 import { PatrolRounds } from '@/components/patrol/patrol-rounds';
 import { PatrolRoutes } from '@/components/patrol/patrol-routes';
-import { Field, PageHeader, Select } from '@/components/ui';
+import { Card, Field, PageHeader, Select } from '@/components/ui';
 import { useT } from '@/lib/i18n';
 import { usePrincipal } from '@/lib/principal-context';
 import { useData } from '@/lib/use-data';
@@ -23,6 +23,8 @@ export default function PatrolPage() {
     [sites.data],
   );
   const [siteId, setSiteId] = useState<string | null>(null);
+  const [notEmployee, setNotEmployee] = useState(false);
+  const markNotEmployee = useCallback(() => setNotEmployee(true), []);
 
   useEffect(() => {
     if (siteId || active.length === 0) return;
@@ -49,7 +51,14 @@ export default function PatrolPage() {
     <>
       <PageHeader title={t.patrol.title} description={canRead ? t.patrol.subtitle : undefined} />
       <div className="space-y-12">
-        <MyPatrolSection />
+        <MyPatrolSection onNotEmployee={markNotEmployee} />
+        {/* Never a blank page: say why there is nothing to show. */}
+        {!canRead && notEmployee && (
+          <Card className="p-5 text-base text-muted sm:p-6">{t.patrol.noAccess}</Card>
+        )}
+        {canRead && sites.data && active.length === 0 && (
+          <Card className="p-5 text-base text-muted sm:p-6">{t.patrol.noSites}</Card>
+        )}
         {canRead && active.length > 0 && (
           <div className="space-y-10">
             <Field label={t.patrol.site} htmlFor="patrol-site">
