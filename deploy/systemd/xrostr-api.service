@@ -1,6 +1,6 @@
 # User service. Install: see README "Running as a service".
 [Unit]
-Description=Xrostr API (127.0.0.1:8015, published via Cloudflare Tunnel)
+Description=Xrostr API (127.0.0.1:8016, behind the web portal)
 After=network-online.target docker.service
 Wants=network-online.target
 

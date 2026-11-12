@@ -14,8 +14,9 @@ export async function createApp(config: AppConfig): Promise<INestApplication> {
   });
   app.useLogger(app.get(Logger));
   app.use(helmet());
-  // One proxy hop (cloudflared) sits in front; makes request.ip the real client address.
-  app.set('trust proxy', 1);
+  // Proxies on this host (cloudflared, then the web portal) are trusted, so request.ip is the
+  // real client address from X-Forwarded-For.
+  app.set('trust proxy', 'loopback');
   app.useBodyParser('json', { limit: '100kb' });
   app.enableShutdownHooks();
   return app;

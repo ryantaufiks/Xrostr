@@ -1,0 +1,16 @@
+# User service. Install: see README "Running as a service".
+[Unit]
+Description=Xrostr web portal (127.0.0.1:8015, published via Cloudflare Tunnel)
+After=network-online.target xrostr-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/inroster/inroster-hrms/apps/web
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node --env-file=../../.env node_modules/next/dist/bin/next start -H 127.0.0.1 -p 8015
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

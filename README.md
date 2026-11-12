@@ -17,6 +17,7 @@ apps/
       audit/      tenant audit log reader
     src/shared/   unit of work + tenant context, cipher, audit writer, outbox, HTTP plumbing
   worker/       outbox relay
+  web/          Next.js portal (Superadmin and tenant) with a same-origin /api proxy
 packages/
   contracts/    Zod request schemas, permissions, roles, shared types
   db/           Drizzle schema with RLS policies, migrations, migrate + seed CLIs
@@ -40,14 +41,14 @@ pnpm db:up                  # PostgreSQL 17 on 127.0.0.1:5440
 pnpm build
 pnpm db:migrate             # creates the xrostr_app role, applies migrations and grants
 pnpm db:seed                # first superadmin from SEED_SUPERADMIN_*
-pnpm --filter @xrostr/api start      # http://127.0.0.1:8015
-pnpm --filter @xrostr/worker start
+./start.sh                           # API 127.0.0.1:8016, portal 127.0.0.1:8015
 ```
 
 ## Public access via Cloudflare Tunnel
 
-The API binds to `127.0.0.1:8015` only; the internet reaches it through `cloudflared`, so no
-port is opened on the host. Example `~/.cloudflared/config.yml` for a named tunnel:
+The web portal listens on `127.0.0.1:8015` and is the only public entry point; it forwards
+`/api/*` to the API on `127.0.0.1:8016` and keeps tokens in httpOnly cookies. Nothing listens on
+a public interface; the internet reaches the portal through `cloudflared`. Example `~/.cloudflared/config.yml` for a named tunnel:
 
 ```yaml
 tunnel: xrostr
@@ -63,8 +64,8 @@ cloudflared tunnel route dns xrostr xrostr.cloud
 cloudflared tunnel run xrostr
 ```
 
-The app trusts exactly one proxy hop (`trust proxy = 1`), so audit logs and rate limits see the
-real client IP that cloudflared forwards.
+The API trusts proxies on loopback only (`trust proxy = loopback`), so audit logs and rate limits
+see the real client IP that cloudflared forwards.
 
 ## Running as a service
 
@@ -75,12 +76,12 @@ One command starts or restarts everything, and is safe to run again after every 
 ```
 
 It starts PostgreSQL, installs dependencies, builds, migrates and seeds the database, installs the
-systemd user units from `deploy/systemd/` (pointed at this checkout), restarts `xrostr-api` and
-`xrostr-worker`, then checks `http://127.0.0.1:8015/health` and `https://xrostr.cloud/health`.
+systemd user units from `deploy/systemd/` (pointed at this checkout), restarts `xrostr-api`,
+`xrostr-worker` and `xrostr-web`, then checks each one and `https://xrostr.cloud/api/health`.
 
 ```bash
-journalctl --user -u xrostr-api -f                 # logs
-systemctl --user stop xrostr-api xrostr-worker     # stop
+journalctl --user -u xrostr-web -u xrostr-api -f               # logs
+systemctl --user stop xrostr-web xrostr-api xrostr-worker     # stop
 ```
 
 ## Onboarding flow

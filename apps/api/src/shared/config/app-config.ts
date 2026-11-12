@@ -10,9 +10,9 @@ const base64Key = (bytes: number) =>
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  // Loopback by default: public traffic arrives through the Cloudflare Tunnel.
+  // Internal only: the web portal on 8015 forwards /api/* here.
   API_HOST: z.string().default('127.0.0.1'),
-  API_PORT: z.coerce.number().int().positive().default(8015),
+  API_PORT: z.coerce.number().int().positive().default(8016),
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_ISSUER: z.string().default('xrostr'),

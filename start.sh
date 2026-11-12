@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # Starts or restarts everything Xrostr needs, in order:
-#   PostgreSQL (Docker) -> dependencies -> build -> migrations -> API + worker (systemd user services)
-# then checks the API locally and through the Cloudflare Tunnel. Safe to run again at any time.
+#   PostgreSQL (Docker) -> dependencies -> build -> migrations -> API, worker, web (systemd user services)
+# then checks the API, the web portal, and the public site through the Cloudflare Tunnel. Safe to run again at any time.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 UNIT_DIR="$HOME/.config/systemd/user"
-SERVICES=(xrostr-api xrostr-worker)
-LOCAL_HEALTH="http://127.0.0.1:8015/health"
-PUBLIC_HEALTH="https://xrostr.cloud/health"
+SERVICES=(xrostr-api xrostr-worker xrostr-web)
+API_HEALTH="http://127.0.0.1:8016/health"
+# Through the web portal's /api proxy, so this proves web -> API works too.
+WEB_HEALTH="http://127.0.0.1:8015/api/health"
+PUBLIC_HEALTH="https://xrostr.cloud/api/health"
 
 step() { printf '\n\033[1;34m==>\033[0m %s\n' "$1"; }
 ok() { printf '\033[1;32m  ✓\033[0m %s\n' "$1"; }
@@ -54,21 +56,27 @@ systemctl --user daemon-reload
 systemctl --user enable "${SERVICES[@]}" >/dev/null 2>&1
 ok "units installed in $UNIT_DIR"
 
-step "Restarting API and worker"
+step "Restarting API, worker and web portal"
 systemctl --user restart "${SERVICES[@]}"
 for svc in "${SERVICES[@]}"; do
   systemctl --user is-active --quiet "$svc" || fail "$svc did not start: journalctl --user -u $svc -n 50"
 done
 ok "${SERVICES[*]} running"
 
-step "Checking the API"
-for _ in $(seq 1 30); do
-  curl -fsS --max-time 2 "$LOCAL_HEALTH" >/dev/null 2>&1 && break
-  sleep 1
-done
-curl -fsS --max-time 2 "$LOCAL_HEALTH" >/dev/null 2>&1 ||
-  fail "API is not answering on $LOCAL_HEALTH: journalctl --user -u xrostr-api -n 50"
-ok "local:  $LOCAL_HEALTH"
+wait_for() {
+  local url=$1 service=$2
+  for _ in $(seq 1 30); do
+    curl -fsS --max-time 2 "$url" >/dev/null 2>&1 && return 0
+    sleep 1
+  done
+  fail "$service is not answering on $url: journalctl --user -u $service -n 50"
+}
+
+step "Checking health"
+wait_for "$API_HEALTH" xrostr-api
+ok "api:    $API_HEALTH"
+wait_for "$WEB_HEALTH" xrostr-web
+ok "web:    $WEB_HEALTH"
 
 if curl -fsS --max-time 15 "$PUBLIC_HEALTH" >/dev/null 2>&1; then
   ok "public: $PUBLIC_HEALTH"
@@ -76,4 +84,4 @@ else
   warn "public check failed for $PUBLIC_HEALTH (is cloudflared running?)"
 fi
 
-printf '\n\033[1;32mXrostr is up.\033[0m Logs: journalctl --user -u xrostr-api -f\n'
+printf '\n\033[1;32mXrostr is up:\033[0m https://xrostr.cloud  (logs: journalctl --user -u xrostr-web -u xrostr-api -f)\n'

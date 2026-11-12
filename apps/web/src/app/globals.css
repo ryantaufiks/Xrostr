@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* Brand: deep navy for structure, teal for action. */
+  --color-ink-50: #f6f7f9;
+  --color-ink-100: #eceef2;
+  --color-ink-200: #d5d9e2;
+  --color-ink-300: #b1b8c7;
+  --color-ink-400: #8691a6;
+  --color-ink-500: #67738b;
+  --color-ink-600: #525c72;
+  --color-ink-700: #434b5d;
+  --color-ink-800: #2b3140;
+  --color-ink-900: #171b26;
+  --color-ink-950: #0c0f17;
+
+  --color-brand-50: #effcf9;
+  --color-brand-100: #c9f6ec;
+  --color-brand-200: #94ecda;
+  --color-brand-300: #57dbc3;
+  --color-brand-400: #29c1a9;
+  --color-brand-500: #12a590;
+  --color-brand-600: #0b8476;
+  --color-brand-700: #0d6a60;
+  --color-brand-800: #10544d;
+  --color-brand-900: #124641;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    color-scheme: light;
+  }
+  body {
+    @apply bg-ink-50 text-ink-900;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}

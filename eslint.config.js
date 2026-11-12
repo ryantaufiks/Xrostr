@@ -7,7 +7,16 @@ const frameworkImports = ['@nestjs/*', 'drizzle-orm', 'drizzle-orm/*', 'pg', '@x
 const outerLayers = ['**/infrastructure/**', '**/interface/**'];
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', 'packages/db/migrations/**'] },
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/coverage/**',
+      '**/.next/**',
+      '**/next-env.d.ts',
+      'packages/db/migrations/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
