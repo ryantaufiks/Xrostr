@@ -39,4 +39,4 @@ export interface PushPayload {
 
 /** Notification kinds that must not be missed: they stay on screen and vibrate. */
 export const isUrgentNotification = (kind: string) =>
-  kind.startsWith('alert.') || kind === 'welfare.check';
+  kind.startsWith('alert.') || kind === 'welfare.check' || kind === 'relief.offered';

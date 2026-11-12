@@ -9,6 +9,7 @@ import {
   type RosterAuxiliaryView,
   type RosterConflictsView,
   type ShiftKind,
+  type ReliefRequestView,
   type ShiftView,
   type StaffingView,
   type ZoneView,
@@ -43,6 +44,7 @@ import {
 import { useConfirm } from '@/components/confirm-dialog';
 import { RosterGrid } from '@/components/roster-grid';
 import { useToast } from '@/components/toast';
+import { ReliefControl } from '@/components/relief-control';
 import { StaffingEditor } from '@/components/staffing-editor';
 import { ZonesSection } from '@/components/zones-section';
 import { api, ApiError } from '@/lib/api';
@@ -83,6 +85,23 @@ export default function RosterPage() {
   }, [activeSites, siteId]);
 
   const sunday = addDays(monday, 6);
+  const reliefs = useData<ReliefRequestView[]>(
+    canManage && siteId ? `/tenant/relief?status=all&locationId=${siteId}` : null,
+  );
+  // The latest relief search per shift (the list is newest first).
+  const reliefByShift = useMemo(() => {
+    const map = new Map<string, ReliefRequestView>();
+    for (const r of reliefs.data ?? []) if (!map.has(r.shiftId)) map.set(r.shiftId, r);
+    return map;
+  }, [reliefs.data]);
+  // Relief shifts, by their own id: the original they replaced is cancelled and hidden.
+  const reliefByNewShift = useMemo(
+    () =>
+      new Map(
+        (reliefs.data ?? []).flatMap((r) => (r.newShiftId ? [[r.newShiftId, r] as const] : [])),
+      ),
+    [reliefs.data],
+  );
   const roster = useData<ShiftView[]>(
     siteId ? `/tenant/roster?locationId=${siteId}&from=${monday}&to=${sunday}` : null,
   );
@@ -296,7 +315,12 @@ export default function RosterPage() {
               shifts={roster.data!.filter((s) => s.localDate === day)}
               employees={canManage ? (employees.data ?? []) : null}
               zones={zones.data ?? []}
+              reliefByShift={reliefByShift}
+              reliefByNewShift={reliefByNewShift}
               onChanged={roster.reload}
+              onReliefChanged={async () => {
+                await Promise.all([roster.reload(), reliefs.reload()]);
+              }}
               onRemove={removeShift}
             />
           ))}
@@ -313,7 +337,10 @@ function DayCard({
   shifts,
   employees,
   zones,
+  reliefByShift,
+  reliefByNewShift,
   onChanged,
+  onReliefChanged,
   onRemove,
 }: {
   day: string;
@@ -323,7 +350,10 @@ function DayCard({
   /** Null when the viewer cannot plan shifts. */
   employees: EmployeeView[] | null;
   zones: ZoneView[];
+  reliefByShift: ReadonlyMap<string, ReliefRequestView>;
+  reliefByNewShift: ReadonlyMap<string, ReliefRequestView>;
   onChanged: () => Promise<void>;
+  onReliefChanged: () => Promise<void>;
   onRemove: (shift: ShiftView) => Promise<void>;
 }) {
   const t = useT();
@@ -388,6 +418,23 @@ function DayCard({
                 <Badge tone={s.status === 'draft' ? 'warn' : 'active'}>
                   {s.status === 'draft' ? t.schedule.draft : t.schedule.publishedBadge}
                 </Badge>
+                {reliefByNewShift.get(s.id) && (
+                  <p className="text-sm text-muted">
+                    {t.relief.covers(reliefByNewShift.get(s.id)!.original.fullName)}
+                  </p>
+                )}
+                {/* A published site shift still running or ahead can be handed to a relief. */}
+                {employees &&
+                  s.status === 'published' &&
+                  s.kind !== 'standby' &&
+                  s.location &&
+                  Date.parse(s.endsAt) > Date.now() && (
+                    <ReliefControl
+                      shift={s}
+                      request={reliefByShift.get(s.id)}
+                      onChanged={onReliefChanged}
+                    />
+                  )}
               </div>
               {employees && (
                 <IconButton

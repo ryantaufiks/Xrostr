@@ -185,3 +185,78 @@ export interface ZoneView {
   name: string;
   locations: { id: string; name: string }[];
 }
+
+// ---------- Relief (replacement) ----------
+
+/** Why a candidate is offered first: already on duty nearby, on call, or off duty. */
+export const RELIEF_PRIORITIES = ['roving', 'standby', 'off_duty'] as const;
+export type ReliefPriority = (typeof RELIEF_PRIORITIES)[number];
+
+export const RELIEF_STATUSES = ['open', 'filled', 'unfilled', 'cancelled'] as const;
+export type ReliefStatus = (typeof RELIEF_STATUSES)[number];
+
+export const RELIEF_OFFER_STATUSES = [
+  'queued',
+  'offered',
+  'accepted',
+  'declined',
+  'expired',
+  'withdrawn',
+] as const;
+export type ReliefOfferStatus = (typeof RELIEF_OFFER_STATUSES)[number];
+
+export interface ReliefCandidate {
+  employee: { id: string; fullName: string; employeeNo: string; phone: string | null };
+  priority: ReliefPriority;
+  /** Working hours already planned in the week of the shift. */
+  weeklyHours: number;
+  /** Taking this shift would push the officer over the weekly limit. */
+  overWeeklyLimit: boolean;
+}
+
+/** Candidates in the order to offer, and how long each has to answer. */
+export const sendReliefSchema = z.object({
+  employeeIds: z.array(z.uuid()).min(1).max(20),
+  timeoutMinutes: z.number().int().min(5).max(60).default(15),
+});
+export type SendReliefRequest = z.infer<typeof sendReliefSchema>;
+
+export const reliefQuerySchema = z.object({
+  locationId: z.uuid().optional(),
+  status: z.enum(['open', 'all']).default('open'),
+});
+export type ReliefQuery = z.infer<typeof reliefQuerySchema>;
+
+export interface ReliefRequestView {
+  id: string;
+  shiftId: string;
+  status: ReliefStatus;
+  location: { id: string; name: string };
+  original: { id: string; fullName: string };
+  localDate: string;
+  localStart: string;
+  localEnd: string;
+  timezone: string;
+  timeoutMinutes: number;
+  offers: {
+    employee: { id: string; fullName: string };
+    status: ReliefOfferStatus;
+    expiresAt: string | null;
+  }[];
+  filledBy: { id: string; fullName: string } | null;
+  /** The relief's own shift once filled. */
+  newShiftId: string | null;
+  createdAt: string;
+}
+
+/** A replacement offer as the officer sees it. */
+export interface MyReliefOffer {
+  id: string;
+  status: ReliefOfferStatus;
+  expiresAt: string | null;
+  location: { id: string; name: string };
+  localDate: string;
+  localStart: string;
+  localEnd: string;
+  timezone: string;
+}

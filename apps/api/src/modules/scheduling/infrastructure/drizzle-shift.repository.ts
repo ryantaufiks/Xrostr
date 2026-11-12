@@ -201,4 +201,8 @@ export class DrizzleShiftRepository extends ShiftRepository {
   async cancel(id: string): Promise<void> {
     await this.ctx.executor().update(shifts).set({ status: 'cancelled' }).where(eq(shifts.id, id));
   }
+
+  async truncate(id: string, endsAt: Date): Promise<void> {
+    await this.ctx.executor().update(shifts).set({ endsAt }).where(eq(shifts.id, id));
+  }
 }

@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
   boolean,
   check,
@@ -344,6 +345,8 @@ export const shifts = pgTable(
     publishedAt: timestamp('published_at', { withTimezone: true }),
     /** Set once supervisors were told nobody checked in for this shift. */
     noShowAlertedAt: timestamp('no_show_alerted_at', { withTimezone: true }),
+    /** For a relief shift: the shift it took over from (history, and callout pay later). */
+    replacesShiftId: uuid('replaces_shift_id').references((): AnyPgColumn => shifts.id),
     ...timestamps,
     version: version(),
   },
@@ -630,5 +633,67 @@ export const alerts = pgTable(
     index('alerts_status_idx').on(t.status, t.raisedAt),
     index('alerts_employee_idx').on(t.employeeId, t.raisedAt),
     tenantIsolation('alerts'),
+  ],
+).enableRLS();
+
+/**
+ * A search for someone to take over a published site shift. Offers go to candidates one at a
+ * time; the first to accept gets a new shift and the original is cancelled or cut short.
+ */
+export const reliefRequests = pgTable(
+  'relief_requests',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    shiftId: uuid('shift_id')
+      .notNull()
+      .references(() => shifts.id),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id),
+    /** The part of the shift to cover: from the request (or the shift start) to its end. */
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
+    requestedBy: uuid('requested_by').notNull(),
+    status: text('status').notNull().default('open'),
+    timeoutMinutes: integer('timeout_minutes').notNull(),
+    filledEmployeeId: uuid('filled_employee_id').references(() => employees.id),
+    newShiftId: uuid('new_shift_id').references(() => shifts.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+  },
+  (t) => [
+    // One open search per shift.
+    uniqueIndex('relief_requests_one_open_uq')
+      .on(t.shiftId)
+      .where(sql`status = 'open'`),
+    index('relief_requests_location_idx').on(t.locationId, t.createdAt),
+    tenantIsolation('relief_requests'),
+  ],
+).enableRLS();
+
+export const reliefOffers = pgTable(
+  'relief_offers',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    requestId: uuid('request_id')
+      .notNull()
+      .references(() => reliefRequests.id, { onDelete: 'cascade' }),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    position: integer('position').notNull(),
+    status: text('status').notNull().default('queued'),
+    offeredAt: timestamp('offered_at', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('relief_offers_once_uq').on(t.requestId, t.employeeId),
+    index('relief_offers_pending_idx').on(t.status, t.expiresAt),
+    index('relief_offers_employee_idx').on(t.employeeId, t.status),
+    tenantIsolation('relief_offers'),
   ],
 ).enableRLS();

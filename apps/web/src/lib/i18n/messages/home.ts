@@ -62,6 +62,9 @@ export const home = bilingual(
       'alert.sos_raised': 'SOS dikirim',
       'alert.acknowledged': 'Peringatan ditanggapi',
       'alert.resolved': 'Peringatan diselesaikan',
+      'relief.requested': 'Pengganti dicari',
+      'relief.accepted': 'Pengganti menerima shift',
+      'relief.cancelled': 'Pencarian pengganti dihentikan',
     } as Record<string, string>,
   },
   {
@@ -125,6 +128,9 @@ export const home = bilingual(
       'alert.sos_raised': 'SOS raised',
       'alert.acknowledged': 'Alert acknowledged',
       'alert.resolved': 'Alert resolved',
+      'relief.requested': 'Relief requested',
+      'relief.accepted': 'Relief accepted the shift',
+      'relief.cancelled': 'Relief search stopped',
     },
   },
 );

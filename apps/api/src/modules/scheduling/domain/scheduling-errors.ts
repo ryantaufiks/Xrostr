@@ -20,6 +20,36 @@ export const SchedulingErrors = {
       'shift_not_draft',
       'Only draft shifts can be replaced; cancel a published shift instead.',
     ),
+  reliefShiftNotEligible: () =>
+    new DomainError(
+      'validation',
+      'relief_shift_not_eligible',
+      'Only a published site shift that has not ended can be covered by a relief.',
+    ),
+  reliefAlreadyOpen: () =>
+    new DomainError(
+      'conflict',
+      'relief_already_open',
+      'This shift already has an open relief search.',
+    ),
+  reliefNoCandidates: () =>
+    new DomainError(
+      'validation',
+      'relief_no_candidates',
+      'None of the chosen officers can take this shift any more.',
+    ),
+  reliefNotFound: () =>
+    new DomainError('not_found', 'relief_not_found', 'Relief search not found.'),
+  reliefClosed: () =>
+    new DomainError('conflict', 'relief_closed', 'This relief search has already ended.'),
+  reliefOfferNotFound: () =>
+    new DomainError('not_found', 'relief_offer_not_found', 'Replacement offer not found.'),
+  reliefOfferClosed: () =>
+    new DomainError(
+      'conflict',
+      'relief_offer_closed',
+      'This offer is no longer open: it expired, was answered, or someone else took the shift.',
+    ),
   zoneMixedSites: () =>
     new DomainError(
       'validation',

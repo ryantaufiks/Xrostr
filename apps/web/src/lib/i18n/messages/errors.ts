@@ -64,6 +64,15 @@ export const errors = bilingual<Record<string, string>>(
     alert_not_found: 'Peringatan tidak ditemukan.',
     alert_resolved: 'Peringatan ini sudah diselesaikan.',
     shift_not_draft: 'Hanya draft yang bisa diganti; batalkan shift yang sudah terbit.',
+    relief_shift_not_eligible:
+      'Hanya shift site yang sudah terbit dan belum selesai yang bisa dicarikan pengganti.',
+    relief_already_open: 'Shift ini sedang dicarikan pengganti.',
+    relief_no_candidates: 'Officer yang dipilih tidak bisa lagi mengambil shift ini.',
+    relief_not_found: 'Pencarian pengganti tidak ditemukan.',
+    relief_closed: 'Pencarian pengganti ini sudah selesai.',
+    relief_offer_not_found: 'Tawaran tidak ditemukan.',
+    relief_offer_closed:
+      'Tawaran ini sudah tidak berlaku: kedaluwarsa, sudah dijawab, atau diambil officer lain.',
     zone_not_found: 'Zona tidak ditemukan.',
     zone_name_taken: 'Sudah ada zona dengan nama ini.',
     zone_mixed_sites: 'Satu zona hanya untuk site dari legal entity dan zona waktu yang sama.',
@@ -145,6 +154,15 @@ export const errors = bilingual<Record<string, string>>(
     alert_not_found: 'Alert not found.',
     alert_resolved: 'This alert has already been resolved.',
     shift_not_draft: 'Only draft shifts can be replaced; cancel a published shift instead.',
+    relief_shift_not_eligible:
+      'Only a published site shift that has not ended can be covered by a relief.',
+    relief_already_open: 'This shift already has an open relief search.',
+    relief_no_candidates: 'None of the chosen officers can take this shift any more.',
+    relief_not_found: 'Relief search not found.',
+    relief_closed: 'This relief search has already ended.',
+    relief_offer_not_found: 'Replacement offer not found.',
+    relief_offer_closed:
+      'This offer is no longer open: it expired, was answered, or someone else took the shift.',
     zone_not_found: 'Zone not found.',
     zone_name_taken: 'A zone with this name already exists.',
     zone_mixed_sites: 'A zone groups sites of one legal entity in one time zone.',

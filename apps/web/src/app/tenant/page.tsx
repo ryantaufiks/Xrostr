@@ -6,6 +6,7 @@ import { api, ApiError } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { MyShifts } from '@/components/my-shifts';
+import { ReliefOffers } from '@/components/relief-offers';
 import { SafetyPanel } from '@/components/safety/safety-panel';
 import { usePrincipal } from '@/lib/principal-context';
 
@@ -38,6 +39,7 @@ export default function TenantHome() {
         <PageHeader title={t.home.myScheduleTitle} description={t.home.myScheduleGreeting} />
         <div className="space-y-8">
           <SafetyPanel sections={['check']} />
+          <ReliefOffers />
           <MyShifts />
           <SafetyPanel sections={['sos']} />
         </div>

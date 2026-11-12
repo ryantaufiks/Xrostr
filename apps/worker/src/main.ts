@@ -4,6 +4,7 @@ import { pino } from 'pino';
 import { buildHandlers } from './handlers.js';
 import { NoShowMonitor } from './no-show-monitor.js';
 import { OutboxRelay } from './outbox-relay.js';
+import { ReliefMonitor } from './relief-monitor.js';
 import { SafetyMonitor } from './safety-monitor.js';
 import { WebPushSender } from './push-delivery.js';
 
@@ -34,9 +35,14 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   });
 }
 
-// Missed check-ins, welfare checks and late patrols are looked at once a minute, beside the
-// relay loop. A tick still running when the next is due is skipped, never doubled.
-const monitors = [new NoShowMonitor(handle.db, logger), new SafetyMonitor(handle.db, logger)];
+// Missed check-ins, welfare checks, late patrols and unanswered relief offers are looked at
+// once a minute, beside the relay loop. A tick still running when the next is due is skipped,
+// never doubled.
+const monitors = [
+  new NoShowMonitor(handle.db, logger),
+  new SafetyMonitor(handle.db, logger),
+  new ReliefMonitor(handle.db, logger),
+];
 let monitoring = false;
 const monitorTimer = setInterval(() => {
   if (monitoring) return;

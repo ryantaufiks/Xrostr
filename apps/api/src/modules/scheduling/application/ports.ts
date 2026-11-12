@@ -1,4 +1,11 @@
-import type { AttendanceKind, ShiftAttendance, ShiftKind, ShiftStatus } from '@xrostr/contracts';
+import type {
+  AttendanceKind,
+  ReliefOfferStatus,
+  ReliefStatus,
+  ShiftAttendance,
+  ShiftKind,
+  ShiftStatus,
+} from '@xrostr/contracts';
 
 export interface Shift {
   id: string;
@@ -12,7 +19,11 @@ export interface Shift {
   timezone: string;
   notes: string | null;
 }
-export type NewShift = Omit<Shift, 'id' | 'status'> & { createdBy: string };
+export type NewShift = Omit<Shift, 'id' | 'status'> & {
+  createdBy: string;
+  /** Set on a relief shift: the shift it takes over from. */
+  replacesShiftId?: string | null;
+};
 
 /** All methods require a tenant unit of work. */
 export abstract class ShiftRepository {
@@ -49,6 +60,8 @@ export abstract class ShiftRepository {
   abstract liveForEmployee(employeeId: string, start: Date, end: Date): Promise<Shift[]>;
   abstract remove(id: string): Promise<void>;
   abstract cancel(id: string): Promise<void>;
+  /** Ends a shift early, e.g. when a relief takes over part way through. */
+  abstract truncate(id: string, endsAt: Date): Promise<void>;
 }
 
 export interface NewAttendanceEvent {
@@ -118,4 +131,59 @@ export abstract class ZoneRepository {
   abstract findById(id: string): Promise<Zone | null>;
   /** Null when a zone with that name already exists. */
   abstract insert(name: string, locationIds: readonly string[]): Promise<string | null>;
+}
+
+export interface ReliefRequest {
+  id: string;
+  shiftId: string;
+  locationId: string;
+  startsAt: Date;
+  endsAt: Date;
+  requestedBy: string;
+  status: ReliefStatus;
+  timeoutMinutes: number;
+  filledEmployeeId: string | null;
+  newShiftId: string | null;
+  createdAt: Date;
+}
+
+export interface ReliefOffer {
+  id: string;
+  requestId: string;
+  employeeId: string;
+  position: number;
+  status: ReliefOfferStatus;
+  offeredAt: Date | null;
+  expiresAt: Date | null;
+}
+
+/** All methods require a tenant unit of work. */
+export abstract class ReliefRepository {
+  /** Null when the shift already has an open search. */
+  abstract insertRequest(
+    request: Pick<
+      ReliefRequest,
+      'shiftId' | 'locationId' | 'startsAt' | 'endsAt' | 'requestedBy' | 'timeoutMinutes'
+    >,
+  ): Promise<string | null>;
+  abstract insertOffers(requestId: string, employeeIds: readonly string[]): Promise<void>;
+  abstract findRequest(id: string): Promise<ReliefRequest | null>;
+  /** Reads the request and locks it until the transaction ends, so two accepts cannot both win. */
+  abstract lockRequest(id: string): Promise<ReliefRequest | null>;
+  abstract list(filter: { locationId?: string; openOnly: boolean }): Promise<ReliefRequest[]>;
+  abstract offers(requestIds: readonly string[]): Promise<ReliefOffer[]>;
+  abstract findOffer(id: string): Promise<ReliefOffer | null>;
+  /** Offers currently waiting for this employee's answer, on open requests. */
+  abstract pendingFor(employeeId: string, at: Date): Promise<ReliefOffer[]>;
+  abstract setOfferStatus(id: string, status: ReliefOfferStatus, at: Date): Promise<void>;
+  /** Offers the next queued candidate; null when the queue is empty. */
+  abstract offerNext(requestId: string, at: Date, expiresAt: Date): Promise<ReliefOffer | null>;
+  /** Withdraws every offer still queued or offered. */
+  abstract withdrawRemaining(requestId: string, at: Date): Promise<void>;
+  abstract close(
+    id: string,
+    status: Exclude<ReliefStatus, 'open'>,
+    at: Date,
+    filled?: { employeeId: string; shiftId: string },
+  ): Promise<void>;
 }
