@@ -38,6 +38,7 @@ interface Values {
   role: SystemRole;
   assignmentType: AssignmentType;
   canRelieve: boolean;
+  siteIds: string[];
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -72,6 +73,7 @@ export function EmployeeForm<T>({
     role: (employee?.role as SystemRole) ?? 'employee',
     assignmentType: employee?.assignmentType ?? 'fixed',
     canRelieve: employee?.canRelieve ?? false,
+    siteIds: employee?.siteIds ?? [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -96,6 +98,8 @@ export function EmployeeForm<T>({
       employmentType: values.employmentType,
       assignmentType: values.assignmentType,
       canRelieve: values.canRelieve,
+      // Only sites of the chosen legal entity can be cleared.
+      siteIds: values.siteIds.filter((id) => sites.some((s) => s.id === id)),
     };
     setSaving(true);
     try {
@@ -298,6 +302,34 @@ export function EmployeeForm<T>({
             <span className="block text-sm text-muted">{t.workforce.canRelieveHint}</span>
           </span>
         </label>
+        {sites.length > 1 && (
+          <fieldset className="space-y-2">
+            <legend className="label font-bold text-muted">{t.workforce.allowedSites}</legend>
+            <p className="text-sm text-muted">{t.workforce.allowedSitesHint}</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {sites.map((s) => (
+                <label key={s.id} className="flex min-h-11 items-center gap-3">
+                  <input
+                    type="checkbox"
+                    className="size-5"
+                    checked={s.id === values.locationId || values.siteIds.includes(s.id)}
+                    disabled={s.id === values.locationId}
+                    onChange={(e) =>
+                      set({
+                        siteIds: e.target.checked
+                          ? [...values.siteIds, s.id]
+                          : values.siteIds.filter((id) => id !== s.id),
+                      })
+                    }
+                  />
+                  <span className="text-base text-fg">
+                    {s.name} <span className="font-mono text-sm text-muted">{s.code}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
       </Section>
 
       <div className="flex justify-end">

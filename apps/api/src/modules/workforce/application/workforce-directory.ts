@@ -43,4 +43,9 @@ export class WorkforceDirectory {
     const all = await this.locations.list();
     return new Map(all.filter((l) => wanted.has(l.id)).map((l) => [l.id, l]));
   }
+
+  /** Sites each employee is cleared to guard; employees with no list are left out. */
+  allowedSites(employeeIds: readonly string[]): Promise<Map<string, string[]>> {
+    return this.employees.allowedSites(employeeIds);
+  }
 }

@@ -14,7 +14,7 @@ import { AlertTriangle, Copy, Eraser, Plus, X } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useToast } from '@/components/toast';
 import { api, ApiError } from '@/lib/api';
-import { addDays } from '@/lib/dates';
+import { addDays, dayLabel } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
 import { shiftKindShort } from '@/lib/shifts';
 import { Button, Card, Field, Input, cx } from './ui';
@@ -127,29 +127,41 @@ export function RosterGrid({
     const preset = kind === 'night' ? SHIFT_PRESETS.night : SHIFT_PRESETS.day;
     const startTime = kind === 'custom' ? customStart : preset.start;
     const hours = kind === 'custom' ? Number(customHours) : preset.hours;
+    // One all-or-nothing request: each cell's draft is replaced in place, and if any cell fails
+    // (a clash, say) nothing changes, so no draft is lost half way.
+    const items = [...selected].map((key) => {
+      const [employeeId, day] = key.split('::') as [string, string];
+      const draft = shifts.find(
+        (x) => x.employee.id === employeeId && x.localDate === day && x.status === 'draft',
+      );
+      return {
+        locationId: site.id,
+        employeeId,
+        date: day,
+        startTime,
+        durationHours: hours,
+        kind,
+        ...(draft && { replaceShiftId: draft.id }),
+      };
+    });
     setBusy(true);
     try {
-      for (const key of selected) {
-        const [employeeId, day] = key.split('::') as [string, string];
-        for (const s of shifts.filter((x) => x.employee.id === employeeId && x.localDate === day)) {
-          if (s.status === 'draft') await api(`/tenant/shifts/${s.id}`, { method: 'DELETE' });
-        }
-        await api('/tenant/shifts', {
-          body: {
-            locationId: site.id,
-            employeeId,
-            date: day,
-            startTime,
-            durationHours: hours,
-            kind,
-          },
-        });
-      }
+      await api('/tenant/shifts/batch', { body: { items } });
       setSelected(new Set());
       setCustom(false);
       await onChanged();
     } catch (e) {
-      toast.push('error', e instanceof ApiError ? e.message : t.common.error);
+      if (!(e instanceof ApiError)) {
+        toast.push('error', t.common.error);
+        return;
+      }
+      // Name the cell that failed: the batch was undone, so the planner fixes just that one.
+      const failed = typeof e.details.index === 'number' ? items[e.details.index] : undefined;
+      const who = failed && employees.find((x) => x.id === failed.employeeId)?.fullName;
+      toast.push(
+        'error',
+        failed && who ? `${who} · ${dayLabel(failed.date)}: ${e.message}` : e.message,
+      );
     } finally {
       setBusy(false);
     }
@@ -193,6 +205,8 @@ export function RosterGrid({
         return t.schedule.conflictWeeklyHours(c.employeeName, c.detail);
       case 'consecutive_nights':
         return t.schedule.conflictNights(c.employeeName, c.detail);
+      case 'site_not_allowed':
+        return t.schedule.conflictSite(c.employeeName);
     }
   }
 

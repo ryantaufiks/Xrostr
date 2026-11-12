@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type {
+  BatchShiftsRequest,
   CopyResult,
   CreateShiftRequest,
   MyShiftsQuery,
@@ -15,6 +16,7 @@ import type {
 import { WEEKLY_HOUR_LIMITS } from '@xrostr/contracts';
 import { AuditLogger, UnitOfWork } from '../../../shared/application/ports.js';
 import { formatCalendarDate } from '../../../shared/domain/dates.js';
+import { DomainError } from '../../../shared/domain/domain-error.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import type { Principal } from '../../identity/public-api.js';
 import { Notifier } from '../../notifications/public-api.js';
@@ -143,6 +145,39 @@ export class SchedulingService {
       const [view] = await this.views([(await this.shifts.findById(id))!]);
       return ok(view!);
     });
+  }
+
+  /**
+   * Creates several shifts, all or nothing. An item may replace one of the officer's drafts, so a
+   * grid cell changes in one step; if any item fails, every change of the batch is undone and
+   * the error names the item (`details.index`).
+   */
+  async batch(actor: Principal, input: BatchShiftsRequest): Promise<Result<ShiftView[]>> {
+    try {
+      return await this.uow.runInTenant(tenantOf(actor), async () => {
+        const created: ShiftView[] = [];
+        for (const [index, item] of input.items.entries()) {
+          const { replaceShiftId, ...request } = item;
+          if (replaceShiftId) {
+            const old = await this.shifts.findById(replaceShiftId);
+            if (!old || old.employeeId !== request.employeeId)
+              throw new BatchAbort(index, SchedulingErrors.shiftNotFound());
+            if (old.status !== 'draft')
+              throw new BatchAbort(index, SchedulingErrors.shiftNotDraft());
+            await this.shifts.remove(old.id);
+          }
+          // Nested in this unit of work, so it joins the batch's transaction.
+          const result = await this.create(actor, request);
+          if (!result.ok) throw new BatchAbort(index, result.error);
+          created.push(result.value);
+        }
+        return ok(created);
+      });
+    } catch (error) {
+      if (!(error instanceof BatchAbort)) throw error;
+      const { kind, code, message, details } = error.cause;
+      return err(new DomainError(kind, code, message, { ...details, index: error.index }));
+    }
   }
 
   /** The timezone used to interpret the shift's local date: site, zone, then officer's home. */
@@ -353,6 +388,7 @@ export class SchedulingService {
         query.to,
         limit,
         location.timezone,
+        await this.workforce.allowedSites(ids),
       );
       return ok({ conflicts, leaves });
     });
@@ -473,4 +509,14 @@ function toView(
     },
     attendance: attendance ?? null,
   };
+}
+
+/** Thrown inside a batch to roll its transaction back; carries the failing item's error. */
+class BatchAbort extends Error {
+  constructor(
+    readonly index: number,
+    override readonly cause: DomainError,
+  ) {
+    super(cause.message);
+  }
 }

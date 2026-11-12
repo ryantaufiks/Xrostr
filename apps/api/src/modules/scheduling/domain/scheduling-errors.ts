@@ -14,6 +14,12 @@ export const SchedulingErrors = {
       'The employee is contracted by another legal entity than the site’s.',
     ),
   zoneNotFound: () => new DomainError('not_found', 'zone_not_found', 'Zone not found.'),
+  shiftNotDraft: () =>
+    new DomainError(
+      'conflict',
+      'shift_not_draft',
+      'Only draft shifts can be replaced; cancel a published shift instead.',
+    ),
   zoneMixedSites: () =>
     new DomainError(
       'validation',

@@ -408,4 +408,105 @@ describe('roster planning: zones, roving, standby, staffing, copy and conflicts'
       ]);
     });
   });
+
+  describe('batch and cleared sites', () => {
+    it('applies a batch all or nothing, replacing drafts in place', async () => {
+      const officer = await hire('BT-1', tenant.idEntityId, { locationId: siteC });
+      const first = await shift({
+        locationId: siteC,
+        employeeId: officer.id,
+        date: '2027-01-04',
+        startTime: '08:00',
+        durationHours: 12,
+        kind: 'day',
+      }).expect(201);
+      const item = (date: string, extra: Record<string, unknown> = {}) => ({
+        locationId: siteC,
+        employeeId: officer.id,
+        date,
+        startTime: '20:00',
+        durationHours: 12,
+        kind: 'night',
+        ...extra,
+      });
+      const roster = () =>
+        http
+          .get(`/tenant/roster?locationId=${siteC}&from=2027-01-04&to=2027-01-10`)
+          .set(bearer(admin))
+          .expect(200)
+          .then((r) =>
+            r.body.map((s: { localDate: string; kind: string }) => `${s.localDate} ${s.kind}`),
+          );
+
+      // The second item clashes with the first: nothing may change, not even the replaced draft.
+      const failed = await http
+        .post('/tenant/shifts/batch')
+        .set(bearer(admin))
+        .send({
+          items: [
+            item('2027-01-04', { replaceShiftId: first.body.id }),
+            item('2027-01-04', { startTime: '22:00', durationHours: 4, kind: 'custom' }),
+          ],
+        })
+        .expect(409);
+      expect(failed.body).toMatchObject({ code: 'shift_overlap', index: 1 });
+      expect(await roster()).toEqual(['2027-01-04 day']);
+
+      const done = await http
+        .post('/tenant/shifts/batch')
+        .set(bearer(admin))
+        .send({
+          items: [item('2027-01-04', { replaceShiftId: first.body.id }), item('2027-01-05')],
+        })
+        .expect(201);
+      expect(done.body).toHaveLength(2);
+      expect(await roster()).toEqual(['2027-01-04 night', '2027-01-05 night']);
+    });
+
+    it('stores cleared sites of the same legal entity only', async () => {
+      const officer = await hire('CL-1', tenant.idEntityId, { locationId: siteA });
+      const foreign = await http
+        .patch(`/tenant/employees/${officer.id}`)
+        .set(bearer(admin))
+        .send({ siteIds: [rivalSite] })
+        .expect(404);
+      expect(foreign.body.code).toBe('location_not_found');
+      await http
+        .patch(`/tenant/employees/${officer.id}`)
+        .set(bearer(admin))
+        .send({ siteIds: [sgSite] })
+        .expect(422);
+      const saved = await http
+        .patch(`/tenant/employees/${officer.id}`)
+        .set(bearer(admin))
+        .send({ siteIds: [siteB] })
+        .expect(200);
+      expect(saved.body.siteIds).toEqual([siteB]);
+
+      // Main site A and cleared site B are fine; site C is flagged.
+      for (const [locationId, date] of [
+        [siteA, '2027-02-01'],
+        [siteB, '2027-02-02'],
+        [siteC, '2027-02-03'],
+      ] as const) {
+        await shift({
+          locationId,
+          employeeId: officer.id,
+          date,
+          startTime: '08:00',
+          durationHours: 8,
+          kind: 'day',
+        }).expect(201);
+      }
+      const conflicts = await http
+        .get(`/tenant/roster/conflicts?locationId=${siteC}&from=2027-02-01&to=2027-02-07`)
+        .set(bearer(admin))
+        .expect(200);
+      expect(
+        conflicts.body.conflicts
+          .filter((c: { kind: string; employeeId: string }) => c.employeeId === officer.id)
+          .map((c: { kind: string; localDate: string }) => `${c.kind} ${c.localDate}`),
+      ).toEqual(['site_not_allowed 2027-02-03']);
+    });
+  });
 });

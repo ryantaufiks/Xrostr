@@ -22,25 +22,44 @@ export const SHIFT_PRESETS: Record<
   night: { start: '20:00', hours: 12 },
 };
 
+const shiftFields = z.object({
+  /** The site for a fixed shift; null for roving (zone) and standby shifts. */
+  locationId: z.uuid().nullable().optional(),
+  /** The zone for a roving shift; null for fixed and standby shifts. */
+  zoneId: z.uuid().nullable().optional(),
+  employeeId: z.uuid(),
+  date: isoDate,
+  startTime: clock,
+  durationHours: z.number().min(1).max(24),
+  kind: z.enum(SHIFT_KINDS),
+  notes: z.string().trim().max(500).optional(),
+});
+const hasOnePlace = (v: { kind: ShiftKind; locationId?: string | null; zoneId?: string | null }) =>
+  v.kind === 'standby' || (v.locationId != null) !== (v.zoneId != null);
+const onePlaceMessage = {
+  path: ['zoneId'],
+  message: 'Site or zone shifts need exactly one of locationId and zoneId',
+};
+
 /** The site's local date and start time; the server converts with the site's time zone. */
-export const createShiftSchema = z
-  .object({
-    /** The site for a fixed shift; null for roving (zone) and standby shifts. */
-    locationId: z.uuid().nullable().optional(),
-    /** The zone for a roving shift; null for fixed and standby shifts. */
-    zoneId: z.uuid().nullable().optional(),
-    employeeId: z.uuid(),
-    date: isoDate,
-    startTime: clock,
-    durationHours: z.number().min(1).max(24),
-    kind: z.enum(SHIFT_KINDS),
-    notes: z.string().trim().max(500).optional(),
-  })
-  .refine((v) => v.kind === 'standby' || (v.locationId != null) !== (v.zoneId != null), {
-    path: ['zoneId'],
-    message: 'Site or zone shifts need exactly one of locationId and zoneId',
-  });
+export const createShiftSchema = shiftFields.refine(hasOnePlace, onePlaceMessage);
 export type CreateShiftRequest = z.infer<typeof createShiftSchema>;
+
+/**
+ * Several shifts in one go, all or nothing. `replaceShiftId` names a draft of the same officer
+ * that the new shift takes the place of, so a grid cell can be changed in one step.
+ */
+export const batchShiftsSchema = z.object({
+  items: z
+    .array(
+      shiftFields
+        .extend({ replaceShiftId: z.uuid().optional() })
+        .refine(hasOnePlace, onePlaceMessage),
+    )
+    .min(1)
+    .max(100),
+});
+export type BatchShiftsRequest = z.infer<typeof batchShiftsSchema>;
 
 export const rosterQuerySchema = z
   .object({ locationId: z.uuid(), from: isoDate, to: isoDate })
@@ -113,7 +132,13 @@ export interface StaffingView {
   requirements: StaffingRequirement[];
 }
 
-export const CONFLICT_KINDS = ['leave', 'rest', 'weekly_hours', 'consecutive_nights'] as const;
+export const CONFLICT_KINDS = [
+  'leave',
+  'rest',
+  'weekly_hours',
+  'consecutive_nights',
+  'site_not_allowed',
+] as const;
 export type ConflictKind = (typeof CONFLICT_KINDS)[number];
 
 /** Statutory weekly working-hour limits by country code. */

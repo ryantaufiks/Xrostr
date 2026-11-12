@@ -44,6 +44,8 @@ export class EmployeesService {
       if (!entity) return err(WorkforceErrors.legalEntityNotFound());
       const locationCheck = await this.checkLocation(input.locationId ?? null, entity.id);
       if (!locationCheck.ok) return locationCheck;
+      const sitesCheck = await this.checkSites(input.siteIds ?? [], entity.id);
+      if (!sitesCheck.ok) return sitesCheck;
       if (await this.employees.employeeNoExists(input.employeeNo)) {
         return err(WorkforceErrors.employeeNoTaken());
       }
@@ -68,6 +70,7 @@ export class EmployeesService {
         assignmentType: input.assignmentType ?? 'fixed',
         canRelieve: input.canRelieve ?? false,
       });
+      if (input.siteIds?.length) await this.employees.setAllowedSites(employeeId, input.siteIds);
       await this.record(actor, 'employee.created', employeeId, {
         employeeNo: input.employeeNo,
         role: input.role,
@@ -93,8 +96,14 @@ export class EmployeesService {
         const locationCheck = await this.checkLocation(input.locationId, current.legalEntityId);
         if (!locationCheck.ok) return locationCheck;
       }
+      const { siteIds, ...changes } = input;
+      if (siteIds !== undefined) {
+        const sitesCheck = await this.checkSites(siteIds, current.legalEntityId);
+        if (!sitesCheck.ok) return sitesCheck;
+      }
 
-      await this.employees.update(id, input);
+      await this.employees.update(id, changes);
+      if (siteIds !== undefined) await this.employees.setAllowedSites(id, [...new Set(siteIds)]);
       if (input.status && input.status !== current.status) {
         await this.access.setAccess(tenantId, current.userId, input.status === 'active');
       }
@@ -131,13 +140,28 @@ export class EmployeesService {
     return ok(undefined);
   }
 
+  /** Allowed sites must be the tenant's own sites of the employee's legal entity. */
+  private async checkSites(
+    siteIds: readonly string[],
+    legalEntityId: string,
+  ): Promise<Result<void>> {
+    for (const id of new Set(siteIds)) {
+      const result = await this.checkLocation(id, legalEntityId);
+      if (!result.ok) return result;
+    }
+    return ok(undefined);
+  }
+
   private async views(employees: Employee[]): Promise<EmployeeView[]> {
-    const [accounts, entities, locations] = await Promise.all([
+    const [accounts, entities, locations, sites] = await Promise.all([
       this.access.summarize(employees.map((e) => e.userId)),
       this.entities.list(),
       this.locations.list(),
+      this.employees.allowedSites(employees.map((e) => e.id)),
     ]);
-    return employees.map((e) => toView(e, accounts.get(e.userId), entities, locations));
+    return employees.map((e) =>
+      toView(e, accounts.get(e.userId), entities, locations, sites.get(e.id) ?? []),
+    );
   }
 
   private record(actor: Principal, action: string, id: string, metadata: Record<string, unknown>) {
@@ -157,6 +181,7 @@ function toView(
   account: UserSummary | undefined,
   entities: LegalEntityWithPack[],
   locations: Location[],
+  siteIds: string[],
 ): EmployeeView {
   const entity = entities.find((x) => x.id === employee.legalEntityId);
   const location = locations.find((x) => x.id === employee.locationId);
@@ -174,6 +199,7 @@ function toView(
     role: account?.roleKey ?? null,
     assignmentType: employee.assignmentType,
     canRelieve: employee.canRelieve,
+    siteIds,
     legalEntity: {
       id: employee.legalEntityId,
       name: entity?.name ?? '',

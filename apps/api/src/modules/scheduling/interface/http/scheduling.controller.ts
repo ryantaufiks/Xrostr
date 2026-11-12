@@ -14,6 +14,7 @@ import {
   recordAttendanceSchema,
   type AttendanceResult,
   type RecordAttendanceRequest,
+  batchShiftsSchema,
   createShiftSchema,
   copyRosterSchema,
   myShiftsQuerySchema,
@@ -22,6 +23,7 @@ import {
   setStaffingSchema,
   type CopyResult,
   type CopyRosterRequest,
+  type BatchShiftsRequest,
   type CreateShiftRequest,
   type MyShiftsQuery,
   type PublishResult,
@@ -67,6 +69,15 @@ export class SchedulingController {
     @Body(new ZodValidationPipe(createShiftSchema)) body: CreateShiftRequest,
   ): Promise<ShiftView> {
     return unwrap(await this.scheduling.create(actor, body));
+  }
+
+  @RequirePermissions('schedules.manage')
+  @Post('tenant/shifts/batch')
+  async batch(
+    @CurrentPrincipal() actor: Principal,
+    @Body(new ZodValidationPipe(batchShiftsSchema)) body: BatchShiftsRequest,
+  ): Promise<ShiftView[]> {
+    return unwrap(await this.scheduling.batch(actor, body));
   }
 
   @RequirePermissions('schedules.manage')

@@ -73,4 +73,7 @@ export abstract class EmployeeRepository {
   abstract employeeNoExists(employeeNo: string): Promise<boolean>;
   abstract insert(employee: NewEmployee): Promise<string>;
   abstract update(id: string, changes: EmployeeChanges): Promise<void>;
+  /** Sites each employee is cleared to guard; employees with none are left out. */
+  abstract allowedSites(employeeIds: readonly string[]): Promise<Map<string, string[]>>;
+  abstract setAllowedSites(employeeId: string, locationIds: readonly string[]): Promise<void>;
 }

@@ -91,6 +91,8 @@ export const createEmployeeSchema = z.object({
   role: z.enum(SYSTEM_ROLES),
   assignmentType: z.enum(ASSIGNMENT_TYPES).optional(),
   canRelieve: z.boolean().optional(),
+  /** Sites this officer is cleared to guard besides their main site; empty = any site. */
+  siteIds: z.array(z.uuid()).max(200).optional(),
 });
 export type CreateEmployeeRequest = z.infer<typeof createEmployeeSchema>;
 
@@ -104,6 +106,7 @@ export const updateEmployeeSchema = z
     status: z.enum(EMPLOYEE_STATUSES),
     assignmentType: z.enum(ASSIGNMENT_TYPES),
     canRelieve: z.boolean(),
+    siteIds: z.array(z.uuid()).max(200),
   })
   .partial();
 export type UpdateEmployeeRequest = z.infer<typeof updateEmployeeSchema>;
@@ -124,6 +127,8 @@ export interface EmployeeView {
   role: string | null;
   assignmentType: AssignmentType;
   canRelieve: boolean;
+  /** Sites cleared to guard besides the main site; empty means no restriction. */
+  siteIds: string[];
   legalEntity: { id: string; name: string; countryCode: string };
   location: { id: string; name: string } | null;
 }

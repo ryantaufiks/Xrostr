@@ -68,6 +68,9 @@ export const workforce = bilingual(
     roving: 'Roving',
     canRelieve: 'Bisa jadi pengganti',
     canRelieveHint: 'Officer roving otomatis dianggap bisa jadi pengganti.',
+    allowedSites: 'Site yang boleh dijaga',
+    allowedSitesHint:
+      'Site utama selalu boleh. Biarkan semua kosong bila officer boleh dijadwalkan di site mana pun; grid akan memberi peringatan bila dijadwalkan di site lain.',
     saveChanges: 'Simpan perubahan',
     saveAndInvite: 'Simpan dan buat undangan',
   },
@@ -138,6 +141,9 @@ export const workforce = bilingual(
     roving: 'Roving',
     canRelieve: 'Can relieve',
     canRelieveHint: 'Roving officers are automatically treated as relievers.',
+    allowedSites: 'Sites cleared to guard',
+    allowedSitesHint:
+      'The main site is always allowed. Leave all unticked if the officer may be scheduled anywhere; the grid warns when they are scheduled elsewhere.',
     saveChanges: 'Save changes',
     saveAndInvite: 'Save and create invitation',
   },

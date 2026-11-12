@@ -124,4 +124,58 @@ describe('computeConflicts', () => {
     expect(runs.length).toBeGreaterThan(0);
     expect(runs.every((c) => c.detail >= MAX_CONSECUTIVE_NIGHTS)).toBe(true);
   });
+
+  it('does not count nights separated by a day off as consecutive', () => {
+    // Mon, Wed, Thu, Fri nights: Tuesday off breaks the run, so the longest run is 3.
+    const nights = [5, 7, 8, 9].map((d) =>
+      shift(
+        `n${d}`,
+        'night',
+        `2026-01-0${d}T20:00:00Z`,
+        `2026-01-${String(d + 1).padStart(2, '0')}T08:00:00Z`,
+      ),
+    );
+    const conflicts = computeConflicts(
+      [employee('e1', 'Slamet')],
+      nights,
+      [],
+      WEEK.from,
+      WEEK.to,
+      100,
+      'UTC',
+    );
+    expect(conflicts.filter((c) => c.kind === 'consecutive_nights')).toEqual([]);
+  });
+
+  it('flags a site the officer is not cleared to guard, but never their main site', () => {
+    const atSite = (id: string, locationId: string) => ({
+      ...shift(id, 'day', '2026-01-06T00:00:00Z', '2026-01-06T08:00:00Z'),
+      locationId,
+    });
+    const conflicts = computeConflicts(
+      [{ ...employee('e1', 'Slamet'), locationId: 'home' }],
+      [
+        atSite('s1', 'home'),
+        {
+          ...atSite('s2', 'cleared'),
+          startsAt: new Date('2026-01-07T00:00:00Z'),
+          endsAt: new Date('2026-01-07T08:00:00Z'),
+        },
+        {
+          ...atSite('s3', 'other'),
+          startsAt: new Date('2026-01-08T00:00:00Z'),
+          endsAt: new Date('2026-01-08T08:00:00Z'),
+        },
+      ],
+      [],
+      WEEK.from,
+      WEEK.to,
+      100,
+      'UTC',
+      new Map([['e1', ['cleared']]]),
+    );
+    expect(conflicts.filter((c) => c.kind === 'site_not_allowed').map((c) => c.shiftId)).toEqual([
+      's3',
+    ]);
+  });
 });

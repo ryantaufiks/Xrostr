@@ -43,6 +43,7 @@ import {
 import { useConfirm } from '@/components/confirm-dialog';
 import { RosterGrid } from '@/components/roster-grid';
 import { useToast } from '@/components/toast';
+import { StaffingEditor } from '@/components/staffing-editor';
 import { ZonesSection } from '@/components/zones-section';
 import { api, ApiError } from '@/lib/api';
 import { addDays, dayLabel, mondayOf, todayLocal, weekLabel } from '@/lib/dates';
@@ -243,7 +244,13 @@ export default function RosterPage() {
       </div>
 
       {canManage && site && (
-        <div className="mb-6">
+        <div className="mb-6 space-y-4">
+          <StaffingEditor
+            key={`${site.id}-${staffing.data ? 'loaded' : 'loading'}`}
+            siteId={site.id}
+            staffing={staffing.data}
+            onSaved={staffing.reload}
+          />
           <ZonesSection zones={zones.data ?? []} sites={activeSites} onChanged={zones.reload} />
         </div>
       )}

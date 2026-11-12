@@ -15,7 +15,9 @@ const HOUR_MS = 3_600_000;
  *  - a shift on an approved-leave day,
  *  - a shift starting less than MIN_REST_HOURS after the previous one,
  *  - weekly hours above the statutory limit,
- *  - a run of consecutive night shifts at or past the threshold.
+ *  - a run of consecutive night shifts at or past the threshold,
+ *  - a site shift at a site the officer is not cleared to guard (their main site always is;
+ *    an officer with no list of cleared sites may guard any site).
  * Only shifts whose site-local date is inside from..to are flagged; the previous shift used for
  * the rest rule may sit just before `from`.
  */
@@ -27,8 +29,10 @@ export function computeConflicts(
   to: string,
   weeklyLimit: number,
   timezone: string,
+  allowedSites: ReadonlyMap<string, readonly string[]> = new Map(),
 ): ShiftConflict[] {
   const nameOf = new Map(employees.map((e) => [e.id, e.fullName]));
+  const homeOf = new Map(employees.map((e) => [e.id, e.locationId]));
   const leaveDates = new Map<string, Set<string>>();
   for (const span of leaves) {
     const set = leaveDates.get(span.employeeId) ?? new Set<string>();
@@ -79,6 +83,23 @@ export function computeConflicts(
         });
       }
 
+      const cleared = allowedSites.get(employeeId) ?? [];
+      if (
+        shift.locationId &&
+        cleared.length > 0 &&
+        !cleared.includes(shift.locationId) &&
+        homeOf.get(employeeId) !== shift.locationId
+      ) {
+        conflicts.push({
+          kind: 'site_not_allowed',
+          employeeId,
+          employeeName: name,
+          shiftId: shift.id,
+          localDate,
+          detail: 0,
+        });
+      }
+
       // On-call shifts are not "work": no rest or consecutive-night rules.
       if (shift.kind === 'standby') continue;
 
@@ -105,8 +126,18 @@ export function computeConflicts(
       }
 
       if (shift.kind === 'night') {
+        // A run counts nights on consecutive local dates; a day off (or a day shift) breaks it.
         let run = 1;
-        for (let j = i - 1; j >= 0 && ordered[j]!.kind === 'night'; j--) run++;
+        let expected = addDays(localDate, -1);
+        for (let j = i - 1; j >= 0; j--) {
+          const earlier = ordered[j]!;
+          if (earlier.kind === 'standby') continue;
+          if (earlier.kind !== 'night') break;
+          const date = utcToLocal(earlier.startsAt, timezone).date;
+          if (date !== expected) break;
+          run++;
+          expected = addDays(date, -1);
+        }
         if (run >= MAX_CONSECUTIVE_NIGHTS) {
           conflicts.push({
             kind: 'consecutive_nights',

@@ -5,8 +5,8 @@ import type {
   EmploymentType,
   LocationStatus,
 } from '@xrostr/contracts';
-import { employees, locations } from '@xrostr/db';
-import { and, asc, eq, ne } from 'drizzle-orm';
+import { employeeLocations, employees, locations } from '@xrostr/db';
+import { and, asc, eq, inArray, ne } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import {
   EmployeeRepository,
@@ -164,5 +164,34 @@ export class DrizzleEmployeeRepository extends EmployeeRepository {
   async update(id: string, changes: EmployeeChanges): Promise<void> {
     if (Object.keys(changes).length === 0) return;
     await this.ctx.executor().update(employees).set(changes).where(eq(employees.id, id));
+  }
+
+  async allowedSites(employeeIds: readonly string[]): Promise<Map<string, string[]>> {
+    const result = new Map<string, string[]>();
+    if (employeeIds.length === 0) return result;
+    const rows = await this.ctx
+      .executor()
+      .select({
+        employeeId: employeeLocations.employeeId,
+        locationId: employeeLocations.locationId,
+      })
+      .from(employeeLocations)
+      .where(inArray(employeeLocations.employeeId, [...employeeIds]));
+    for (const row of rows)
+      result.set(row.employeeId, [...(result.get(row.employeeId) ?? []), row.locationId]);
+    return result;
+  }
+
+  async setAllowedSites(employeeId: string, locationIds: readonly string[]): Promise<void> {
+    const db = this.ctx.executor();
+    await db.delete(employeeLocations).where(eq(employeeLocations.employeeId, employeeId));
+    if (locationIds.length === 0) return;
+    await db.insert(employeeLocations).values(
+      locationIds.map((locationId) => ({
+        tenantId: this.ctx.tenantId(),
+        employeeId,
+        locationId,
+      })),
+    );
   }
 }
