@@ -53,6 +53,7 @@ export class LocationsService {
         latitude: input.latitude ?? null,
         longitude: input.longitude ?? null,
         geofenceRadiusM: input.geofenceRadiusM,
+        welfareIntervalMinutes: input.welfareIntervalMinutes ?? null,
       });
       await this.record(actor, 'location.created', id, { code: input.code });
       return ok(toView((await this.locations.findById(id))!, [entity]));
@@ -126,6 +127,7 @@ function toView(location: Location, entities: LegalEntityWithPack[]): LocationVi
     latitude: location.latitude,
     longitude: location.longitude,
     geofenceRadiusM: location.geofenceRadiusM,
+    welfareIntervalMinutes: location.welfareIntervalMinutes,
     status: location.status,
     legalEntity: {
       id: location.legalEntityId,

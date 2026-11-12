@@ -1,7 +1,16 @@
 'use client';
 
 import type { Permission } from '@xrostr/contracts';
-import { Building2, CalendarDays, House, Palmtree, Route, UserRound, Users } from 'lucide-react';
+import {
+  Building2,
+  CalendarDays,
+  House,
+  Palmtree,
+  Route,
+  Siren,
+  UserRound,
+  Users,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AppShell, type NavItem } from '@/components/app-shell';
 import { NotificationBell } from '@/components/notification-bell';
@@ -23,6 +32,7 @@ function navFor(permissions: readonly Permission[], nav: Dictionary['home']['nav
       : []),
     // Officers patrol; planners and HR monitor. Everyone in a tenant has a reason to be here.
     { href: '/tenant/patrol', label: nav.patrol, icon: Route },
+    ...(can('alerts.respond') ? [{ href: '/tenant/alerts', label: nav.alerts, icon: Siren }] : []),
     { href: '/tenant/leave', label: nav.leave, icon: Palmtree },
     ...(can('locations.read')
       ? [{ href: '/tenant/locations', label: nav.sites, icon: Building2 }]

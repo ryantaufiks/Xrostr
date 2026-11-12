@@ -33,4 +33,10 @@ export interface PushPayload {
   body: string;
   url: string;
   tag: string;
+  /** Safety messages (SOS, alerts, welfare checks) stay on screen and vibrate until handled. */
+  urgent?: boolean;
 }
+
+/** Notification kinds that must not be missed: they stay on screen and vibrate. */
+export const isUrgentNotification = (kind: string) =>
+  kind.startsWith('alert.') || kind === 'welfare.check';

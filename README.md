@@ -154,6 +154,9 @@ All errors are `application/problem+json` (RFC 9457) with a stable `code`.
 | PATCH      | `/tenant/patrol/checkpoints/:id`, POST `/:id/tag/rotate`         | `patrols.manage`   |
 | GET        | `/tenant/patrol/rounds?locationId&from&to`                       | `patrols.read`     |
 | GET, POST  | `/me/patrol`, `/me/patrol/scans`, `/me/patrol/rounds/:id/finish` | tenant user        |
+| GET, POST  | `/me/safety`, `/me/sos`, `/me/welfare/:id/respond`               | tenant user        |
+| GET        | `/tenant/alerts?status=open\|all`                                | `alerts.respond`   |
+| POST       | `/tenant/alerts/:id/acknowledge`, `/:id/resolve`                 | `alerts.respond`   |
 | GET, POST  | `/notifications`, `/notifications/push/*`                        | tenant user        |
 | GET        | `/tenant/audit-log?limit=`                                       | `audit.read`       |
 

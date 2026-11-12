@@ -42,7 +42,8 @@ self.addEventListener('push', (event) => {
       badge: '/icons/badge-96.png',
       tag: data.tag,
       data: { url: data.url || '/' },
-      lang: 'id',
+      // Safety messages stay until the officer or supervisor deals with them.
+      ...(data.urgent && { requireInteraction: true, vibrate: [400, 200, 400, 200, 400] }),
     }),
   );
 });

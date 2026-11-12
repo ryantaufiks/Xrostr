@@ -7,6 +7,7 @@ import { IdentityModule } from './modules/identity/identity.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { LeaveModule } from './modules/leave/leave.module.js';
 import { PatrolModule } from './modules/patrol/patrol.module.js';
+import { SafetyModule } from './modules/safety/safety.module.js';
 import { SchedulingModule } from './modules/scheduling/scheduling.module.js';
 import { TenancyModule } from './modules/tenancy/tenancy.module.js';
 import { WorkforceModule } from './modules/workforce/workforce.module.js';
@@ -45,6 +46,7 @@ export class AppModule {
         SchedulingModule,
         LeaveModule,
         PatrolModule,
+        SafetyModule,
       ],
       controllers: [HealthController],
       providers: [

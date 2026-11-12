@@ -1,4 +1,4 @@
-import type { PushPayload } from '@xrostr/contracts';
+import { isUrgentNotification, type PushPayload } from '@xrostr/contracts';
 import { notifications, pushSubscriptions, TENANT_SETTING, type Database } from '@xrostr/db';
 import { and, eq, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
@@ -67,6 +67,7 @@ export class PushDelivery {
         body: notification.body,
         url: notification.url ?? '/',
         tag: notification.id,
+        ...(isUrgentNotification(notification.kind) && { urgent: true }),
       };
 
       for (const device of devices) {

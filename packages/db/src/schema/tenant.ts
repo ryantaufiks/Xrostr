@@ -187,6 +187,8 @@ export const locations = pgTable(
     latitude: doublePrecision('latitude'),
     longitude: doublePrecision('longitude'),
     geofenceRadiusM: integer('geofence_radius_m').notNull().default(150),
+    /** Minutes between "are you OK?" checks for officers on shift here; null turns them off. */
+    welfareIntervalMinutes: integer('welfare_interval_minutes'),
     /** Secret printed in the site's check-in QR code; rotating it voids old posters. */
     checkinSecret: text('checkin_secret')
       .notNull()
@@ -469,5 +471,73 @@ export const patrolScans = pgTable(
   (t) => [
     unique('patrol_scans_once_uq').on(t.roundId, t.checkpointId),
     tenantIsolation('patrol_scans'),
+  ],
+).enableRLS();
+
+/** An "are you OK?" prompt sent to an officer on shift; unanswered ones are escalated. */
+export const welfareChecks = pgTable(
+  'welfare_checks',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    shiftId: uuid('shift_id')
+      .notNull()
+      .references(() => shifts.id),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id),
+    promptedAt: timestamp('prompted_at', { withTimezone: true }).notNull(),
+    respondBy: timestamp('respond_by', { withTimezone: true }).notNull(),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+    escalatedAt: timestamp('escalated_at', { withTimezone: true }),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('welfare_checks_shift_idx').on(t.shiftId, t.promptedAt),
+    index('welfare_checks_employee_idx').on(t.employeeId, t.promptedAt),
+    tenantIsolation('welfare_checks'),
+  ],
+).enableRLS();
+
+/**
+ * Safety alerts for supervisors: an officer's SOS, an unanswered welfare check, or an overdue
+ * patrol round. `dedupeKey` lets the worker raise each automatic alert once.
+ */
+export const alerts = pgTable(
+  'alerts',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    kind: text('kind').notNull(),
+    status: text('status').notNull().default('open'),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    locationId: uuid('location_id').references(() => locations.id),
+    shiftId: uuid('shift_id').references(() => shifts.id),
+    routeId: uuid('route_id').references(() => patrolRoutes.id),
+    welfareCheckId: uuid('welfare_check_id').references(() => welfareChecks.id),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    accuracyM: integer('accuracy_m'),
+    note: text('note'),
+    dedupeKey: text('dedupe_key'),
+    raisedAt: timestamp('raised_at', { withTimezone: true }).notNull(),
+    acknowledgedBy: uuid('acknowledged_by'),
+    acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
+    resolvedBy: uuid('resolved_by'),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('alerts_dedupe_uq').on(t.tenantId, t.dedupeKey),
+    index('alerts_status_idx').on(t.status, t.raisedAt),
+    index('alerts_employee_idx').on(t.employeeId, t.raisedAt),
+    tenantIsolation('alerts'),
   ],
 ).enableRLS();

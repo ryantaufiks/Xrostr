@@ -1,19 +1,8 @@
-import {
-  employees,
-  locations,
-  notifications,
-  outboxEvents,
-  roles,
-  tenants,
-  TENANT_SETTING,
-  userRoles,
-  users,
-  type Database,
-  type Transaction,
-} from '@xrostr/db';
-import { isLocale, localeForRegion, type Locale, type Localized } from '@xrostr/contracts';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { localeForRegion, type Locale } from '@xrostr/contracts';
+import { employees, locations, tenants, TENANT_SETTING, type Database } from '@xrostr/db';
+import { eq, inArray, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
+import { localClock, notifyUsers, usersWithPermission } from './notify.js';
 
 /** Minutes after a shift starts before its missing check-in is reported. */
 export const NO_SHOW_GRACE_MINUTES = 15;
@@ -74,20 +63,11 @@ export class NoShowMonitor {
       ).rows;
       if (due.length === 0) return 0;
 
-      const planners = await plannerUserIds(tx);
+      const planners = await usersWithPermission(tx, 'schedules.manage');
       const people = await tx
         .select({ id: employees.id, userId: employees.userId, fullName: employees.fullName })
         .from(employees)
         .where(inArray(employees.id, [...new Set(due.map((d) => d.employee_id))]));
-      const recipients = [...planners, ...people.map((p) => p.userId)];
-      const locales = new Map(
-        (
-          await tx
-            .select({ id: users.id, locale: users.locale })
-            .from(users)
-            .where(inArray(users.id, recipients))
-        ).map((u) => [u.id, u.locale]),
-      );
       const sites = await tx
         .select({ id: locations.id, name: locations.name, timezone: locations.timezone })
         .from(locations)
@@ -99,23 +79,21 @@ export class NoShowMonitor {
         if (!person || !site) continue;
         const start = localClock(new Date(shift.starts_at), site.timezone);
 
-        for (const userId of planners) {
-          await notify(tx, tenantId, userId, locales, tenantLocale, {
-            kind: 'attendance.no_show',
-            url: '/tenant/roster',
-            text: {
-              en: {
-                title: 'Officer has not checked in',
-                body: `${person.fullName}, ${start} shift at ${site.name}, has not checked in.`,
-              },
-              id: {
-                title: 'Officer belum absen',
-                body: `${person.fullName}, shift ${start} di ${site.name}, belum absen masuk.`,
-              },
+        await notifyUsers(tx, tenantId, tenantLocale, planners, {
+          kind: 'attendance.no_show',
+          url: '/tenant/roster',
+          text: {
+            en: {
+              title: 'Officer has not checked in',
+              body: `${person.fullName}, ${start} shift at ${site.name}, has not checked in.`,
             },
-          });
-        }
-        await notify(tx, tenantId, person.userId, locales, tenantLocale, {
+            id: {
+              title: 'Officer belum absen',
+              body: `${person.fullName}, shift ${start} di ${site.name}, belum absen masuk.`,
+            },
+          },
+        });
+        await notifyUsers(tx, tenantId, tenantLocale, [person.userId], {
           kind: 'attendance.reminder',
           url: '/tenant',
           text: {
@@ -134,46 +112,4 @@ export class NoShowMonitor {
       return due.length;
     });
   }
-}
-
-async function plannerUserIds(tx: Transaction): Promise<string[]> {
-  const rows = await tx
-    .selectDistinct({ id: users.id })
-    .from(users)
-    .innerJoin(userRoles, eq(userRoles.userId, users.id))
-    .innerJoin(roles, eq(roles.id, userRoles.roleId))
-    .where(and(eq(users.status, 'active'), sql`'schedules.manage' = any(${roles.permissions})`));
-  return rows.map((r) => r.id);
-}
-
-/** Written in the recipient's own language, else the tenant's default, as the API's Notifier. */
-async function notify(
-  tx: Transaction,
-  tenantId: string,
-  userId: string,
-  locales: ReadonlyMap<string, string | null>,
-  tenantLocale: Locale,
-  message: { kind: string; url: string; text: Localized<{ title: string; body: string }> },
-): Promise<void> {
-  const preferred = locales.get(userId);
-  const { title, body } = message.text[isLocale(preferred) ? preferred : tenantLocale];
-  const [row] = await tx
-    .insert(notifications)
-    .values({ tenantId, userId, kind: message.kind, url: message.url, title, body })
-    .returning({ id: notifications.id });
-  await tx.insert(outboxEvents).values({
-    tenantId,
-    type: 'notification.created',
-    payload: { notificationId: row!.id, userId },
-  });
-}
-
-/** "20:00" in the site's time zone. */
-function localClock(instant: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).format(instant);
 }

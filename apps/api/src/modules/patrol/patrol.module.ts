@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SchedulingModule } from '../scheduling/scheduling.module.js';
 import { WorkforceModule } from '../workforce/workforce.module.js';
+import { PatrolDirectory } from './application/patrol-directory.js';
 import { PatrolRoutesService } from './application/patrol-routes.service.js';
 import { PatrolService } from './application/patrol.service.js';
 import { PatrolRoundRepository, PatrolRouteRepository } from './application/ports.js';
@@ -18,6 +19,8 @@ import { PatrolController } from './interface/http/patrol.controller.js';
     { provide: PatrolRoundRepository, useClass: DrizzlePatrolRoundRepository },
     PatrolRoutesService,
     PatrolService,
+    PatrolDirectory,
   ],
+  exports: [PatrolDirectory],
 })
 export class PatrolModule {}

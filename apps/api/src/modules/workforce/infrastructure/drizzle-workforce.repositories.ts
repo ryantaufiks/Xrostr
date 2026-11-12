@@ -27,6 +27,7 @@ const toLocation = (r: LocationRow): Location => ({
   latitude: r.latitude,
   longitude: r.longitude,
   geofenceRadiusM: r.geofenceRadiusM,
+  welfareIntervalMinutes: r.welfareIntervalMinutes,
   status: r.status as LocationStatus,
   checkinSecret: r.checkinSecret,
 });

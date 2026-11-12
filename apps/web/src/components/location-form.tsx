@@ -8,10 +8,14 @@ import { useT } from '@/lib/i18n';
 import { fieldErrors, TIMEZONE_LABELS, type LegalEntityOption } from '@/lib/workforce';
 import { Alert, Button, Card, Field, Input, Select } from './ui';
 
-type Values = Omit<CreateLocationRequest, 'latitude' | 'longitude' | 'geofenceRadiusM'> & {
+type Values = Omit<
+  CreateLocationRequest,
+  'latitude' | 'longitude' | 'geofenceRadiusM' | 'welfareIntervalMinutes'
+> & {
   latitude: string;
   longitude: string;
   geofenceRadiusM: string;
+  welfareIntervalMinutes: string;
 };
 
 const fromLocation = (l: LocationView): Values => ({
@@ -23,6 +27,7 @@ const fromLocation = (l: LocationView): Values => ({
   latitude: l.latitude?.toString() ?? '',
   longitude: l.longitude?.toString() ?? '',
   geofenceRadiusM: String(l.geofenceRadiusM),
+  welfareIntervalMinutes: l.welfareIntervalMinutes?.toString() ?? '',
 });
 
 /** Create or edit a site. Coordinates can come from the device while standing on site. */
@@ -49,6 +54,7 @@ export function LocationForm({
           latitude: '',
           longitude: '',
           geofenceRadiusM: '150',
+          welfareIntervalMinutes: '',
         },
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -92,6 +98,9 @@ export function LocationForm({
       address: values.address,
       timezone: values.timezone,
       geofenceRadiusM: Number(values.geofenceRadiusM),
+      welfareIntervalMinutes: values.welfareIntervalMinutes.trim()
+        ? Number(values.welfareIntervalMinutes)
+        : null,
       ...coords,
       ...(location ? {} : { legalEntityId: values.legalEntityId }),
     };
@@ -228,6 +237,27 @@ export function LocationForm({
             />
           </Field>
         </div>
+      </Card>
+
+      <Card className="p-5 sm:p-6">
+        <Field
+          label={t.safety.welfareInterval}
+          htmlFor="welfare"
+          hint={t.safety.welfareIntervalHint}
+          error={errors.welfareIntervalMinutes}
+        >
+          <Input
+            id="welfare"
+            type="number"
+            min={15}
+            max={480}
+            step={5}
+            inputMode="numeric"
+            className="max-w-48"
+            value={values.welfareIntervalMinutes}
+            onChange={(e) => set({ welfareIntervalMinutes: e.target.value })}
+          />
+        </Field>
       </Card>
 
       <div className="flex justify-end">

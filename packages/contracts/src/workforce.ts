@@ -34,6 +34,8 @@ const locationFields = {
   latitude: z.number().min(-90).max(90).nullable().optional(),
   longitude: z.number().min(-180).max(180).nullable().optional(),
   geofenceRadiusM: z.number().int().min(30).max(2000),
+  /** Minutes between welfare checks for officers on shift here; null turns them off. */
+  welfareIntervalMinutes: z.number().int().min(15).max(480).nullable().optional(),
 };
 
 export const createLocationSchema = z
@@ -62,6 +64,7 @@ export interface LocationView {
   latitude: number | null;
   longitude: number | null;
   geofenceRadiusM: number;
+  welfareIntervalMinutes: number | null;
   status: LocationStatus;
   legalEntity: { id: string; name: string; countryCode: string };
 }

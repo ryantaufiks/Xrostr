@@ -85,6 +85,20 @@
       "when": 1794480800558,
       "tag": "0011_patrol_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794482345994,
+      "tag": "0012_safety",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794482346467,
+      "tag": "0013_safety_permissions",
+      "breakpoints": true
     }
   ]
 }

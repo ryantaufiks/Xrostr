@@ -4,8 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from './api';
 import { messageFor } from './messages';
 
-/** Loads `path` from the API; `reload` fetches it again after a change. */
-export function useData<T>(path: string | null) {
+/**
+ * Loads `path` from the API; `reload` fetches it again after a change. With `refreshMs`, it also
+ * refetches on that interval, for screens that must stay current such as the alert desk.
+ */
+export function useData<T>(path: string | null, refreshMs?: number) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,6 +22,11 @@ export function useData<T>(path: string | null) {
     }
   }, [path]);
 
-  useEffect(() => void reload(), [reload]);
+  useEffect(() => {
+    void reload();
+    if (!refreshMs) return;
+    const timer = setInterval(() => void reload(), refreshMs);
+    return () => clearInterval(timer);
+  }, [reload, refreshMs]);
   return { data, error, reload };
 }

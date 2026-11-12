@@ -4,10 +4,11 @@ import { pino } from 'pino';
 import { buildHandlers } from './handlers.js';
 import { NoShowMonitor } from './no-show-monitor.js';
 import { OutboxRelay } from './outbox-relay.js';
+import { SafetyMonitor } from './safety-monitor.js';
 import { WebPushSender } from './push-delivery.js';
 
 const IDLE_DELAY_MS = 1000;
-const NO_SHOW_INTERVAL_MS = 60_000;
+const MONITOR_INTERVAL_MS = 60_000;
 
 const logger = pino({ name: 'worker', level: process.env.LOG_LEVEL ?? 'info' });
 const databaseUrl = process.env.DATABASE_URL;
@@ -33,17 +34,23 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   });
 }
 
-// Missed check-ins are looked for once a minute, beside the relay loop.
-const monitor = new NoShowMonitor(handle.db, logger);
+// Missed check-ins, welfare checks and late patrols are looked at once a minute, beside the
+// relay loop. A tick still running when the next is due is skipped, never doubled.
+const monitors = [new NoShowMonitor(handle.db, logger), new SafetyMonitor(handle.db, logger)];
 let monitoring = false;
 const monitorTimer = setInterval(() => {
   if (monitoring) return;
   monitoring = true;
-  monitor
-    .tick()
-    .catch((error: unknown) => logger.error({ err: error }, 'no-show monitor failed'))
-    .finally(() => (monitoring = false));
-}, NO_SHOW_INTERVAL_MS);
+  (async () => {
+    for (const monitor of monitors) {
+      await monitor
+        .tick()
+        .catch((error: unknown) =>
+          logger.error({ err: error }, `${monitor.constructor.name} failed`),
+        );
+    }
+  })().finally(() => (monitoring = false));
+}, MONITOR_INTERVAL_MS);
 controller.signal.addEventListener('abort', () => clearInterval(monitorTimer));
 
 logger.info('outbox relay started');

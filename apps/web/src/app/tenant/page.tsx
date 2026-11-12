@@ -6,6 +6,7 @@ import { api, ApiError } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { useT } from '@/lib/i18n';
 import { MyShifts } from '@/components/my-shifts';
+import { SafetyPanel } from '@/components/safety/safety-panel';
 import { usePrincipal } from '@/lib/principal-context';
 
 interface LegalEntity {
@@ -35,7 +36,11 @@ export default function TenantHome() {
     return (
       <>
         <PageHeader title={t.home.myScheduleTitle} description={t.home.myScheduleGreeting} />
-        <MyShifts />
+        <div className="space-y-8">
+          <SafetyPanel sections={['check']} />
+          <MyShifts />
+          <SafetyPanel sections={['sos']} />
+        </div>
       </>
     );
   }

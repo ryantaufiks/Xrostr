@@ -104,7 +104,13 @@ export class DrizzleAccountRepository extends AccountRepository {
     if (userIds.length === 0) return new Map();
     const rows = await this.ctx
       .executor()
-      .select({ id: users.id, email: users.email, status: users.status, roleKey: roles.key })
+      .select({
+        id: users.id,
+        email: users.email,
+        fullName: users.fullName,
+        status: users.status,
+        roleKey: roles.key,
+      })
       .from(users)
       .leftJoin(userRoles, eq(userRoles.userId, users.id))
       .leftJoin(roles, eq(roles.id, userRoles.roleId))
@@ -115,6 +121,7 @@ export class DrizzleAccountRepository extends AccountRepository {
       if (!summaries.has(row.id)) {
         summaries.set(row.id, {
           email: row.email,
+          fullName: row.fullName,
           status: row.status as AccountStatus,
           roleKey: row.roleKey,
         });

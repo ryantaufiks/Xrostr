@@ -9,6 +9,7 @@ import type {
 
 export interface UserSummary {
   email: string;
+  fullName: string;
   status: AccountStatus;
   roleKey: string | null;
 }

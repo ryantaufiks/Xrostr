@@ -10,6 +10,7 @@ export interface Location {
   latitude: number | null;
   longitude: number | null;
   geofenceRadiusM: number;
+  welfareIntervalMinutes: number | null;
   status: LocationStatus;
   /** Printed in the site's check-in QR code. Never sent to the portal as part of a site. */
   checkinSecret: string;
