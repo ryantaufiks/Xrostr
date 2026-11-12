@@ -1,7 +1,7 @@
 'use client';
 
 import type { TenantSummary } from '@xrostr/contracts';
-import { Building2, Plus } from 'lucide-react';
+import { Building2, ChevronRight, Pencil, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Alert, Badge, Card, PageHeader, Spinner, buttonStyles } from '@/components/ui';
@@ -45,7 +45,34 @@ export default function TenantsPage() {
         </Card>
       )}
       {tenants && tenants.length > 0 && (
-        <Card className="overflow-x-auto">
+        <ul className="space-y-3 sm:hidden">
+          {tenants.map((t) => (
+            <li key={t.id}>
+              <Link href={`/platform/tenants/${t.id}`} className="block">
+                <Card className="flex items-center gap-4 p-5 hover:bg-sunken">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <p className="text-lg font-semibold text-fg">{t.name}</p>
+                    <p className="font-mono text-sm text-muted">{t.slug}</p>
+                    <p className="text-base text-muted">
+                      {REGION_LABELS[t.dataRegion] ?? t.dataRegion} ·{' '}
+                      {PLAN_LABELS[t.plan] ?? t.plan}
+                    </p>
+                    <Badge tone={t.status === 'active' ? 'active' : 'warn'}>
+                      {t.status === 'active' ? 'Aktif' : 'Ditangguhkan'}
+                    </Badge>
+                  </div>
+                  <span className="label inline-flex items-center gap-1 font-bold text-fg">
+                    Kelola
+                    <ChevronRight className="size-5" aria-hidden />
+                  </span>
+                </Card>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {tenants && tenants.length > 0 && (
+        <Card className="hidden overflow-x-auto sm:block">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-line label text-muted">
               <tr>
@@ -55,6 +82,9 @@ export default function TenantsPage() {
                 <th className="px-5 py-3 font-medium">Paket</th>
                 <th className="px-5 py-3 font-medium">Status</th>
                 <th className="px-5 py-3 font-medium">Dibuat</th>
+                <th className="px-5 py-3 font-medium">
+                  <span className="sr-only">Aksi</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -79,6 +109,15 @@ export default function TenantsPage() {
                     </Badge>
                   </td>
                   <td className="px-5 py-3.5 text-muted">{formatDate(t.createdAt)}</td>
+                  <td className="px-5 py-3.5 text-right">
+                    <Link
+                      href={`/platform/tenants/${t.id}`}
+                      className={buttonStyles('secondary', 'min-h-11 px-4')}
+                    >
+                      <Pencil className="size-4" aria-hidden />
+                      Kelola
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
