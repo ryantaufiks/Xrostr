@@ -68,18 +68,20 @@ real client IP that cloudflared forwards.
 
 ## Running as a service
 
-`deploy/systemd/` holds user units for the API and worker (paths assume the repo lives at
-`~/inroster/inroster-hrms`; edit `WorkingDirectory` otherwise). PostgreSQL restarts with Docker.
+One command starts or restarts everything, and is safe to run again after every `git pull`:
 
 ```bash
-pnpm build
-cp deploy/systemd/xrostr-*.service ~/.config/systemd/user/
-systemctl --user daemon-reload
-systemctl --user enable --now xrostr-api xrostr-worker
-journalctl --user -u xrostr-api -f
+./start.sh
 ```
 
-After pulling changes: `pnpm build && pnpm db:migrate && systemctl --user restart xrostr-api xrostr-worker`.
+It starts PostgreSQL, installs dependencies, builds, migrates and seeds the database, installs the
+systemd user units from `deploy/systemd/` (pointed at this checkout), restarts `xrostr-api` and
+`xrostr-worker`, then checks `http://127.0.0.1:8015/health` and `https://xrostr.cloud/health`.
+
+```bash
+journalctl --user -u xrostr-api -f                 # logs
+systemctl --user stop xrostr-api xrostr-worker     # stop
+```
 
 ## Onboarding flow
 
