@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: hrms_owner
+      POSTGRES_PASSWORD: hrms_owner_dev
+      POSTGRES_DB: inroster_hrms
+    ports:
+      - '127.0.0.1:5440:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U hrms_owner -d inroster_hrms']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

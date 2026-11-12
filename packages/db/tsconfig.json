@@ -1,0 +1,6 @@
+{
+  "extends": "@inroster/config/tsconfig.lib.json",
+  "compilerOptions": {
+    "types": ["node"]
+  }
+}
