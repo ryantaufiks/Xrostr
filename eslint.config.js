@@ -33,6 +33,10 @@ export default tseslint.config(
     },
   },
   {
+    files: ['apps/web/public/sw.js'],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
+  {
     // Clean architecture: domain is pure TypeScript.
     files: ['apps/*/src/modules/*/domain/**/*.ts', 'apps/*/src/shared/domain/**/*.ts'],
     rules: {

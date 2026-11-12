@@ -17,10 +17,13 @@ export interface NavItem {
 export function AppShell({
   areaLabel,
   nav,
+  actions,
   children,
 }: {
   areaLabel: string;
   nav: NavItem[];
+  /** Extra header controls before sign-out, such as the notification bell. */
+  actions?: ReactNode;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -64,6 +67,7 @@ export function AppShell({
               </Link>
             ))}
           </nav>
+          {actions}
           <button
             onClick={signOut}
             disabled={signingOut}

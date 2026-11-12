@@ -10,4 +10,5 @@ export {
   PlatformOnly,
   Public,
   RequirePermissions,
+  TenantUser,
 } from './interface/http/auth.decorators.js';

@@ -3,12 +3,12 @@
 import { passwordSchema } from '@xrostr/contracts';
 import { useState, type FormEvent } from 'react';
 import { api, ApiError } from '@/lib/api';
-import { Alert, Button, Card, Field, Input, PageHeader } from './ui';
+import { Alert, Button, Field, Input } from './ui';
+import { AccountSection } from './account-section';
 
 type Errors = Partial<Record<'current' | 'next' | 'confirm', string>>;
 
-/** Account page shared by the platform and tenant areas. */
-export function ChangePasswordPage() {
+export function ChangePasswordCard() {
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -56,59 +56,52 @@ export function ChangePasswordPage() {
   }
 
   return (
-    <>
-      <PageHeader title="Akun" description="Keamanan akun Anda." />
-      <Card className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[240px_1fr]">
-        <div>
-          <h2 className="label font-bold text-fg">Ganti password</h2>
-          <p className="mt-1 text-sm text-muted">
-            Setelah diganti, semua perangkat lain otomatis keluar. Sesi di perangkat ini tetap
-            aktif.
-          </p>
-        </div>
-        <form onSubmit={submit} className="max-w-md space-y-4" noValidate>
-          {formError && <Alert>{formError}</Alert>}
-          {saved && <Alert tone="success">Password berhasil diganti.</Alert>}
-          <Field label="Password saat ini" htmlFor="current" error={errors.current}>
-            <Input
-              id="current"
-              type="password"
-              value={current}
-              onChange={(e) => setCurrent(e.target.value)}
-              autoComplete="current-password"
-              aria-invalid={!!errors.current}
-            />
-          </Field>
-          <Field
-            label="Password baru"
-            htmlFor="next"
-            hint="Minimal 12 karakter, berisi huruf dan angka."
-            error={errors.next}
-          >
-            <Input
-              id="next"
-              type="password"
-              value={next}
-              onChange={(e) => setNext(e.target.value)}
-              autoComplete="new-password"
-              aria-invalid={!!errors.next}
-            />
-          </Field>
-          <Field label="Ulangi password baru" htmlFor="confirm" error={errors.confirm}>
-            <Input
-              id="confirm"
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              autoComplete="new-password"
-              aria-invalid={!!errors.confirm}
-            />
-          </Field>
-          <Button type="submit" loading={loading}>
-            Simpan password
-          </Button>
-        </form>
-      </Card>
-    </>
+    <AccountSection
+      title="Ganti password"
+      description="Setelah diganti, semua perangkat lain otomatis keluar. Sesi di perangkat ini tetap aktif."
+    >
+      <form onSubmit={submit} className="max-w-md space-y-4" noValidate>
+        {formError && <Alert>{formError}</Alert>}
+        {saved && <Alert tone="success">Password berhasil diganti.</Alert>}
+        <Field label="Password saat ini" htmlFor="current" error={errors.current}>
+          <Input
+            id="current"
+            type="password"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+            autoComplete="current-password"
+            aria-invalid={!!errors.current}
+          />
+        </Field>
+        <Field
+          label="Password baru"
+          htmlFor="next"
+          hint="Minimal 12 karakter, berisi huruf dan angka."
+          error={errors.next}
+        >
+          <Input
+            id="next"
+            type="password"
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+            autoComplete="new-password"
+            aria-invalid={!!errors.next}
+          />
+        </Field>
+        <Field label="Ulangi password baru" htmlFor="confirm" error={errors.confirm}>
+          <Input
+            id="confirm"
+            type="password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            autoComplete="new-password"
+            aria-invalid={!!errors.confirm}
+          />
+        </Field>
+        <Button type="submit" loading={loading}>
+          Simpan password
+        </Button>
+      </form>
+    </AccountSection>
   );
 }

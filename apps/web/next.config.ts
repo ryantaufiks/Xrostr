@@ -10,6 +10,8 @@ const contentSecurityPolicy = [
   "img-src 'self' data:",
   "font-src 'self'",
   "connect-src 'self'",
+  "worker-src 'self'",
+  "manifest-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -21,6 +23,11 @@ const config: NextConfig = {
   poweredByHeader: false,
   async headers() {
     return [
+      {
+        // The service worker must never be served stale, or users stay on an old version.
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+      },
       {
         source: '/:path*',
         headers: [

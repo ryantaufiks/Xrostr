@@ -4,6 +4,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { IdentityModule } from './modules/identity/identity.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { TenancyModule } from './modules/tenancy/tenancy.module.js';
 import { APP_CONFIG, type AppConfig } from './shared/config/app-config.js';
 import { HealthController } from './health.controller.js';
@@ -35,6 +36,7 @@ export class AppModule {
         IdentityModule,
         TenancyModule,
         AuditModule,
+        NotificationsModule,
       ],
       controllers: [HealthController],
       providers: [

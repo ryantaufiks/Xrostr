@@ -4,6 +4,7 @@ import type { Permission, SessionStage } from '@xrostr/contracts';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from './api';
+import { releasePush } from './pwa';
 
 export interface Principal {
   subject: { type: 'platform_admin' | 'user'; id: string; tenantId: string | null };
@@ -54,5 +55,6 @@ export function useSession(area: Area): Principal | null {
 }
 
 export async function logout(): Promise<void> {
+  await releasePush();
   await api('/auth/logout', { method: 'POST' }).catch(() => undefined);
 }

@@ -121,3 +121,46 @@ export const auditLog = pgTable(
     tenantIsolation('audit_log'),
   ],
 ).enableRLS();
+
+/** Browser push endpoints of a user's devices (Web Push). One row per device. */
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    endpoint: text('endpoint').notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('push_subscriptions_user_endpoint_uq').on(t.userId, t.endpoint),
+    tenantIsolation('push_subscriptions'),
+  ],
+).enableRLS();
+
+/** In-app inbox. Every notification is stored here and also pushed to the user's devices. */
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    url: text('url'),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('notifications_user_created_idx').on(t.userId, t.createdAt),
+    tenantIsolation('notifications'),
+  ],
+).enableRLS();

@@ -31,6 +31,7 @@ const ACTION_LABELS: Record<string, string> = {
   'auth.mfa_enabled': '2FA diaktifkan',
   'user.invite_accepted': 'Undangan diterima',
   'auth.password_changed': 'Password diganti',
+  'tenant.created': 'Perusahaan dibuat',
   'auth.password_change_failed': 'Gagal mengganti password',
 };
 

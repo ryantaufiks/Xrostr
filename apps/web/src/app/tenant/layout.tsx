@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { AppShell } from '@/components/app-shell';
+import { NotificationBell } from '@/components/notification-bell';
 import { Spinner } from '@/components/ui';
 import { PrincipalContext } from '@/lib/principal-context';
 import { useSession } from '@/lib/session';
@@ -13,6 +14,7 @@ export default function TenantLayout({ children }: { children: ReactNode }) {
     <PrincipalContext.Provider value={principal}>
       <AppShell
         areaLabel="Perusahaan"
+        actions={<NotificationBell href="/tenant/notifications" />}
         nav={[
           { href: '/tenant', label: 'Ringkasan' },
           { href: '/tenant/account', label: 'Akun' },

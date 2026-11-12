@@ -1,12 +1,18 @@
+import type { Database } from '@xrostr/db';
 import type { Logger } from 'pino';
 import type { EventHandler } from './outbox-relay.js';
+import { PushDelivery, type PushSender } from './push-delivery.js';
 
 /**
- * Event type → handlers. Phase 0 only records deliveries; Phase 1 adds the welcome
- * email with the invite link and pushes long-running work onto BullMQ queues.
+ * Event type → handlers. `sender` is null when Web Push is not configured; notifications
+ * then stay in the in-app inbox only.
  */
-export function buildHandlers(logger: Logger): Map<string, EventHandler[]> {
-  return new Map<string, EventHandler[]>([
+export function buildHandlers(
+  db: Database,
+  sender: PushSender | null,
+  logger: Logger,
+): Map<string, EventHandler[]> {
+  const handlers = new Map<string, EventHandler[]>([
     [
       'tenant.created',
       [
@@ -16,4 +22,10 @@ export function buildHandlers(logger: Logger): Map<string, EventHandler[]> {
       ],
     ],
   ]);
+  if (sender) {
+    handlers.set('notification.created', [new PushDelivery(db, sender, logger).deliver]);
+  } else {
+    logger.warn('VAPID keys not set: push notifications are disabled');
+  }
+  return handlers;
 }

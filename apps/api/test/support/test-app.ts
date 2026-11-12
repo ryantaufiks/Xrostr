@@ -23,6 +23,7 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     },
     fieldEncryptionKey: Buffer.alloc(32, 7),
     rateLimitEnabled: false,
+    vapidPublicKey: 'test-public-key',
     ...overrides,
   };
 }

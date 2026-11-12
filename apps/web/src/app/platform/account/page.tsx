@@ -1,7 +1,7 @@
 'use client';
 
-import { ChangePasswordPage } from '@/components/change-password-form';
+import { AccountPage } from '@/components/account-page';
 
-export default function AccountPage() {
-  return <ChangePasswordPage />;
+export default function Page() {
+  return <AccountPage area="platform" />;
 }

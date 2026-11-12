@@ -3,6 +3,7 @@ import { createDatabase } from '@xrostr/db';
 import { pino } from 'pino';
 import { buildHandlers } from './handlers.js';
 import { OutboxRelay } from './outbox-relay.js';
+import { WebPushSender } from './push-delivery.js';
 
 const IDLE_DELAY_MS = 1000;
 
@@ -13,8 +14,14 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
-const handle = createDatabase(databaseUrl, { max: 2 });
-const relay = new OutboxRelay(handle.db, buildHandlers(logger));
+// One connection for the relay's batch transaction, the rest for handlers.
+const handle = createDatabase(databaseUrl, { max: 4 });
+const { VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY } = process.env;
+const sender =
+  VAPID_SUBJECT && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY
+    ? new WebPushSender(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY)
+    : null;
+const relay = new OutboxRelay(handle.db, buildHandlers(handle.db, sender, logger));
 const controller = new AbortController();
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

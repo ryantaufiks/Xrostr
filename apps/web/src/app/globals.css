@@ -1,13 +1,29 @@
 @import 'tailwindcss';
 
 /*
- * Monochrome theme: ash gray in light mode, black in dark mode (follows the system),
- * with one flat accent. Surfaces are separated by hairlines, never by shadows.
+ * Monochrome theme: black by default, ash gray when the user picks the light theme
+ * (data-theme="light" on <html>), with one flat accent. Surfaces are separated by
+ * hairlines, never by shadows.
  *
  * Built for older users too: every text colour meets WCAG AA (4.5:1) on both surfaces,
  * and control borders meet the 3:1 non-text contrast minimum.
  */
 :root {
+  color-scheme: dark;
+  --bg: #000000;
+  --surface: #0c0c0c;
+  --sunken: #161616;
+  --line: #2b2b2b;
+  --control: #7a7a76;
+  --fg: #f1f1ef;
+  --muted: #b9b9b4;
+  --faint: #94948f;
+  --accent: #ff5157;
+  --dot: rgb(255 255 255 / 0.12);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
   --bg: #dcdeda;
   --surface: #e9eae7;
   --sunken: #d0d3ce;
@@ -18,21 +34,6 @@
   --faint: #565b53;
   --accent: #b0121a;
   --dot: rgb(11 11 11 / 0.1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --surface: #0c0c0c;
-    --sunken: #161616;
-    --line: #2b2b2b;
-    --control: #7a7a76;
-    --fg: #f1f1ef;
-    --muted: #b9b9b4;
-    --faint: #94948f;
-    --accent: #ff5157;
-    --dot: rgb(255 255 255 / 0.12);
-  }
 }
 
 @theme inline {
@@ -62,7 +63,6 @@
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
-    color-scheme: light dark;
   }
   body {
     @apply bg-bg text-fg;

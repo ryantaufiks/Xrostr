@@ -17,6 +17,9 @@ export const AllowMfaSetup = () => SetMetadata(ALLOW_MFA_SETUP_KEY, true);
 /** Only platform superadmins. */
 export const PlatformOnly = () => SetMetadata(PLATFORM_ONLY_KEY, true);
 
+/** Any signed-in tenant user, whatever their role (no platform admins). */
+export const TenantUser = () => SetMetadata(PERMISSIONS_KEY, []);
+
 /** Only tenant users holding every listed permission. */
 export const RequirePermissions = (...permissions: Permission[]) =>
   SetMetadata(PERMISSIONS_KEY, permissions);

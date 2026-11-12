@@ -20,6 +20,7 @@ const envSchema = z.object({
   REFRESH_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(2_592_000),
   FIELD_ENCRYPTION_KEY: base64Key(32),
   RATE_LIMIT_ENABLED: z.stringbool().default(true),
+  VAPID_PUBLIC_KEY: z.string().optional(),
 });
 
 export interface AppConfig {
@@ -30,6 +31,8 @@ export interface AppConfig {
   jwt: { secret: string; issuer: string; accessTtlSeconds: number; refreshTtlSeconds: number };
   fieldEncryptionKey: Buffer;
   rateLimitEnabled: boolean;
+  /** Web Push application server key; push is off when unset. */
+  vapidPublicKey: string | null;
 }
 
 /** Injection token for the validated configuration. */
@@ -55,5 +58,6 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     fieldEncryptionKey: Buffer.from(env.FIELD_ENCRYPTION_KEY, 'base64'),
     rateLimitEnabled: env.RATE_LIMIT_ENABLED,
+    vapidPublicKey: env.VAPID_PUBLIC_KEY || null,
   };
 }

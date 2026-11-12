@@ -1,6 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Doto, Inter, Space_Mono } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { PwaRegister } from '@/components/pwa-register';
+import { THEME_BOOT_SCRIPT } from '@/lib/theme';
 import './globals.css';
 
 // Self-hosted at build time, so the strict font-src CSP still holds.
@@ -16,12 +18,30 @@ export const metadata: Metadata = {
   title: { default: 'Xrostr', template: '%s · Xrostr' },
   description: 'HRMS otonom untuk agensi security dan tenaga kerja shift.',
   robots: { index: false, follow: false },
+  appleWebApp: { capable: true, title: 'Xrostr', statusBarStyle: 'black-translucent' },
+  icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  colorScheme: 'dark light',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="id" className={`${inter.variable} ${spaceMono.variable} ${doto.variable}`}>
-      <body>{children}</body>
+    // The boot script may set data-theme before React hydrates.
+    <html
+      lang="id"
+      className={`${inter.variable} ${spaceMono.variable} ${doto.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
+      <body>
+        {children}
+        <PwaRegister />
+      </body>
     </html>
   );
 }

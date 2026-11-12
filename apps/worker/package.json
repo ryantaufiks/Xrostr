@@ -11,14 +11,19 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@xrostr/contracts": "workspace:*",
     "@xrostr/db": "workspace:*",
     "drizzle-orm": "^0.45.4",
-    "pino": "^10.4.0"
+    "pino": "^10.4.0",
+    "web-push": "^4.0.0"
   },
   "devDependencies": {
-    "@xrostr/config": "workspace:*",
     "@testcontainers/postgresql": "^12.2.1",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
+    "@types/web-push": "^3.6.4",
+    "@xrostr/config": "workspace:*",
+    "pg": "^8.23.1",
     "typescript": "~6.0.3",
     "vitest": "^5.1.0"
   }
