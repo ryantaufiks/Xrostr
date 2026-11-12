@@ -139,6 +139,11 @@ All errors are `application/problem+json` (RFC 9457) with a stable `code`.
 | POST      | `/tenant/shifts`, DELETE `/tenant/shifts/:id`         | `schedules.manage` |
 | POST      | `/tenant/roster/publish`                              | `schedules.manage` |
 | GET       | `/me/shifts?from&to`                                  | tenant user        |
+| GET, POST | `/me/leave?year`, POST `/me/leave/:id/cancel`         | tenant user        |
+| GET       | `/tenant/leave/requests?status`                       | `leave.approve`    |
+| POST      | `/tenant/leave/requests/:id/decision`                 | `leave.approve`    |
+| GET       | `/tenant/holidays?countryCode&year`                   | tenant user        |
+| POST      | `/tenant/holidays`, DELETE `/tenant/holidays/:id`     | `holidays.manage`  |
 | GET, POST | `/notifications`, `/notifications/push/*`             | tenant user        |
 | GET       | `/tenant/audit-log?limit=`                            | `audit.read`       |
 

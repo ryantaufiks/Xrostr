@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { SystemRole } from '@xrostr/contracts';
+import type { Permission, SystemRole } from '@xrostr/contracts';
 import { Clock } from '../../../shared/application/ports.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import { IdentityErrors } from '../domain/identity-errors.js';
@@ -79,6 +79,11 @@ export class TenantUserAccess {
 
   summarize(userIds: readonly string[]): Promise<Map<string, UserSummary>> {
     return this.accounts.summarize(userIds);
+  }
+
+  /** Who to notify for a task, e.g. everyone who may approve leave. */
+  usersWithPermission(permission: Permission): Promise<string[]> {
+    return this.accounts.activeUserIdsWithPermission(permission);
   }
 
   private async issueInvite(tenantId: string, userId: string): Promise<IssuedInvite> {

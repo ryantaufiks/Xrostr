@@ -141,6 +141,23 @@ export class DrizzleShiftRepository extends ShiftRepository {
     return rows.map(toShift);
   }
 
+  async liveForEmployee(employeeId: string, start: Date, end: Date): Promise<Shift[]> {
+    const rows = await this.ctx
+      .executor()
+      .select()
+      .from(shifts)
+      .where(
+        and(
+          eq(shifts.employeeId, employeeId),
+          ne(shifts.status, 'cancelled'),
+          gte(shifts.startsAt, start),
+          lt(shifts.startsAt, end),
+        ),
+      )
+      .orderBy(asc(shifts.startsAt));
+    return rows.map(toShift);
+  }
+
   async remove(id: string): Promise<void> {
     await this.ctx.executor().delete(shifts).where(eq(shifts.id, id));
   }

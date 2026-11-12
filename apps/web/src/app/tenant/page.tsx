@@ -42,6 +42,12 @@ const ACTION_LABELS: Record<string, string> = {
   'schedule.published': 'Jadwal diterbitkan',
   'location.checkin_code_rotated': 'Kode QR site diganti',
   'auth.password_change_failed': 'Gagal mengganti password',
+  'leave.requested': 'Cuti diajukan',
+  'leave.cancelled': 'Pengajuan cuti dibatalkan',
+  'leave.approved': 'Cuti disetujui',
+  'leave.rejected': 'Cuti ditolak',
+  'holiday.created': 'Hari libur ditambahkan',
+  'holiday.removed': 'Hari libur dihapus',
 };
 
 const actionLabel = (action: string) => ACTION_LABELS[action] ?? action;

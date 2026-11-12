@@ -1,9 +1,9 @@
 'use client';
 
-import { LogOut, type LucideIcon } from 'lucide-react';
+import { Ellipsis, LogOut, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { logout } from '@/lib/session';
 import { Logo } from './brand';
 import { cx, Dot } from './ui';
@@ -14,6 +14,9 @@ export interface NavItem {
   /** Shown in the bottom tab bar on phones. */
   icon: LucideIcon;
 }
+
+const MAX_TABS = 5;
+const TAB = 'flex min-h-16 flex-col items-center justify-center gap-1 text-[13px] font-semibold';
 
 /**
  * Signed-in layout. Wide screens: navigation in the top bar. Phones: a bottom tab bar with
@@ -34,10 +37,16 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  useEffect(() => setMoreOpen(false), [pathname]);
   // The most specific match wins, so /tenant/account does not also light up /tenant.
   const activeHref = nav
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     .sort((x, y) => y.href.length - x.href.length)[0]?.href;
+  // Five large tabs fit a phone; beyond that the rest go under "Lainnya".
+  const tabs = nav.length > MAX_TABS ? nav.slice(0, MAX_TABS - 1) : nav;
+  const more = nav.slice(tabs.length);
+  const moreActive = more.some((item) => item.href === activeHref);
 
   async function signOut() {
     setSigningOut(true);
@@ -86,31 +95,68 @@ export function AppShell({
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 pt-8 pb-32 sm:px-6 sm:py-10">{children}</main>
+      {moreOpen && (
+        <div
+          className="fixed inset-0 z-10 sm:hidden"
+          onClick={() => setMoreOpen(false)}
+          aria-hidden
+        />
+      )}
       <nav
         aria-label="Menu utama"
-        className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-bg pb-[env(safe-area-inset-bottom)] sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
+        {moreOpen && (
+          <ul id="more-menu" className="border-b border-line">
+            {more.map(({ href, label, icon: Icon }) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  aria-current={href === activeHref ? 'page' : undefined}
+                  className={cx(
+                    'flex min-h-14 items-center gap-4 px-6 text-lg font-semibold',
+                    href === activeHref ? 'text-fg' : 'text-muted',
+                  )}
+                >
+                  <Icon className="size-6" aria-hidden />
+                  {label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
         <div
           className="grid"
-          style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}
+          style={{
+            gridTemplateColumns: `repeat(${tabs.length + (more.length ? 1 : 0)}, minmax(0, 1fr))`,
+          }}
         >
-          {nav.map(({ href, label, icon: Icon }) => {
+          {tabs.map(({ href, label, icon: Icon }) => {
             const active = href === activeHref;
             return (
               <Link
                 key={href}
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className={cx(
-                  'flex min-h-16 flex-col items-center justify-center gap-1 text-[13px] font-semibold',
-                  active ? 'text-fg' : 'text-muted',
-                )}
+                className={cx(TAB, active ? 'text-fg' : 'text-muted')}
               >
                 <Icon className="size-6" aria-hidden strokeWidth={active ? 2.4 : 1.8} />
                 {label}
               </Link>
             );
           })}
+          {more.length > 0 && (
+            <button
+              type="button"
+              aria-expanded={moreOpen}
+              aria-controls="more-menu"
+              onClick={() => setMoreOpen((open) => !open)}
+              className={cx(TAB, moreActive || moreOpen ? 'text-fg' : 'text-muted')}
+            >
+              <Ellipsis className="size-6" aria-hidden strokeWidth={moreActive ? 2.4 : 1.8} />
+              Lainnya
+            </button>
+          )}
         </div>
       </nav>
     </div>

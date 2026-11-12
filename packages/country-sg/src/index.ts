@@ -1,5 +1,9 @@
 import type { CountryPack } from '@xrostr/contracts';
 
+/**
+ * Singapore. Leave follows the Employment Act minimums and the government-paid parental schemes
+ * as known at the time of writing; verify against MOM before relying on them for payroll.
+ */
 export const singaporePack: CountryPack = {
   code: 'SG',
   name: 'Singapore',
@@ -9,4 +13,88 @@ export const singaporePack: CountryPack = {
   timezones: ['Asia/Singapore'],
   locale: 'en-SG',
   defaultDataRegion: 'sg',
+  leaveTypes: [
+    {
+      code: 'annual',
+      name: 'Cuti tahunan',
+      paid: true,
+      requiresDocument: false,
+      minServiceMonths: 3,
+      // 7 days in the first year, one more per completed year, up to 14.
+      entitlement: (years) => Math.min(14, 7 + years),
+      basis: 'Employment Act s.88A',
+    },
+    {
+      code: 'sick',
+      name: 'Cuti sakit (rawat jalan)',
+      paid: true,
+      requiresDocument: true,
+      minServiceMonths: 3,
+      entitlement: () => 14,
+      basis: 'Employment Act s.89',
+    },
+    {
+      code: 'hospitalisation',
+      name: 'Cuti rawat inap',
+      paid: true,
+      requiresDocument: true,
+      minServiceMonths: 3,
+      entitlement: () => 60,
+      basis: 'Employment Act s.89',
+    },
+    {
+      code: 'childcare',
+      name: 'Cuti mengasuh anak',
+      paid: true,
+      requiresDocument: false,
+      minServiceMonths: 3,
+      entitlement: () => 6,
+      basis: 'Child Development Co-Savings Act',
+    },
+    {
+      code: 'maternity',
+      name: 'Cuti melahirkan',
+      paid: true,
+      requiresDocument: true,
+      minServiceMonths: 3,
+      entitlement: () => 112,
+      basis: 'Government-Paid Maternity Leave (16 minggu)',
+    },
+    {
+      code: 'paternity',
+      name: 'Cuti ayah',
+      paid: true,
+      requiresDocument: true,
+      minServiceMonths: 3,
+      entitlement: () => 28,
+      basis: 'Government-Paid Paternity Leave (4 minggu)',
+    },
+    {
+      code: 'unpaid',
+      name: 'Cuti tanpa upah',
+      paid: false,
+      requiresDocument: false,
+      minServiceMonths: 0,
+      entitlement: () => null,
+      basis: 'Kebijakan perusahaan',
+    },
+  ],
+  holidays: {
+    2026: [
+      { date: '2026-01-01', name: "New Year's Day" },
+      { date: '2026-02-17', name: 'Chinese New Year' },
+      { date: '2026-02-18', name: 'Chinese New Year (hari ke-2)' },
+      { date: '2026-03-21', name: 'Hari Raya Puasa' },
+      { date: '2026-04-03', name: 'Good Friday' },
+      { date: '2026-05-01', name: 'Labour Day' },
+      { date: '2026-05-27', name: 'Hari Raya Haji' },
+      { date: '2026-05-31', name: 'Vesak Day' },
+      { date: '2026-06-01', name: 'Vesak Day (pengganti)' },
+      { date: '2026-08-09', name: 'National Day' },
+      { date: '2026-08-10', name: 'National Day (pengganti)' },
+      { date: '2026-11-08', name: 'Deepavali' },
+      { date: '2026-11-09', name: 'Deepavali (pengganti)' },
+      { date: '2026-12-25', name: 'Christmas Day' },
+    ],
+  },
 };

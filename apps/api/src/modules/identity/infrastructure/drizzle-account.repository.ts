@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PERMISSIONS, type Permission } from '@xrostr/contracts';
 import { platformAdmins, roles, userRoles, users } from '@xrostr/db';
-import { eq, inArray } from 'drizzle-orm';
+import { and, arrayContains, eq, inArray } from 'drizzle-orm';
 import { DatabaseContext } from '../../../shared/infrastructure/database/database-context.js';
 import { AccountRepository, type UserSummary } from '../application/ports.js';
 import type { Account, AccountStatus, LoginAttemptState, SubjectRef } from '../domain/account.js';
@@ -121,6 +121,17 @@ export class DrizzleAccountRepository extends AccountRepository {
       }
     }
     return summaries;
+  }
+
+  async activeUserIdsWithPermission(permission: string): Promise<string[]> {
+    const rows = await this.ctx
+      .executor()
+      .selectDistinct({ id: users.id })
+      .from(users)
+      .innerJoin(userRoles, eq(userRoles.userId, users.id))
+      .innerJoin(roles, eq(roles.id, userRoles.roleId))
+      .where(and(eq(users.status, 'active'), arrayContains(roles.permissions, [permission])));
+    return rows.map((r) => r.id);
   }
 
   private async update(ref: SubjectRef, values: Partial<AdminRow & UserRow>): Promise<void> {

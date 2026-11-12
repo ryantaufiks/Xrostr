@@ -33,6 +33,8 @@ export abstract class ShiftRepository {
     opensBeforeMs: number,
     closesAfterMs: number,
   ): Promise<Shift[]>;
+  /** Live (not cancelled) shifts of an employee starting within [start, end). */
+  abstract liveForEmployee(employeeId: string, start: Date, end: Date): Promise<Shift[]>;
   abstract remove(id: string): Promise<void>;
   abstract cancel(id: string): Promise<void>;
 }

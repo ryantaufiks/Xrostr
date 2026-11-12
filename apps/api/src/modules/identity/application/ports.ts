@@ -74,6 +74,8 @@ export abstract class AccountRepository {
   abstract setUserStatus(userId: string, status: AccountStatus): Promise<void>;
   /** Email, status and role of tenant users, by id. Requires a tenant unit of work. */
   abstract summarize(userIds: readonly string[]): Promise<Map<string, UserSummary>>;
+  /** Active users whose role grants the permission. Requires a tenant unit of work. */
+  abstract activeUserIdsWithPermission(permission: string): Promise<string[]>;
 }
 
 export abstract class RoleRepository {

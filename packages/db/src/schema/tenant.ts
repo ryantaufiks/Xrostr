@@ -296,3 +296,65 @@ export const attendanceEvents = pgTable(
     tenantIsolation('attendance_events'),
   ],
 ).enableRLS();
+
+/** A tenant's public holidays per country, seeded from the Country Pack and editable. */
+export const publicHolidays = pgTable(
+  'public_holidays',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    countryCode: text('country_code').notNull(),
+    date: date('date').notNull(),
+    name: text('name').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('public_holidays_day_uq').on(t.tenantId, t.countryCode, t.date),
+    tenantIsolation('public_holidays'),
+  ],
+).enableRLS();
+
+/**
+ * Remembers which (country, year) calendars were seeded, so a holiday an admin deleted is not
+ * re-created on the next read.
+ */
+export const holidayCalendars = pgTable(
+  'holiday_calendars',
+  {
+    tenantId: tenantId(),
+    countryCode: text('country_code').notNull(),
+    year: integer('year').notNull(),
+    seededAt: timestamp('seeded_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.countryCode, t.year] }),
+    tenantIsolation('holiday_calendars'),
+  ],
+).enableRLS();
+
+export const leaveRequests = pgTable(
+  'leave_requests',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    leaveType: text('leave_type').notNull(),
+    startDate: date('start_date').notNull(),
+    endDate: date('end_date').notNull(),
+    days: integer('days').notNull(),
+    reason: text('reason'),
+    status: text('status').notNull().default('pending'),
+    decidedBy: uuid('decided_by'),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    decisionNote: text('decision_note'),
+    ...timestamps,
+    version: version(),
+  },
+  (t) => [
+    index('leave_requests_employee_idx').on(t.employeeId, t.startDate),
+    index('leave_requests_status_idx').on(t.status),
+    tenantIsolation('leave_requests'),
+  ],
+).enableRLS();

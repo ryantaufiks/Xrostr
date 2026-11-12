@@ -15,6 +15,8 @@ export const PERMISSIONS = [
   'locations.manage',
   'schedules.read',
   'schedules.manage',
+  'leave.approve',
+  'holidays.manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -52,6 +54,8 @@ export const SYSTEM_ROLE_DEFINITIONS: readonly SystemRoleDefinition[] = [
       'employees.manage',
       'locations.read',
       'schedules.read',
+      'leave.approve',
+      'holidays.manage',
     ],
     mfaRequired: true,
   },
@@ -64,6 +68,7 @@ export const SYSTEM_ROLE_DEFINITIONS: readonly SystemRoleDefinition[] = [
       'locations.read',
       'schedules.read',
       'schedules.manage',
+      'leave.approve',
     ],
     mfaRequired: false,
   },
