@@ -7,8 +7,10 @@ import { Alert, Badge, Card, PageHeader, Spinner, buttonStyles } from '@/compone
 import { usePrincipal } from '@/lib/principal-context';
 import { useData } from '@/lib/use-data';
 import { TIMEZONE_LABELS } from '@/lib/workforce';
+import { useT } from '@/lib/i18n';
 
 export default function LocationsPage() {
+  const t = useT();
   const { permissions } = usePrincipal();
   const canManage = permissions.includes('locations.manage');
   const { data, error } = useData<LocationView[]>('/tenant/locations');
@@ -16,13 +18,13 @@ export default function LocationsPage() {
   return (
     <>
       <PageHeader
-        title="Site"
-        description="Lokasi kerja dan radius absensinya."
+        title={t.sites.title}
+        description={t.sites.subtitle}
         actions={
           canManage && (
             <Link href="/tenant/locations/new" className={buttonStyles('primary')}>
               <Plus className="size-5" aria-hidden />
-              Tambah site
+              {t.sites.add}
             </Link>
           )
         }
@@ -32,10 +34,8 @@ export default function LocationsPage() {
       {data?.length === 0 && (
         <Card className="flex flex-col items-center px-6 py-16 text-center">
           <Building2 className="size-10 text-faint" aria-hidden />
-          <h2 className="mt-4 font-display text-xl font-bold">Belum ada site</h2>
-          <p className="mt-1 max-w-sm text-base text-muted">
-            Tambahkan lokasi tempat officer bertugas, lengkap dengan titik dan radius absensi.
-          </p>
+          <h2 className="mt-4 font-display text-xl font-bold">{t.sites.empty}</h2>
+          <p className="mt-1 max-w-sm text-base text-muted">{t.sites.emptyHint}</p>
         </Card>
       )}
       {data && data.length > 0 && (
@@ -49,7 +49,7 @@ export default function LocationsPage() {
                     <p className="font-mono text-sm text-muted">{site.code}</p>
                   </div>
                   <Badge tone={site.status === 'active' ? 'active' : 'neutral'}>
-                    {site.status === 'active' ? 'Aktif' : 'Arsip'}
+                    {site.status === 'active' ? t.sites.active : t.sites.archived}
                   </Badge>
                 </div>
                 <dl className="mt-4 space-y-1.5 text-base">
@@ -57,8 +57,8 @@ export default function LocationsPage() {
                     <MapPin className="mt-1 size-4 shrink-0" aria-hidden />
                     <span>
                       {site.latitude != null
-                        ? `Radius ${site.geofenceRadiusM} m`
-                        : 'Titik lokasi belum diisi'}
+                        ? t.sites.radius(site.geofenceRadiusM)
+                        : t.sites.noPoint}
                     </span>
                   </div>
                   <p className="text-muted">{TIMEZONE_LABELS[site.timezone] ?? site.timezone}</p>

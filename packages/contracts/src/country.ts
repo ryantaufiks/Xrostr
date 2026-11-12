@@ -1,3 +1,5 @@
+import type { Localized } from './locale.js';
+
 export const COUNTRY_CODES = ['SG', 'ID'] as const;
 export type CountryCode = (typeof COUNTRY_CODES)[number];
 
@@ -10,7 +12,7 @@ export type DataRegion = (typeof DATA_REGIONS)[number];
  */
 export interface LeaveTypeRule {
   readonly code: string;
-  readonly name: string;
+  readonly name: Localized<string>;
   readonly paid: boolean;
   readonly requiresDocument: boolean;
   /** Service needed before the type can be used at all. */

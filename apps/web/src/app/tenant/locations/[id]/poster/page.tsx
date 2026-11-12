@@ -9,9 +9,11 @@ import { Logo } from '@/components/brand';
 import { Alert, Button, Spinner } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { useData } from '@/lib/use-data';
+import { useT } from '@/lib/i18n';
 
 /** A4 poster for the guard post. The app chrome is hidden when printing. */
 export default function PosterPage() {
+  const t = useT();
   const { id } = useParams<{ id: string }>();
   const sites = useData<LocationView[]>('/tenant/locations');
   const [image, setImage] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export default function PosterPage() {
         }),
       )
       .then(setImage)
-      .catch((e: unknown) => setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.'));
+      .catch((e: unknown) => setError(e instanceof ApiError ? e.message : t.common.error));
   }, [id]);
 
   if (error ?? sites.error) return <Alert>{error ?? sites.error}</Alert>;
@@ -39,7 +41,7 @@ export default function PosterPage() {
       <div className="print:hidden">
         <Button onClick={() => window.print()}>
           <Printer className="size-5" aria-hidden />
-          Cetak
+          {t.sites.print}
         </Button>
       </div>
       {/* Always black on white, whatever the screen theme, so it prints cleanly. */}
@@ -51,9 +53,9 @@ export default function PosterPage() {
         <Logo />
         <h1 className="text-4xl font-bold">{site.name}</h1>
         <p className="font-mono text-xl">{site.code}</p>
-        <img src={image} alt={`QR absensi ${site.name}`} className="w-full max-w-md" />
-        <p className="text-2xl font-semibold">Pindai untuk absen masuk & pulang</p>
-        <p className="text-lg">Buka Xrostr → Absen, atau pindai dengan kamera HP.</p>
+        <img src={image} alt={t.sites.posterAlt(site.name)} className="w-full max-w-md" />
+        <p className="text-2xl font-semibold">{t.sites.posterScan}</p>
+        <p className="text-lg">{t.sites.posterHow}</p>
       </section>
     </div>
   );

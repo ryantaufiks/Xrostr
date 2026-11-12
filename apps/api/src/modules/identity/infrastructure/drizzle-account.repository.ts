@@ -123,6 +123,27 @@ export class DrizzleAccountRepository extends AccountRepository {
     return summaries;
   }
 
+  async localeOf(ref: SubjectRef): Promise<string | null> {
+    const db = this.ctx.executor();
+    const [row] =
+      ref.type === 'platform_admin'
+        ? await db
+            .select({ locale: platformAdmins.locale })
+            .from(platformAdmins)
+            .where(eq(platformAdmins.id, ref.id))
+            .limit(1)
+        : await db
+            .select({ locale: users.locale })
+            .from(users)
+            .where(eq(users.id, ref.id))
+            .limit(1);
+    return row?.locale ?? null;
+  }
+
+  async setLocale(ref: SubjectRef, locale: string | null): Promise<void> {
+    await this.update(ref, { locale });
+  }
+
   async usersWithRole(roleKey: string) {
     const rows = await this.ctx
       .executor()

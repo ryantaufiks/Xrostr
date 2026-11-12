@@ -6,13 +6,15 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { addDays, dayLabel, todayLocal } from '@/lib/dates';
-import { attendanceOpen, attendanceSummary, SHIFT_LABELS, shiftHours } from '@/lib/shifts';
+import { attendanceOpen, attendanceSummary, shiftHours, shiftKindLabel } from '@/lib/shifts';
 import { Alert, Card, Spinner, buttonStyles, cx } from './ui';
+import { useT } from '@/lib/i18n';
 
 const DAYS_AHEAD = 14;
 
 /** The signed-in person's published shifts for the next two weeks, today first. */
 export function MyShifts() {
+  const t = useT();
   const [shifts, setShifts] = useState<ShiftView[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notEmployee, setNotEmployee] = useState(false);
@@ -24,33 +26,36 @@ export function MyShifts() {
       .then(setShifts)
       .catch((e: unknown) => {
         if (e instanceof ApiError && e.code === 'not_an_employee') setNotEmployee(true);
-        else setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+        else setError(e instanceof ApiError ? e.message : t.common.error);
       });
   }, [today]);
 
   if (notEmployee) return null;
   if (error) return <Alert>{error}</Alert>;
-  if (!shifts) return <Spinner label="Memuat jadwal…" />;
+  if (!shifts) return <Spinner label={t.schedule.loadingSchedule} />;
 
   if (shifts.length === 0) {
     return (
       <Card className="flex flex-col items-center px-6 py-12 text-center">
         <CalendarCheck className="size-10 text-faint" aria-hidden />
-        <p className="mt-4 text-lg font-semibold text-fg">Belum ada jadwal</p>
-        <p className="mt-1 max-w-sm text-base text-muted">
-          Jadwal 2 minggu ke depan akan tampil di sini setelah diterbitkan supervisor.
-        </p>
+        <p className="mt-4 text-lg font-semibold text-fg">{t.schedule.empty}</p>
+        <p className="mt-1 max-w-sm text-base text-muted">{t.schedule.emptyHint}</p>
       </Card>
     );
   }
 
   return (
-    <section className="space-y-3" aria-label="Jadwal saya">
+    <section className="space-y-3" aria-label={t.schedule.mySchedule}>
       {shifts.map((s) => {
-        const when = s.localDate === today ? 'Hari ini' : s.localDate === tomorrow ? 'Besok' : null;
+        const isToday = s.localDate === today;
+        const when = isToday
+          ? t.schedule.today
+          : s.localDate === tomorrow
+            ? t.schedule.tomorrow
+            : null;
         const Icon = s.kind === 'night' ? Moon : Sun;
         return (
-          <Card key={s.id} className={cx('p-5', when === 'Hari ini' && 'border-fg')}>
+          <Card key={s.id} className={cx('p-5', isToday && 'border-fg')}>
             <p className="label font-bold text-muted">
               {when && <span className="mr-2 text-accent">{when}</span>}
               {dayLabel(s.localDate)}
@@ -62,7 +67,7 @@ export function MyShifts() {
                 <p className="text-3xl font-bold tracking-tight text-fg tabular-nums">
                   {shiftHours(s)}
                 </p>
-                <p className="text-base text-muted">{SHIFT_LABELS[s.kind]}</p>
+                <p className="text-base text-muted">{shiftKindLabel(s.kind)}</p>
               </div>
             </div>
             <p className="mt-3 flex items-center gap-2 text-base text-fg">
@@ -79,9 +84,10 @@ export function MyShifts() {
 
 /** What the officer has done for this shift, and the one button they need next. */
 function ShiftAttendanceLine({ shift }: { shift: ShiftView }) {
+  const t = useT();
   const summary = attendanceSummary(shift);
   const done = !!shift.attendance?.checkOutAt;
-  const action = shift.attendance?.checkInAt ? 'Absen pulang' : 'Absen masuk';
+  const action = shift.attendance?.checkInAt ? t.schedule.checkOut : t.schedule.checkIn;
   return (
     <div className="mt-4 space-y-3 border-t border-line pt-4">
       {summary && (

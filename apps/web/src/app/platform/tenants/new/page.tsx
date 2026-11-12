@@ -9,6 +9,7 @@ import {
   type CreateTenantResponse,
   type DataRegion,
   type Plan,
+  localeForRegion,
 } from '@xrostr/contracts';
 import { Check, Copy, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
@@ -24,8 +25,8 @@ import {
   buttonStyles,
 } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
-import { COUNTRY_LABELS, formatDateTime, PLAN_LABELS, REGION_LABELS, slugify } from '@/lib/format';
-import { FIELD_MESSAGES } from '@/lib/zod-locale';
+import { formatDateTime, PLAN_LABELS, slugify } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 
 interface EntityRow {
   name: string;
@@ -42,6 +43,11 @@ const emptyEntity = (countryCode: CountryCode = 'SG'): EntityRow => ({
 });
 
 export default function NewTenantPage() {
+  const t = useT();
+  const fieldMessages: Record<string, string> = {
+    slug: t.platform.slugRule,
+    legalEntities: t.platform.entityRequired,
+  };
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [slugEdited, setSlugEdited] = useState(false);
@@ -82,7 +88,7 @@ export default function NewTenantPage() {
         Object.fromEntries(
           parsed.error.issues.map((i) => {
             const path = i.path.join('.');
-            return [path, FIELD_MESSAGES[path] ?? i.message];
+            return [path, fieldMessages[path] ?? i.message];
           }),
         ),
       );
@@ -100,7 +106,7 @@ export default function NewTenantPage() {
         if (e.fieldErrors.length)
           setErrors(Object.fromEntries(e.fieldErrors.map((f) => [f.path, f.message])));
       } else {
-        setFormError('Terjadi kesalahan.');
+        setFormError(t.common.error);
       }
     } finally {
       setLoading(false);
@@ -111,16 +117,13 @@ export default function NewTenantPage() {
 
   return (
     <>
-      <PageHeader
-        title="Buat tenant"
-        description="Tenant, legal entity, role bawaan, dan undangan admin pertama dibuat sekaligus."
-      />
+      <PageHeader title={t.platform.createTenant} description={t.platform.newSubtitle} />
       <form onSubmit={submit} className="space-y-6" noValidate>
         {formError && <Alert>{formError}</Alert>}
 
-        <Section title="Perusahaan" description="Identitas tenant dan lokasi penyimpanan datanya.">
+        <Section title={t.platform.companySection} description={t.platform.companySectionHint}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Nama perusahaan" htmlFor="name" error={errors.name}>
+            <Field label={t.platform.companyName} htmlFor="name" error={errors.name}>
               <Input
                 id="name"
                 value={name}
@@ -132,9 +135,9 @@ export default function NewTenantPage() {
               />
             </Field>
             <Field
-              label="Slug"
+              label={t.platform.slug}
               htmlFor="slug"
-              hint="Dipakai karyawan saat masuk. Huruf kecil, angka, dan tanda hubung."
+              hint={t.platform.slugHint}
               error={errors.slug}
             >
               <Input
@@ -149,23 +152,25 @@ export default function NewTenantPage() {
               />
             </Field>
             <Field
-              label="Region data"
+              label={t.platform.dataRegion}
               htmlFor="region"
-              hint="Lokasi penyimpanan data karyawan tenant ini."
+              hint={t.platform.regionHint(
+                localeForRegion(dataRegion) === 'id' ? 'Bahasa Indonesia' : 'English',
+              )}
             >
               <Select
                 id="region"
                 value={dataRegion}
                 onChange={(e) => setDataRegion(e.target.value as DataRegion)}
               >
-                {Object.entries(REGION_LABELS).map(([value, label]) => (
+                {Object.entries(t.common.regions).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
                 ))}
               </Select>
             </Field>
-            <Field label="Paket" htmlFor="plan">
+            <Field label={t.platform.plan} htmlFor="plan">
               <Select id="plan" value={plan} onChange={(e) => setPlan(e.target.value as Plan)}>
                 {PLANS.map((p) => (
                   <option key={p} value={p}>
@@ -177,10 +182,7 @@ export default function NewTenantPage() {
           </div>
         </Section>
 
-        <Section
-          title="Legal entity"
-          description="Badan hukum pemberi kerja. Negara menentukan aturan payroll, pajak, dan cuti (Country Pack)."
-        >
+        <Section title={t.platform.entitySection} description={t.platform.entitySectionHint}>
           <div className="space-y-3">
             {entities.map((entity, index) => (
               <div
@@ -188,7 +190,7 @@ export default function NewTenantPage() {
                 className="grid gap-3 rounded-xl border border-line p-3 sm:grid-cols-[1fr_160px_180px_auto] sm:items-start"
               >
                 <Field
-                  label="Nama badan hukum"
+                  label={t.platform.entityName}
                   htmlFor={`entity-${index}-name`}
                   error={errors[`legalEntities.${index}.name`]}
                 >
@@ -202,7 +204,7 @@ export default function NewTenantPage() {
                     aria-invalid={!!errors[`legalEntities.${index}.name`]}
                   />
                 </Field>
-                <Field label="Negara" htmlFor={`entity-${index}-country`}>
+                <Field label={t.platform.country} htmlFor={`entity-${index}-country`}>
                   <Select
                     id={`entity-${index}-country`}
                     value={entity.countryCode}
@@ -212,12 +214,12 @@ export default function NewTenantPage() {
                   >
                     {COUNTRY_CODES.map((c) => (
                       <option key={c} value={c}>
-                        {COUNTRY_LABELS[c]}
+                        {t.common.countries[c]}
                       </option>
                     ))}
                   </Select>
                 </Field>
-                <Field label="No. registrasi" htmlFor={`entity-${index}-reg`}>
+                <Field label={t.platform.registration} htmlFor={`entity-${index}-reg`}>
                   <Input
                     id={`entity-${index}-reg`}
                     value={entity.registrationNumber}
@@ -229,7 +231,7 @@ export default function NewTenantPage() {
                   type="button"
                   variant="ghost"
                   className="sm:mt-6.5"
-                  aria-label="Hapus legal entity"
+                  aria-label={t.platform.removeEntity}
                   disabled={entities.length === 1}
                   onClick={() => setEntities((rows) => rows.filter((_, i) => i !== index))}
                 >
@@ -249,17 +251,18 @@ export default function NewTenantPage() {
               }
             >
               <Plus className="size-4" aria-hidden />
-              Tambah legal entity
+              {t.platform.addEntity}
             </Button>
           </div>
         </Section>
 
-        <Section
-          title="Administrator pertama"
-          description="Menerima tautan undangan untuk membuat password. Wajib mengaktifkan 2FA saat masuk pertama."
-        >
+        <Section title={t.platform.adminSection} description={t.platform.adminSectionHint}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Nama lengkap" htmlFor="admin-name" error={errors['firstAdmin.fullName']}>
+            <Field
+              label={t.platform.fullName}
+              htmlFor="admin-name"
+              error={errors['firstAdmin.fullName']}
+            >
               <Input
                 id="admin-name"
                 value={adminName}
@@ -267,7 +270,11 @@ export default function NewTenantPage() {
                 aria-invalid={!!errors['firstAdmin.fullName']}
               />
             </Field>
-            <Field label="Email" htmlFor="admin-email" error={errors['firstAdmin.email']}>
+            <Field
+              label={t.platform.email}
+              htmlFor="admin-email"
+              error={errors['firstAdmin.email']}
+            >
               <Input
                 id="admin-email"
                 type="email"
@@ -281,10 +288,10 @@ export default function NewTenantPage() {
 
         <div className="flex justify-end gap-2">
           <Link href="/platform/tenants" className={buttonStyles('secondary')}>
-            Batal
+            {t.common.cancel}
           </Link>
           <Button type="submit" loading={loading}>
-            Buat tenant
+            {t.platform.createTenant}
           </Button>
         </div>
       </form>
@@ -317,6 +324,7 @@ function TenantCreated({
 }: {
   created: CreateTenantResponse & { slug: string; name: string };
 }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const link = `${window.location.origin}/invite?token=${encodeURIComponent(created.inviteToken)}&tenant=${encodeURIComponent(created.slug)}`;
 
@@ -328,14 +336,16 @@ function TenantCreated({
 
   return (
     <>
-      <PageHeader title="Tenant dibuat" description={`${created.name} siap dipakai.`} />
+      <PageHeader
+        title={t.platform.createdTitle}
+        description={t.platform.createdSubtitle(created.name)}
+      />
       <Card className="space-y-5 p-6">
         <Alert tone="success">
-          Kirim tautan di bawah ke administrator pertama. Tautan hanya berlaku sekali dan
-          kedaluwarsa pada <strong>{formatDateTime(created.inviteExpiresAt)}</strong>.
+          {t.platform.createdInvite} <strong>{formatDateTime(created.inviteExpiresAt)}</strong>.
         </Alert>
         <div>
-          <p className="mb-1.5 text-sm font-medium text-fg">Tautan undangan</p>
+          <p className="mb-1.5 text-sm font-medium text-fg">{t.platform.inviteLink}</p>
           <div className="flex gap-2">
             <Input
               readOnly
@@ -349,16 +359,14 @@ function TenantCreated({
               ) : (
                 <Copy className="size-4" aria-hidden />
               )}
-              {copied ? 'Tersalin' : 'Salin'}
+              {copied ? t.platform.copied : t.platform.copy}
             </Button>
           </div>
-          <p className="mt-1.5 text-xs text-muted">
-            Tautan ini hanya ditampilkan sekarang. Pengiriman email otomatis menyusul di Fase 1.
-          </p>
+          <p className="mt-1.5 text-xs text-muted">{t.platform.inviteShownOnce}</p>
         </div>
         <div className="flex gap-2">
           <Link href="/platform/tenants" className={buttonStyles('primary')}>
-            Ke daftar tenant
+            {t.platform.toList}
           </Link>
         </div>
       </Card>

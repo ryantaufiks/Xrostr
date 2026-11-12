@@ -74,6 +74,9 @@ export abstract class AccountRepository {
   abstract setUserStatus(userId: string, status: AccountStatus): Promise<void>;
   /** Email, status and role of tenant users, by id. Requires a tenant unit of work. */
   abstract summarize(userIds: readonly string[]): Promise<Map<string, UserSummary>>;
+  /** The subject's personal language, or null when it follows the default. */
+  abstract localeOf(ref: SubjectRef): Promise<string | null>;
+  abstract setLocale(ref: SubjectRef, locale: string | null): Promise<void>;
   /** Users holding a role, any status. Requires a tenant unit of work. */
   abstract usersWithRole(
     roleKey: string,

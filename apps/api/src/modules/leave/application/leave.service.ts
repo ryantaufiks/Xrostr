@@ -6,10 +6,12 @@ import {
   type LeaveRequestView,
   type LeaveStatus,
   type LeaveTypeRule,
+  type Locale,
   type MyLeave,
   type RequestLeaveRequest,
 } from '@xrostr/contracts';
 import { AuditLogger, Clock, UnitOfWork } from '../../../shared/application/ports.js';
+import { formatCalendarDate } from '../../../shared/domain/dates.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import { TenantUserAccess, type Principal } from '../../identity/public-api.js';
 import { Notifier } from '../../notifications/public-api.js';
@@ -22,14 +24,10 @@ import { HolidaysService } from './holidays.service.js';
 import { LeaveRequestRepository, type LeaveRequest } from './ports.js';
 
 const tenantOf = (actor: Principal) => actor.subject.tenantId!;
-const humanDate = (date: string) =>
-  new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(
-    new Date(`${date}T00:00:00Z`),
-  );
-const range = (r: Pick<LeaveRequest, 'startDate' | 'endDate'>) =>
-  r.startDate === r.endDate
-    ? humanDate(r.startDate)
-    : `${humanDate(r.startDate)}–${humanDate(r.endDate)}`;
+const range = (r: Pick<LeaveRequest, 'startDate' | 'endDate'>, locale: Locale) => {
+  const day = (d: string) => formatCalendarDate(d, locale, { day: 'numeric', month: 'short' });
+  return r.startDate === r.endDate ? day(r.startDate) : `${day(r.startDate)}–${day(r.endDate)}`;
+};
 
 /** Today's date in a time zone, as YYYY-MM-DD. */
 const dateIn = (at: Date, timeZone: string) =>
@@ -127,8 +125,16 @@ export class LeaveService {
         await this.notifier.notify(tenantId, {
           userId,
           kind: 'leave.requested',
-          title: 'Pengajuan cuti baru',
-          body: `${me.employee.fullName}: ${rule.name}, ${range(input)} (${days} hari).`,
+          text: {
+            en: {
+              title: 'New leave request',
+              body: `${me.employee.fullName}: ${rule.name.en}, ${range(input, 'en')} (${days} ${days === 1 ? 'day' : 'days'}).`,
+            },
+            id: {
+              title: 'Pengajuan cuti baru',
+              body: `${me.employee.fullName}: ${rule.name.id}, ${range(input, 'id')} (${days} hari).`,
+            },
+          },
           url: '/tenant/leave',
         });
       }
@@ -209,13 +215,23 @@ export class LeaveService {
         note,
       );
 
-      const typeName =
-        entity.pack.leaveTypes.find((t) => t.code === request.leaveType)?.name ?? request.leaveType;
+      const typeName = entity.pack.leaveTypes.find((t) => t.code === request.leaveType)?.name ?? {
+        en: request.leaveType,
+        id: request.leaveType,
+      };
       await this.notifier.notify(tenantId, {
         userId: employee.userId,
         kind: approve ? 'leave.approved' : 'leave.rejected',
-        title: approve ? 'Cuti disetujui' : 'Cuti ditolak',
-        body: `${typeName}, ${range(request)}.${note ? ` Catatan: ${note}` : ''}`,
+        text: {
+          en: {
+            title: approve ? 'Leave approved' : 'Leave rejected',
+            body: `${typeName.en}, ${range(request, 'en')}.${note ? ` Note: ${note}` : ''}`,
+          },
+          id: {
+            title: approve ? 'Cuti disetujui' : 'Cuti ditolak',
+            body: `${typeName.id}, ${range(request, 'id')}.${note ? ` Catatan: ${note}` : ''}`,
+          },
+        },
         url: '/tenant/leave',
       });
       await this.record(actor, approve ? 'leave.approved' : 'leave.rejected', id, {
@@ -281,7 +297,7 @@ function toView(
   const rule = entity.pack.leaveTypes.find((t) => t.code === r.leaveType);
   return {
     id: r.id,
-    leaveType: { code: r.leaveType, name: rule?.name ?? r.leaveType },
+    leaveType: { code: r.leaveType, name: rule?.name ?? { en: r.leaveType, id: r.leaveType } },
     startDate: r.startDate,
     endDate: r.endDate,
     days: r.days,

@@ -11,6 +11,7 @@ import {
   type Database,
   type Transaction,
 } from '@xrostr/db';
+import { isLocale, localeForRegion, type Locale, type Localized } from '@xrostr/contracts';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { Logger } from 'pino';
 
@@ -41,13 +42,13 @@ export class NoShowMonitor {
   /** Returns how many shifts were reported. */
   async tick(): Promise<number> {
     const active = await this.db
-      .select({ id: tenants.id })
+      .select({ id: tenants.id, dataRegion: tenants.dataRegion })
       .from(tenants)
       .where(eq(tenants.status, 'active'));
     let reported = 0;
-    for (const { id } of active) {
+    for (const { id, dataRegion } of active) {
       try {
-        reported += await this.checkTenant(id);
+        reported += await this.checkTenant(id, localeForRegion(dataRegion));
       } catch (error) {
         this.logger.error({ err: error, tenantId: id }, 'no-show check failed');
       }
@@ -55,7 +56,7 @@ export class NoShowMonitor {
     return reported;
   }
 
-  private checkTenant(tenantId: string): Promise<number> {
+  private checkTenant(tenantId: string, tenantLocale: Locale): Promise<number> {
     return this.db.transaction(async (tx) => {
       await tx.execute(sql`select set_config(${TENANT_SETTING}, ${tenantId}, true)`);
       // Claiming the rows in the same statement makes concurrent workers report each shift once.
@@ -78,6 +79,15 @@ export class NoShowMonitor {
         .select({ id: employees.id, userId: employees.userId, fullName: employees.fullName })
         .from(employees)
         .where(inArray(employees.id, [...new Set(due.map((d) => d.employee_id))]));
+      const recipients = [...planners, ...people.map((p) => p.userId)];
+      const locales = new Map(
+        (
+          await tx
+            .select({ id: users.id, locale: users.locale })
+            .from(users)
+            .where(inArray(users.id, recipients))
+        ).map((u) => [u.id, u.locale]),
+      );
       const sites = await tx
         .select({ id: locations.id, name: locations.name, timezone: locations.timezone })
         .from(locations)
@@ -90,18 +100,34 @@ export class NoShowMonitor {
         const start = localClock(new Date(shift.starts_at), site.timezone);
 
         for (const userId of planners) {
-          await notify(tx, tenantId, userId, {
+          await notify(tx, tenantId, userId, locales, tenantLocale, {
             kind: 'attendance.no_show',
-            title: 'Officer belum absen',
-            body: `${person.fullName}, shift ${start} di ${site.name}, belum absen masuk.`,
             url: '/tenant/roster',
+            text: {
+              en: {
+                title: 'Officer has not checked in',
+                body: `${person.fullName}, ${start} shift at ${site.name}, has not checked in.`,
+              },
+              id: {
+                title: 'Officer belum absen',
+                body: `${person.fullName}, shift ${start} di ${site.name}, belum absen masuk.`,
+              },
+            },
           });
         }
-        await notify(tx, tenantId, person.userId, {
+        await notify(tx, tenantId, person.userId, locales, tenantLocale, {
           kind: 'attendance.reminder',
-          title: 'Anda belum absen masuk',
-          body: `Shift ${start} di ${site.name} sudah dimulai. Pindai QR di lokasi untuk absen.`,
           url: '/tenant',
+          text: {
+            en: {
+              title: 'You have not checked in',
+              body: `Your ${start} shift at ${site.name} has started. Scan the QR code on site to check in.`,
+            },
+            id: {
+              title: 'Anda belum absen masuk',
+              body: `Shift ${start} di ${site.name} sudah dimulai. Pindai QR di lokasi untuk absen.`,
+            },
+          },
         });
       }
       this.logger.info({ tenantId, shifts: due.length }, 'no-show alerts sent');
@@ -120,15 +146,20 @@ async function plannerUserIds(tx: Transaction): Promise<string[]> {
   return rows.map((r) => r.id);
 }
 
+/** Written in the recipient's own language, else the tenant's default, as the API's Notifier. */
 async function notify(
   tx: Transaction,
   tenantId: string,
   userId: string,
-  message: { kind: string; title: string; body: string; url: string },
+  locales: ReadonlyMap<string, string | null>,
+  tenantLocale: Locale,
+  message: { kind: string; url: string; text: Localized<{ title: string; body: string }> },
 ): Promise<void> {
+  const preferred = locales.get(userId);
+  const { title, body } = message.text[isLocale(preferred) ? preferred : tenantLocale];
   const [row] = await tx
     .insert(notifications)
-    .values({ tenantId, userId, ...message })
+    .values({ tenantId, userId, kind: message.kind, url: message.url, title, body })
     .returning({ id: notifications.id });
   await tx.insert(outboxEvents).values({
     tenantId,
@@ -137,9 +168,9 @@ async function notify(
   });
 }
 
-/** "20.00" in the site's time zone. */
+/** "20:00" in the site's time zone. */
 function localClock(instant: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat('en-GB', {
     timeZone,
     hour: '2-digit',
     minute: '2-digit',

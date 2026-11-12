@@ -3,6 +3,7 @@
 import { Check, Copy, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { formatDateTime } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { Alert, Button, Input, buttonStyles } from './ui';
 
 /** Shows a one-time invite link with copy and WhatsApp buttons. */
@@ -19,11 +20,12 @@ export function InviteShare({
   name: string;
   phone?: string | null;
 }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const params = new URLSearchParams({ token });
   if (tenantSlug) params.set('tenant', tenantSlug);
   const link = `${window.location.origin}/invite?${params.toString()}`;
-  const message = `Halo ${name}, akun Xrostr Anda sudah dibuat. Buka tautan ini untuk membuat password: ${link}`;
+  const message = t.account.inviteWhatsapp(name, link);
   // wa.me wants the number as bare digits with country code, e.g. 6281234567890.
   const digits = phone?.replace(/\D/g, '') ?? '';
   const whatsapp = `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
@@ -37,8 +39,7 @@ export function InviteShare({
   return (
     <div className="space-y-4">
       <Alert tone="success">
-        Kirim tautan ini ke {name}. Hanya berlaku sekali, sampai{' '}
-        <strong>{formatDateTime(expiresAt)}</strong>.
+        {t.account.inviteSend(name)} <strong>{formatDateTime(expiresAt)}</strong>.
       </Alert>
       <Input
         readOnly
@@ -54,7 +55,7 @@ export function InviteShare({
           className={buttonStyles('primary')}
         >
           <MessageCircle className="size-5" aria-hidden />
-          Kirim lewat WhatsApp
+          {t.account.sendWhatsapp}
         </a>
         <Button type="button" variant="secondary" onClick={copy}>
           {copied ? (
@@ -62,7 +63,7 @@ export function InviteShare({
           ) : (
             <Copy className="size-5" aria-hidden />
           )}
-          {copied ? 'Tersalin' : 'Salin tautan'}
+          {copied ? t.account.copied : t.account.copyLink}
         </Button>
       </div>
     </div>

@@ -90,6 +90,42 @@
   background-size: 14px 14px;
 }
 
+/* Compact account controls for the platform: familiar cards, arranged as small widgets. */
+.account-widgets {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-widgets .account-section {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.account-widgets .account-section > div:first-child {
+  padding: 1.25rem 1.25rem 0.875rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.account-widgets .account-section > div:last-child {
+  padding: 1.25rem;
+}
+
+.account-widgets .account-section [role='radiogroup'] {
+  max-width: none;
+}
+
+@media (min-width: 640px) {
+  .account-widgets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-widgets > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
 /* Printing (QR posters): only the page content, black on white. */
 @media print {
   header,

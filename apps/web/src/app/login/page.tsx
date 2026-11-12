@@ -4,8 +4,16 @@ import { Building2, ShieldCheck } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState, type FormEvent } from 'react';
 import { AuthLayout } from '@/components/app-shell';
-import { Alert, Button, Field, Input, cx } from '@/components/ui';
+import {
+  Alert,
+  Button,
+  Field,
+  Input,
+  SegmentedControl,
+  segmentedOptionStyles,
+} from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 import { destinationAfterLogin, fetchPrincipal } from '@/lib/session';
 
 type Mode = 'tenant' | 'platform';
@@ -19,6 +27,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const t = useT();
   const router = useRouter();
   const params = useSearchParams();
   const [mode, setMode] = useState<Mode>(params.get('mode') === 'platform' ? 'platform' : 'tenant');
@@ -44,7 +53,7 @@ function LoginForm() {
       if (e instanceof ApiError && e.code === 'mfa_required') {
         setNeedsCode(true);
       } else {
-        setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+        setError(e instanceof ApiError ? e.message : t.common.error);
         if (e instanceof ApiError && e.code === 'invalid_mfa_code') setTotpCode('');
       }
       setLoading(false);
@@ -58,18 +67,12 @@ function LoginForm() {
   }
 
   return (
-    <AuthLayout
-      title="Masuk ke Xrostr"
-      subtitle="Gunakan akun perusahaan Anda atau akun Superadmin platform."
-    >
-      <div
-        className="mb-6 grid grid-cols-2 gap-1 rounded-full border border-control p-1"
-        role="tablist"
-      >
+    <AuthLayout title={t.auth.loginTitle} subtitle={t.auth.loginSubtitle}>
+      <SegmentedControl className="mb-6 grid grid-cols-2" role="tablist">
         {(
           [
-            ['tenant', 'Perusahaan', Building2],
-            ['platform', 'Superadmin', ShieldCheck],
+            ['tenant', t.auth.company, Building2],
+            ['platform', t.auth.superadmin, ShieldCheck],
           ] as const
         ).map(([value, label, Icon]) => (
           <button
@@ -78,25 +81,18 @@ function LoginForm() {
             role="tab"
             aria-selected={mode === value}
             onClick={() => switchMode(value)}
-            className={cx(
-              'label inline-flex min-h-11 items-center justify-center gap-2 rounded-full font-bold transition',
-              mode === value ? 'bg-fg text-bg' : 'text-muted hover:text-fg',
-            )}
+            className={segmentedOptionStyles(mode === value)}
           >
             <Icon className="size-5" aria-hidden />
             {label}
           </button>
         ))}
-      </div>
+      </SegmentedControl>
 
       <form onSubmit={submit} className="space-y-4">
         {error && <Alert>{error}</Alert>}
         {mode === 'tenant' && (
-          <Field
-            label="Kode perusahaan"
-            htmlFor="tenant"
-            hint="Slug perusahaan, misalnya garda-aman."
-          >
+          <Field label={t.auth.companyCode} htmlFor="tenant" hint={t.auth.companyCodeHint}>
             <Input
               id="tenant"
               value={tenantSlug}
@@ -106,7 +102,7 @@ function LoginForm() {
             />
           </Field>
         )}
-        <Field label="Email" htmlFor="email">
+        <Field label={t.auth.email} htmlFor="email">
           <Input
             id="email"
             type="email"
@@ -116,7 +112,7 @@ function LoginForm() {
             required
           />
         </Field>
-        <Field label="Password" htmlFor="password">
+        <Field label={t.auth.password} htmlFor="password">
           <Input
             id="password"
             type="password"
@@ -127,11 +123,7 @@ function LoginForm() {
           />
         </Field>
         {needsCode && (
-          <Field
-            label="Kode authenticator"
-            htmlFor="totp"
-            hint="6 digit dari Google Authenticator, Authy, atau sejenisnya."
-          >
+          <Field label={t.auth.totp} htmlFor="totp" hint={t.auth.totpHint}>
             <Input
               id="totp"
               inputMode="numeric"
@@ -147,7 +139,7 @@ function LoginForm() {
           </Field>
         )}
         <Button type="submit" loading={loading} className="w-full">
-          Masuk
+          {t.auth.signIn}
         </Button>
       </form>
     </AuthLayout>

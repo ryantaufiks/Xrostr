@@ -7,9 +7,11 @@ import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { Alert, Button, Card, buttonStyles } from './ui';
+import { useT } from '@/lib/i18n';
 
 /** The site's check-in QR: preview, printable poster, and rotation to void old posters. */
 export function SiteQrCard({ locationId, hasPoint }: { locationId: string; hasPoint: boolean }) {
+  const t = useT();
   const [image, setImage] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'error' | 'success'; text: string } | null>(null);
   const [rotating, setRotating] = useState(false);
@@ -26,18 +28,13 @@ export function SiteQrCard({ locationId, hasPoint }: { locationId: string; hasPo
       .catch((e: unknown) =>
         setMessage({
           tone: 'error',
-          text: e instanceof ApiError ? e.message : 'Terjadi kesalahan.',
+          text: e instanceof ApiError ? e.message : t.common.error,
         }),
       );
   }, [locationId]);
 
   async function rotate() {
-    if (
-      !window.confirm(
-        'Ganti kode QR? Poster yang sudah tertempel langsung tidak berlaku dan harus dicetak ulang.',
-      )
-    )
-      return;
+    if (!window.confirm(t.sites.rotateConfirm)) return;
     setRotating(true);
     setMessage(null);
     try {
@@ -46,9 +43,9 @@ export function SiteQrCard({ locationId, hasPoint }: { locationId: string; hasPo
           method: 'POST',
         }),
       );
-      setMessage({ tone: 'success', text: 'Kode QR diganti. Cetak dan tempel poster baru.' });
+      setMessage({ tone: 'success', text: t.sites.rotated });
     } catch (e) {
-      setMessage({ tone: 'error', text: e instanceof ApiError ? e.message : 'Terjadi kesalahan.' });
+      setMessage({ tone: 'error', text: e instanceof ApiError ? e.message : t.common.error });
     } finally {
       setRotating(false);
     }
@@ -57,28 +54,22 @@ export function SiteQrCard({ locationId, hasPoint }: { locationId: string; hasPo
   return (
     <Card className="space-y-4 p-5 sm:p-6">
       <div>
-        <h2 className="label font-bold text-fg">QR absensi</h2>
-        <p className="mt-1 text-sm text-muted">
-          Tempel poster ini di pos jaga. Officer memindainya untuk absen masuk dan pulang.
-        </p>
+        <h2 className="label font-bold text-fg">{t.sites.qrTitle}</h2>
+        <p className="mt-1 text-sm text-muted">{t.sites.qrHint}</p>
       </div>
-      {!hasPoint && (
-        <Alert>
-          Isi titik lokasi site terlebih dahulu; tanpa titik, absensi tidak bisa diterima.
-        </Alert>
-      )}
+      {!hasPoint && <Alert>{t.sites.qrNoPoint}</Alert>}
       {message && <Alert tone={message.tone}>{message.text}</Alert>}
       {image && (
-        <img src={image} alt="QR absensi site" className="size-60 rounded-xl bg-white p-3" />
+        <img src={image} alt={t.sites.qrTitle} className="size-60 rounded-xl bg-white p-3" />
       )}
       <div className="flex flex-wrap gap-2">
         <Link href={`/tenant/locations/${locationId}/poster`} className={buttonStyles('primary')}>
           <Printer className="size-5" aria-hidden />
-          Cetak poster
+          {t.sites.printPoster}
         </Link>
         <Button variant="secondary" loading={rotating} onClick={rotate}>
           <RefreshCw className="size-5" aria-hidden />
-          Ganti kode QR
+          {t.sites.rotate}
         </Button>
       </div>
     </Card>

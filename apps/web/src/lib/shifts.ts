@@ -1,14 +1,17 @@
 import type { ShiftKind, ShiftView } from '@xrostr/contracts';
+import { schedule } from './i18n/messages/schedule';
+import { currentLocale, intlLocale } from './i18n/state';
 
-export const SHIFT_LABELS: Record<ShiftKind, string> = {
-  day: 'Shift pagi',
-  night: 'Shift malam',
-  custom: 'Shift khusus',
-};
+const texts = () => schedule[currentLocale()];
 
-/** "20.00–08.00" in Indonesian notation. */
+export const shiftKindLabel = (kind: ShiftKind) => texts().kinds[kind] ?? kind;
+
+/** Indonesian writes times as 20.00, English as 20:00. */
+const clock = (hhmm: string) => (currentLocale() === 'id' ? hhmm.replace(':', '.') : hhmm);
+
+/** "20.00–08.00" (Indonesian) or "20:00–08:00" (English). */
 export const shiftHours = (s: Pick<ShiftView, 'localStart' | 'localEnd'>) =>
-  `${s.localStart.replace(':', '.')}–${s.localEnd.replace(':', '.')}`;
+  `${clock(s.localStart)}–${clock(s.localEnd)}`;
 
 const HOUR = 3_600_000;
 
@@ -20,22 +23,26 @@ export function attendanceOpen(
   return now >= Date.parse(s.startsAt) - 2 * HOUR && now < Date.parse(s.endsAt) + 4 * HOUR;
 }
 
-const localClock = (iso: string, timeZone: string) =>
-  new Intl.DateTimeFormat('id-ID', {
-    timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  })
-    .format(new Date(iso))
-    .replace(':', '.');
+/** Clock time at the site, not on the phone, e.g. 19.58 (Indonesian) or 19:58 (English). */
+export const localClock = (iso: string, timeZone: string) =>
+  clock(
+    new Intl.DateTimeFormat(intlLocale(), {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .format(new Date(iso))
+      .replace('.', ':'),
+  );
 
-/** "Masuk 19.58 · terlambat 12 mnt · Pulang 08.03" in the site's time zone; null if nothing yet. */
+/** "In 19:58 · 12 min late · Out 08:03" in the site's time zone; null if nothing yet. */
 export function attendanceSummary(s: ShiftView): { text: string; late: boolean } | null {
   const a = s.attendance;
   if (!a?.checkInAt) return null;
-  const parts = [`Masuk ${localClock(a.checkInAt, s.timezone)}`];
-  if (a.lateMinutes) parts.push(`terlambat ${a.lateMinutes} mnt`);
-  if (a.checkOutAt) parts.push(`Pulang ${localClock(a.checkOutAt, s.timezone)}`);
+  const t = texts();
+  const parts = [t.checkedIn(localClock(a.checkInAt, s.timezone))];
+  if (a.lateMinutes) parts.push(t.late(a.lateMinutes));
+  if (a.checkOutAt) parts.push(t.checkedOut(localClock(a.checkOutAt, s.timezone)));
   return { text: parts.join(' · '), late: !!a.lateMinutes };
 }

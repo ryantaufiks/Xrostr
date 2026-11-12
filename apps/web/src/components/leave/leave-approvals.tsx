@@ -7,22 +7,24 @@ import { Alert, Button, Card, Input, Spinner } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { useData } from '@/lib/use-data';
 import { LeaveRequestRow } from './leave-request-row';
+import { useT } from '@/lib/i18n';
 
 /** Pending requests for people who may approve leave. */
 export function LeaveApprovals() {
+  const t = useT();
   const queue = useData<LeaveRequestView[]>('/tenant/leave/requests');
   const [message, setMessage] = useState<{ tone: 'error' | 'success'; text: string } | null>(null);
 
   return (
     <section className="space-y-4" aria-labelledby="approvals">
       <h2 id="approvals" className="font-display text-2xl font-bold">
-        Menunggu persetujuan
+        {t.leave.awaiting}
       </h2>
       {message && <Alert tone={message.tone}>{message.text}</Alert>}
       {queue.error && <Alert>{queue.error}</Alert>}
       {!queue.data && !queue.error && <Spinner />}
       {queue.data?.length === 0 && (
-        <p className="text-base text-muted">Tidak ada pengajuan yang menunggu.</p>
+        <p className="text-base text-muted">{t.leave.nothingAwaiting}</p>
       )}
       {queue.data && queue.data.length > 0 && (
         <Card>
@@ -52,6 +54,7 @@ function Decision({
   request: LeaveRequestView;
   onDone: (text: string, tone: 'error' | 'success') => Promise<void>;
 }) {
+  const t = useT();
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState<'approve' | 'reject' | null>(null);
 
@@ -63,14 +66,14 @@ function Decision({
       });
       const shifts =
         decision === 'approve' && request.conflictingShifts > 0
-          ? ` ${request.conflictingShifts} shift di tanggal tersebut ditarik dari jadwal.`
+          ? t.leave.withdrawn(request.conflictingShifts)
           : '';
       await onDone(
-        `Cuti ${request.employee.fullName} ${decision === 'approve' ? 'disetujui' : 'ditolak'}.${shifts}`,
+        `${t.leave.decided(request.employee.fullName, decision === 'approve')}${shifts}`,
         'success',
       );
     } catch (e) {
-      await onDone(e instanceof ApiError ? e.message : 'Terjadi kesalahan.', 'error');
+      await onDone(e instanceof ApiError ? e.message : t.common.error, 'error');
     } finally {
       setBusy(null);
     }
@@ -81,13 +84,12 @@ function Decision({
       {request.conflictingShifts > 0 && (
         <p className="flex items-center gap-2 text-base text-accent">
           <CalendarX2 className="size-5 shrink-0" aria-hidden />
-          Ada {request.conflictingShifts} shift di tanggal ini. Menyetujui akan menarik shift
-          tersebut.
+          {t.leave.conflicts(request.conflictingShifts)}
         </p>
       )}
       <Input
-        aria-label={`Catatan untuk ${request.employee.fullName}`}
-        placeholder="Catatan (opsional)"
+        aria-label={t.leave.noteFor(request.employee.fullName)}
+        placeholder={t.leave.notePlaceholder}
         maxLength={500}
         value={note}
         onChange={(e) => setNote(e.target.value)}
@@ -98,7 +100,7 @@ function Decision({
           disabled={busy !== null}
           onClick={() => decide('approve')}
         >
-          Setujui
+          {t.leave.approve}
         </Button>
         <Button
           variant="secondary"
@@ -106,7 +108,7 @@ function Decision({
           disabled={busy !== null}
           onClick={() => decide('reject')}
         >
-          Tolak
+          {t.leave.reject}
         </Button>
       </div>
     </div>

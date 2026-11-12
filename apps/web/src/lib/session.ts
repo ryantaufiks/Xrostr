@@ -1,6 +1,6 @@
 'use client';
 
-import type { Permission, SessionStage } from '@xrostr/contracts';
+import type { LocaleSettings, Permission, SessionStage } from '@xrostr/contracts';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from './api';
@@ -11,6 +11,7 @@ export interface Principal {
   sessionId: string;
   stage: SessionStage;
   permissions: Permission[];
+  locale: LocaleSettings;
 }
 
 export type Area = 'platform' | 'tenant';

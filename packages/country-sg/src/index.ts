@@ -16,7 +16,7 @@ export const singaporePack: CountryPack = {
   leaveTypes: [
     {
       code: 'annual',
-      name: 'Cuti tahunan',
+      name: { en: 'Annual leave', id: 'Cuti tahunan' },
       paid: true,
       requiresDocument: false,
       minServiceMonths: 3,
@@ -26,7 +26,7 @@ export const singaporePack: CountryPack = {
     },
     {
       code: 'sick',
-      name: 'Cuti sakit (rawat jalan)',
+      name: { en: 'Sick leave (outpatient)', id: 'Cuti sakit (rawat jalan)' },
       paid: true,
       requiresDocument: true,
       minServiceMonths: 3,
@@ -35,7 +35,7 @@ export const singaporePack: CountryPack = {
     },
     {
       code: 'hospitalisation',
-      name: 'Cuti rawat inap',
+      name: { en: 'Hospitalisation leave', id: 'Cuti rawat inap' },
       paid: true,
       requiresDocument: true,
       minServiceMonths: 3,
@@ -44,7 +44,7 @@ export const singaporePack: CountryPack = {
     },
     {
       code: 'childcare',
-      name: 'Cuti mengasuh anak',
+      name: { en: 'Childcare leave', id: 'Cuti mengasuh anak' },
       paid: true,
       requiresDocument: false,
       minServiceMonths: 3,
@@ -53,7 +53,7 @@ export const singaporePack: CountryPack = {
     },
     {
       code: 'maternity',
-      name: 'Cuti melahirkan',
+      name: { en: 'Maternity leave', id: 'Cuti melahirkan' },
       paid: true,
       requiresDocument: true,
       minServiceMonths: 3,
@@ -62,7 +62,7 @@ export const singaporePack: CountryPack = {
     },
     {
       code: 'paternity',
-      name: 'Cuti ayah',
+      name: { en: 'Paternity leave', id: 'Cuti ayah' },
       paid: true,
       requiresDocument: true,
       minServiceMonths: 3,
@@ -71,7 +71,7 @@ export const singaporePack: CountryPack = {
     },
     {
       code: 'unpaid',
-      name: 'Cuti tanpa upah',
+      name: { en: 'Unpaid leave', id: 'Cuti tanpa upah' },
       paid: false,
       requiresDocument: false,
       minServiceMonths: 0,

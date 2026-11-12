@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { COUNTRY_CODES, type CountryCode } from './country.js';
+import type { Localized } from './locale.js';
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
@@ -40,7 +41,7 @@ export type LeaveQueueQuery = z.infer<typeof leaveQueueQuerySchema>;
 
 export interface LeaveBalance {
   code: string;
-  name: string;
+  name: Localized<string>;
   paid: boolean;
   requiresDocument: boolean;
   basis: string;
@@ -55,7 +56,7 @@ export interface LeaveBalance {
 
 export interface LeaveRequestView {
   id: string;
-  leaveType: { code: string; name: string };
+  leaveType: { code: string; name: Localized<string> };
   startDate: string;
   endDate: string;
   /** Leave days charged: calendar days minus public holidays. */

@@ -6,6 +6,7 @@ const user = (stage: 'full' | 'mfa_setup' = 'full'): Principal => ({
   sessionId: 's',
   stage,
   permissions: [],
+  locale: { locale: 'id', preferred: null, default: 'id' },
 });
 
 describe('return path after login', () => {

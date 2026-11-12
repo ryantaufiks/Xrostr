@@ -1,3 +1,6 @@
+import { attendance } from './i18n/messages/attendance';
+import { currentLocale } from './i18n/state';
+
 /** Reads the site and code from a scanned QR text: a full URL or a bare `/checkin?…` path. */
 export function parseCheckinQr(text: string): { locationId: string; code: string } | null {
   try {
@@ -21,7 +24,7 @@ export interface Position {
 export function currentPosition(): Promise<Position> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error('Perangkat ini tidak bisa membaca lokasi.'));
+      reject(new Error(attendance[currentLocale()].noGeolocation));
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -35,8 +38,8 @@ export function currentPosition(): Promise<Position> {
         reject(
           new Error(
             error.code === error.PERMISSION_DENIED
-              ? 'Izin lokasi ditolak. Izinkan lokasi untuk Xrostr di pengaturan browser, lalu coba lagi.'
-              : 'Lokasi belum terbaca. Pastikan GPS menyala dan Anda di luar ruangan, lalu coba lagi.',
+              ? attendance[currentLocale()].locationDenied
+              : attendance[currentLocale()].locationUnavailable,
           ),
         ),
       { enableHighAccuracy: true, timeout: 20_000, maximumAge: 0 },

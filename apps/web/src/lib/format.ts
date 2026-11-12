@@ -1,11 +1,11 @@
-const dateTime = new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
-const date = new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' });
+import { intlLocale } from './i18n/state';
 
-export const formatDateTime = (iso: string) => dateTime.format(new Date(iso));
-export const formatDate = (iso: string) => date.format(new Date(iso));
-
-export const COUNTRY_LABELS: Record<string, string> = { SG: 'Singapura', ID: 'Indonesia' };
-export const REGION_LABELS: Record<string, string> = { sg: 'Singapura', id: 'Indonesia' };
+export const formatDateTime = (iso: string) =>
+  new Intl.DateTimeFormat(intlLocale(), { dateStyle: 'medium', timeStyle: 'short' }).format(
+    new Date(iso),
+  );
+export const formatDate = (iso: string) =>
+  new Intl.DateTimeFormat(intlLocale(), { dateStyle: 'medium' }).format(new Date(iso));
 export const PLAN_LABELS: Record<string, string> = {
   starter: 'Starter',
   growth: 'Growth',

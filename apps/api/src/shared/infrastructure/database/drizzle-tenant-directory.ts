@@ -20,6 +20,16 @@ export class DrizzleTenantDirectory extends TenantDirectory {
     return row?.id ?? null;
   }
 
+  async dataRegion(tenantId: string): Promise<string | null> {
+    const [row] = await this.ctx
+      .executor()
+      .select({ region: tenants.dataRegion })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+    return row?.region ?? null;
+  }
+
   async isActive(tenantId: string): Promise<boolean> {
     const [row] = await this.ctx
       .executor()

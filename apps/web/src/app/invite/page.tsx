@@ -7,6 +7,7 @@ import { Suspense, useState, type FormEvent } from 'react';
 import { AuthLayout } from '@/components/app-shell';
 import { Alert, Button, Field, Input, buttonStyles } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 
 export default function InvitePage() {
   return (
@@ -17,6 +18,7 @@ export default function InvitePage() {
 }
 
 function InviteForm() {
+  const t = useT();
   const params = useSearchParams();
   const token = params.get('token') ?? '';
   const tenant = params.get('tenant') ?? '';
@@ -30,16 +32,15 @@ function InviteForm() {
     event.preventDefault();
     setError(null);
     const checked = passwordSchema.safeParse(password);
-    if (!checked.success)
-      return setError('Password minimal 12 karakter dan berisi huruf serta angka.');
-    if (password !== confirm) return setError('Konfirmasi password tidak sama.');
+    if (!checked.success) return setError(t.invite.passwordRule);
+    if (password !== confirm) return setError(t.invite.mismatch);
 
     setLoading(true);
     try {
       await api('/auth/accept-invite', { body: { inviteToken: token, password } });
       setDone(true);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      setError(e instanceof ApiError ? e.message : t.common.error);
     } finally {
       setLoading(false);
     }
@@ -47,25 +48,22 @@ function InviteForm() {
 
   if (!token) {
     return (
-      <AuthLayout title="Undangan tidak ditemukan">
-        <Alert>Tautan undangan tidak lengkap. Minta tautan baru ke administrator Anda.</Alert>
+      <AuthLayout title={t.invite.notFound}>
+        <Alert>{t.invite.incomplete}</Alert>
       </AuthLayout>
     );
   }
 
   if (done) {
     return (
-      <AuthLayout title="Akun Anda aktif">
+      <AuthLayout title={t.invite.activeTitle}>
         <div className="space-y-4">
-          <Alert tone="success">
-            Password tersimpan. Saat masuk pertama kali, Anda akan diminta mengaktifkan autentikasi
-            dua faktor.
-          </Alert>
+          <Alert tone="success">{t.invite.activeHint}</Alert>
           <Link
             href={`/login${tenant ? `?tenant=${encodeURIComponent(tenant)}` : ''}`}
             className={buttonStyles('primary', 'w-full')}
           >
-            Masuk sekarang
+            {t.invite.signInNow}
           </Link>
         </div>
       </AuthLayout>
@@ -74,18 +72,12 @@ function InviteForm() {
 
   return (
     <AuthLayout
-      title="Terima undangan"
-      subtitle={
-        tenant ? `Buat password untuk akun Anda di ${tenant}.` : 'Buat password untuk akun Anda.'
-      }
+      title={t.invite.title}
+      subtitle={tenant ? t.invite.subtitleAt(tenant) : t.invite.subtitle}
     >
       <form onSubmit={submit} className="space-y-4">
         {error && <Alert>{error}</Alert>}
-        <Field
-          label="Password baru"
-          htmlFor="password"
-          hint="Minimal 12 karakter, berisi huruf dan angka."
-        >
+        <Field label={t.invite.newPassword} htmlFor="password" hint={t.invite.passwordHint}>
           <Input
             id="password"
             type="password"
@@ -95,7 +87,7 @@ function InviteForm() {
             required
           />
         </Field>
-        <Field label="Ulangi password" htmlFor="confirm">
+        <Field label={t.invite.repeat} htmlFor="confirm">
           <Input
             id="confirm"
             type="password"
@@ -106,7 +98,7 @@ function InviteForm() {
           />
         </Field>
         <Button type="submit" loading={loading} className="w-full">
-          Aktifkan akun
+          {t.invite.activate}
         </Button>
       </form>
     </AuthLayout>

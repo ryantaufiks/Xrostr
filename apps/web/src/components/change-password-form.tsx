@@ -3,12 +3,14 @@
 import { passwordSchema } from '@xrostr/contracts';
 import { useState, type FormEvent } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 import { Alert, Button, Field, Input } from './ui';
 import { AccountSection } from './account-section';
 
 type Errors = Partial<Record<'current' | 'next' | 'confirm', string>>;
 
 export function ChangePasswordCard() {
+  const t = useT();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -19,13 +21,13 @@ export function ChangePasswordCard() {
 
   function validate(): Errors {
     const found: Errors = {};
-    if (!current) found.current = 'Masukkan password saat ini.';
+    if (!current) found.current = t.account.currentRequired;
     if (!passwordSchema.safeParse(next).success) {
-      found.next = 'Minimal 12 karakter, berisi huruf dan angka.';
+      found.next = t.account.passwordRule;
     } else if (next === current) {
-      found.next = 'Password baru harus berbeda dari password saat ini.';
+      found.next = t.account.passwordSame;
     }
-    if (confirm !== next) found.confirm = 'Konfirmasi password tidak sama.';
+    if (confirm !== next) found.confirm = t.account.confirmMismatch;
     return found;
   }
 
@@ -48,7 +50,7 @@ export function ChangePasswordCard() {
       if (e instanceof ApiError && e.code === 'invalid_current_password') {
         setErrors({ current: e.message });
       } else {
-        setFormError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+        setFormError(e instanceof ApiError ? e.message : t.common.error);
       }
     } finally {
       setLoading(false);
@@ -56,14 +58,11 @@ export function ChangePasswordCard() {
   }
 
   return (
-    <AccountSection
-      title="Ganti password"
-      description="Setelah diganti, semua perangkat lain otomatis keluar. Sesi di perangkat ini tetap aktif."
-    >
+    <AccountSection title={t.account.passwordTitle} description={t.account.passwordDescription}>
       <form onSubmit={submit} className="max-w-md space-y-4" noValidate>
         {formError && <Alert>{formError}</Alert>}
-        {saved && <Alert tone="success">Password berhasil diganti.</Alert>}
-        <Field label="Password saat ini" htmlFor="current" error={errors.current}>
+        {saved && <Alert tone="success">{t.account.passwordChanged}</Alert>}
+        <Field label={t.account.currentPassword} htmlFor="current" error={errors.current}>
           <Input
             id="current"
             type="password"
@@ -74,9 +73,9 @@ export function ChangePasswordCard() {
           />
         </Field>
         <Field
-          label="Password baru"
+          label={t.account.newPassword}
           htmlFor="next"
-          hint="Minimal 12 karakter, berisi huruf dan angka."
+          hint={t.account.passwordRule}
           error={errors.next}
         >
           <Input
@@ -88,7 +87,7 @@ export function ChangePasswordCard() {
             aria-invalid={!!errors.next}
           />
         </Field>
-        <Field label="Ulangi password baru" htmlFor="confirm" error={errors.confirm}>
+        <Field label={t.account.repeatPassword} htmlFor="confirm" error={errors.confirm}>
           <Input
             id="confirm"
             type="password"
@@ -99,7 +98,7 @@ export function ChangePasswordCard() {
           />
         </Field>
         <Button type="submit" loading={loading}>
-          Simpan password
+          {t.account.savePassword}
         </Button>
       </form>
     </AccountSection>

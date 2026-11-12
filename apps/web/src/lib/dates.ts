@@ -1,3 +1,5 @@
+import { intlLocale } from './i18n/state';
+
 /** Calendar helpers on YYYY-MM-DD strings (no time zone involved). */
 
 export function todayLocal(): string {
@@ -17,26 +19,19 @@ export function mondayOf(date: string): string {
   return addDays(date, weekday === 0 ? -6 : 1 - weekday);
 }
 
-const longDay = new Intl.DateTimeFormat('id-ID', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-  timeZone: 'UTC',
-});
-const shortDay = new Intl.DateTimeFormat('id-ID', {
-  day: 'numeric',
-  month: 'short',
-  timeZone: 'UTC',
-});
+const format = (date: string, options: Intl.DateTimeFormatOptions) =>
+  new Intl.DateTimeFormat(intlLocale(), { ...options, timeZone: 'UTC' }).format(asUtc(date));
 
 const asUtc = (date: string) => new Date(`${date}T00:00:00Z`);
 
-/** "Senin, 16 November" */
+/** "Senin, 16 November" / "Monday, 16 November" */
 export const dayLabel = (date: string) => {
-  const label = longDay.format(asUtc(date));
+  const label = format(date, { weekday: 'long', day: 'numeric', month: 'long' });
   return label.charAt(0).toUpperCase() + label.slice(1);
 };
 
 /** "16 Nov – 22 Nov" */
 export const weekLabel = (monday: string) =>
-  `${shortDay.format(asUtc(monday))} – ${shortDay.format(asUtc(addDays(monday, 6)))}`;
+  `${format(monday, SHORT)} – ${format(addDays(monday, 6), SHORT)}`;
+
+const SHORT: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };

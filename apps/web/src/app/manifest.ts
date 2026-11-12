@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: '/',
     name: 'Xrostr',
     short_name: 'Xrostr',
-    description: 'HRMS otonom untuk agensi security dan tenaga kerja shift.',
+    description: 'Autonomous HRMS for security agencies and shift workforces.',
     lang: 'id',
     start_url: '/',
     scope: '/',

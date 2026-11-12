@@ -3,6 +3,7 @@
 import { BellOff, BellRing, Download, Send, Share, SquarePlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 import {
   canPromptInstall,
   disablePush,
@@ -17,16 +18,14 @@ import {
 import { AccountSection } from './account-section';
 import { Alert, Button, Dot } from './ui';
 
-const PUSH_MESSAGES: Partial<Record<PushState, string>> = {
-  unsupported:
-    'Browser ini belum mendukung notifikasi. Gunakan Chrome, Edge, Firefox, atau Safari terbaru.',
-  denied:
-    'Notifikasi diblokir untuk Xrostr. Izinkan lewat pengaturan situs di browser, lalu muat ulang halaman ini.',
-  'not-configured': 'Notifikasi belum diaktifkan oleh administrator sistem.',
-};
-
 /** Install the app and turn device notifications on or off. Tenant users only. */
 export function AppCard() {
+  const t = useT();
+  const pushMessages: Partial<Record<PushState, string>> = {
+    unsupported: t.account.pushUnsupported,
+    denied: t.account.pushDenied,
+    'not-configured': t.account.pushNotConfigured,
+  };
   const [installed, setInstalled] = useState(true);
   const [installable, setInstallable] = useState(false);
   const [ios, setIos] = useState(false);
@@ -53,7 +52,7 @@ export function AppCard() {
     } catch (e) {
       setMessage({
         tone: 'error',
-        text: e instanceof ApiError ? e.message : 'Gagal mengatur notifikasi. Coba lagi.',
+        text: e instanceof ApiError ? e.message : t.account.pushFailed,
       });
     } finally {
       setBusy(false);
@@ -61,42 +60,44 @@ export function AppCard() {
   }
 
   return (
-    <AccountSection
-      title="Aplikasi & notifikasi"
-      description="Pasang Xrostr di layar utama HP agar terbuka seperti aplikasi dan bisa menerima pemberitahuan jadwal."
-    >
+    <AccountSection title={t.account.appTitle} description={t.account.appDescription}>
       <div className="max-w-md space-y-6">
         {message && <Alert tone={message.tone}>{message.text}</Alert>}
 
         <div className="space-y-3">
           <p className="label flex items-center gap-2 font-bold text-fg">
             <Dot tone={installed ? 'fg' : 'accent'} />
-            {installed ? 'Aplikasi terpasang' : 'Belum dipasang'}
+            {installed ? t.account.installed : t.account.notInstalled}
           </p>
           {!installed && installable && (
             <Button type="button" onClick={() => run(async () => void (await promptInstall()))}>
               <Download className="size-5" aria-hidden />
-              Pasang aplikasi
+              {t.account.install}
             </Button>
           )}
           {!installed && ios && (
             <ol className="list-decimal space-y-2 pl-5 text-base text-muted">
               <li>
-                Ketuk tombol{' '}
-                <Share className="inline size-5 align-text-bottom" aria-label="Bagikan" /> di
-                Safari.
+                {t.account.iosTap}{' '}
+                <Share
+                  className="inline size-5 align-text-bottom"
+                  aria-label={t.account.iosShare}
+                />{' '}
+                {t.account.iosInSafari}
               </li>
               <li>
-                Pilih <SquarePlus className="inline size-5 align-text-bottom" aria-hidden />{' '}
-                <strong className="text-fg">Tambah ke Layar Utama</strong>.
+                {t.account.iosChoose}{' '}
+                <SquarePlus className="inline size-5 align-text-bottom" aria-hidden />{' '}
+                <strong className="text-fg">{t.account.iosAddToHome}</strong>.
               </li>
-              <li>Buka Xrostr dari layar utama, lalu aktifkan notifikasi di sini.</li>
+              <li>{t.account.iosOpen}</li>
             </ol>
           )}
           {!installed && !installable && !ios && (
             <p className="text-base text-muted">
-              Buka menu browser (⋮), lalu pilih <strong className="text-fg">Instal aplikasi</strong>{' '}
-              atau <strong className="text-fg">Tambahkan ke layar utama</strong>.
+              {t.account.browserMenu}{' '}
+              <strong className="text-fg">{t.account.browserInstall}</strong> {t.account.or}{' '}
+              <strong className="text-fg">{t.account.browserAddHome}</strong>.
             </p>
           )}
         </div>
@@ -104,15 +105,13 @@ export function AppCard() {
         <div className="space-y-3 border-t border-line pt-6">
           <p className="label flex items-center gap-2 font-bold text-fg">
             <Dot tone={push === 'on' ? 'fg' : 'accent'} />
-            {push === 'on' ? 'Notifikasi aktif di perangkat ini' : 'Notifikasi belum aktif'}
+            {push === 'on' ? t.account.pushOn : t.account.pushOff}
           </p>
-          {push && PUSH_MESSAGES[push] && (
-            <p className="text-base text-muted">{PUSH_MESSAGES[push]}</p>
+          {push && pushMessages[push] && (
+            <p className="text-base text-muted">{pushMessages[push]}</p>
           )}
           {push === 'ios-install-first' && (
-            <p className="text-base text-muted">
-              Di iPhone, pasang aplikasi dulu (langkah di atas).
-            </p>
+            <p className="text-base text-muted">{t.account.iosInstallFirst}</p>
           )}
           <div className="flex flex-wrap gap-2">
             {push === 'off' && (
@@ -122,7 +121,7 @@ export function AppCard() {
                 onClick={() => run(async () => setPush(await enablePush()))}
               >
                 <BellRing className="size-5" aria-hidden />
-                Aktifkan notifikasi
+                {t.account.enablePush}
               </Button>
             )}
             {push === 'on' && (
@@ -135,13 +134,13 @@ export function AppCard() {
                       await api('/notifications/test', { method: 'POST' });
                       setMessage({
                         tone: 'success',
-                        text: 'Notifikasi uji dikirim. Seharusnya muncul dalam beberapa detik.',
+                        text: t.account.testSent,
                       });
                     })
                   }
                 >
                   <Send className="size-5" aria-hidden />
-                  Kirim notifikasi uji
+                  {t.account.sendTest}
                 </Button>
                 <Button
                   type="button"
@@ -150,7 +149,7 @@ export function AppCard() {
                   onClick={() => run(async () => setPush(await disablePush()))}
                 >
                   <BellOff className="size-5" aria-hidden />
-                  Matikan
+                  {t.account.turnOff}
                 </Button>
               </>
             )}

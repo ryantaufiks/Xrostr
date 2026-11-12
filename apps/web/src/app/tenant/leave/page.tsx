@@ -8,8 +8,10 @@ import { MyLeaveSection } from '@/components/leave/my-leave';
 import { PageHeader } from '@/components/ui';
 import { usePrincipal } from '@/lib/principal-context';
 import { useData } from '@/lib/use-data';
+import { useT } from '@/lib/i18n';
 
 export default function LeavePage() {
+  const t = useT();
   const { permissions } = usePrincipal();
   const can = (p: Permission) => permissions.includes(p);
   const entities = useData<{ countryCode: CountryCode }[]>(
@@ -27,7 +29,7 @@ export default function LeavePage() {
 
   return (
     <>
-      <PageHeader title="Cuti" description="Saldo, pengajuan, dan hari libur nasional." />
+      <PageHeader title={t.leave.title} description={t.leave.subtitle} />
       <div className="space-y-12">
         {can('leave.approve') && <LeaveApprovals />}
         <MyLeaveSection onCountry={setOwnCountry} />

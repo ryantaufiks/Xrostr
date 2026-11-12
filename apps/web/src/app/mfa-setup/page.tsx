@@ -7,9 +7,11 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { AuthLayout } from '@/components/app-shell';
 import { Alert, Button, Field, Input, Spinner } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 import { fetchPrincipal, homeFor } from '@/lib/session';
 
 export default function MfaSetupPage() {
+  const t = useT();
   const router = useRouter();
   const started = useRef(false);
   const [setup, setSetup] = useState<(MfaSetupResponse & { qr: string }) | null>(null);
@@ -31,7 +33,7 @@ export default function MfaSetupPage() {
       .catch((e: unknown) => {
         if (e instanceof ApiError && e.status === 401) router.replace('/login');
         else if (e instanceof ApiError && e.code === 'mfa_already_enabled') router.replace('/');
-        else setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+        else setError(e instanceof ApiError ? e.message : t.common.error);
       });
   }, [router]);
 
@@ -43,31 +45,24 @@ export default function MfaSetupPage() {
       await api('/auth/mfa/enable', { body: { code } });
       router.replace(homeFor(await fetchPrincipal()));
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      setError(e instanceof ApiError ? e.message : t.common.error);
       setCode('');
       setLoading(false);
     }
   }
 
   return (
-    <AuthLayout
-      title="Aktifkan autentikasi dua faktor"
-      subtitle="Wajib untuk akun dengan akses administrator. Pindai kode QR dengan aplikasi authenticator."
-    >
-      {!setup && !error && <Spinner label="Menyiapkan kode…" />}
+    <AuthLayout title={t.auth.mfaTitle} subtitle={t.auth.mfaSubtitle}>
+      {!setup && !error && <Spinner label={t.auth.mfaPreparing} />}
       {setup && (
         <div className="space-y-5">
           <ol className="list-decimal space-y-1.5 pl-5 text-base text-muted">
-            <li>Buka Google Authenticator, Microsoft Authenticator, atau Authy.</li>
-            <li>Pindai kode QR di bawah, atau masukkan kunci secara manual.</li>
-            <li>Ketik 6 digit kode yang muncul.</li>
+            <li>{t.auth.mfaStep1}</li>
+            <li>{t.auth.mfaStep2}</li>
+            <li>{t.auth.mfaStep3}</li>
           </ol>
           <div className="flex flex-col items-center gap-3 rounded-xl border border-control p-4">
-            <img
-              src={setup.qr}
-              alt="Kode QR autentikasi dua faktor"
-              className="size-52 rounded-lg bg-white p-2"
-            />
+            <img src={setup.qr} alt={t.auth.mfaQrAlt} className="size-52 rounded-lg bg-white p-2" />
             <code className="rounded-md border border-control px-3 py-1.5 font-mono text-base break-all text-fg">
               {setup.secret.match(/.{1,4}/g)?.join(' ')}
             </code>
@@ -78,7 +73,7 @@ export default function MfaSetupPage() {
         {error && <Alert>{error}</Alert>}
         {setup && (
           <>
-            <Field label="Kode authenticator" htmlFor="code">
+            <Field label={t.auth.totp} htmlFor="code">
               <Input
                 id="code"
                 inputMode="numeric"
@@ -92,7 +87,7 @@ export default function MfaSetupPage() {
               />
             </Field>
             <Button type="submit" loading={loading} className="w-full">
-              Aktifkan dan lanjutkan
+              {t.auth.mfaSubmit}
             </Button>
           </>
         )}

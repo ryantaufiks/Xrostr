@@ -4,7 +4,7 @@ import type { CreateLocationRequest, LocationView } from '@xrostr/contracts';
 import { Crosshair } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { api, ApiError } from '@/lib/api';
-import { COUNTRY_LABELS } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 import { fieldErrors, TIMEZONE_LABELS, type LegalEntityOption } from '@/lib/workforce';
 import { Alert, Button, Card, Field, Input, Select } from './ui';
 
@@ -35,6 +35,7 @@ export function LocationForm({
   location?: LocationView;
   onSaved: (saved: LocationView) => void;
 }) {
+  const t = useT();
   const first = entities[0];
   const [values, setValues] = useState<Values>(
     location
@@ -59,7 +60,7 @@ export function LocationForm({
   const set = (patch: Partial<Values>) => setValues((v) => ({ ...v, ...patch }));
 
   function useMyLocation() {
-    if (!navigator.geolocation) return setFormError('Perangkat ini tidak bisa membaca lokasi.');
+    if (!navigator.geolocation) return setFormError(t.sites.noGeolocation);
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -70,7 +71,7 @@ export function LocationForm({
         setLocating(false);
       },
       () => {
-        setFormError('Izin lokasi ditolak atau sinyal GPS lemah. Isi koordinat secara manual.');
+        setFormError(t.sites.locationDenied);
         setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 15_000 },
@@ -107,7 +108,7 @@ export function LocationForm({
         if (e.code === 'timezone_not_in_country') setErrors({ timezone: e.message });
         setFormError(e.message);
       } else {
-        setFormError('Terjadi kesalahan.');
+        setFormError(t.common.error);
       }
     } finally {
       setSaving(false);
@@ -118,11 +119,7 @@ export function LocationForm({
     <form onSubmit={submit} className="space-y-6" noValidate>
       {formError && <Alert>{formError}</Alert>}
       <Card className="space-y-5 p-5 sm:p-6">
-        <Field
-          label="Legal entity"
-          htmlFor="entity"
-          hint="Menentukan negara dan aturan yang berlaku di site ini. Tidak bisa diubah setelah dibuat."
-        >
+        <Field label={t.sites.entity} htmlFor="entity" hint={t.sites.entityHint}>
           <Select
             id="entity"
             value={values.legalEntityId}
@@ -134,13 +131,13 @@ export function LocationForm({
           >
             {entities.map((e) => (
               <option key={e.id} value={e.id}>
-                {e.name} ({COUNTRY_LABELS[e.countryCode] ?? e.countryCode})
+                {e.name} ({t.common.countries[e.countryCode] ?? e.countryCode})
               </option>
             ))}
           </Select>
         </Field>
         <div className="grid gap-5 sm:grid-cols-[1fr_200px]">
-          <Field label="Nama site" htmlFor="name" error={errors.name}>
+          <Field label={t.sites.name} htmlFor="name" error={errors.name}>
             <Input
               id="name"
               value={values.name}
@@ -149,7 +146,12 @@ export function LocationForm({
               aria-invalid={!!errors.name}
             />
           </Field>
-          <Field label="Kode" htmlFor="code" hint="Singkat, misalnya JKT-01." error={errors.code}>
+          <Field
+            label={t.sites.codeLabel}
+            htmlFor="code"
+            hint={t.sites.codeHint}
+            error={errors.code}
+          >
             <Input
               id="code"
               value={values.code}
@@ -159,14 +161,14 @@ export function LocationForm({
             />
           </Field>
         </div>
-        <Field label="Alamat" htmlFor="address" error={errors.address}>
+        <Field label={t.sites.address} htmlFor="address" error={errors.address}>
           <Input
             id="address"
             value={values.address ?? ''}
             onChange={(e) => set({ address: e.target.value })}
           />
         </Field>
-        <Field label="Zona waktu" htmlFor="timezone" error={errors.timezone}>
+        <Field label={t.sites.timezone} htmlFor="timezone" error={errors.timezone}>
           <Select
             id="timezone"
             value={values.timezone}
@@ -183,18 +185,15 @@ export function LocationForm({
 
       <Card className="space-y-5 p-5 sm:p-6">
         <div>
-          <h2 className="label font-bold text-fg">Titik lokasi dan radius absensi</h2>
-          <p className="mt-1 text-sm text-muted">
-            Officer hanya bisa absen bila berada di dalam radius dari titik ini. Paling akurat jika
-            diisi saat Anda berdiri di lokasi.
-          </p>
+          <h2 className="label font-bold text-fg">{t.sites.pointTitle}</h2>
+          <p className="mt-1 text-sm text-muted">{t.sites.pointHint}</p>
         </div>
         <Button type="button" variant="secondary" loading={locating} onClick={useMyLocation}>
           <Crosshair className="size-5" aria-hidden />
-          Pakai lokasi saya sekarang
+          {t.sites.useMyLocation}
         </Button>
         <div className="grid gap-5 sm:grid-cols-3">
-          <Field label="Latitude" htmlFor="lat" error={errors.latitude}>
+          <Field label={t.sites.latitude} htmlFor="lat" error={errors.latitude}>
             <Input
               id="lat"
               inputMode="decimal"
@@ -203,7 +202,7 @@ export function LocationForm({
               placeholder="-6.208800"
             />
           </Field>
-          <Field label="Longitude" htmlFor="lng" error={errors.longitude}>
+          <Field label={t.sites.longitude} htmlFor="lng" error={errors.longitude}>
             <Input
               id="lng"
               inputMode="decimal"
@@ -213,7 +212,7 @@ export function LocationForm({
             />
           </Field>
           <Field
-            label="Radius (meter)"
+            label={t.sites.radiusLabel}
             htmlFor="radius"
             hint="30–2000 m"
             error={errors.geofenceRadiusM}
@@ -233,7 +232,7 @@ export function LocationForm({
 
       <div className="flex justify-end">
         <Button type="submit" loading={saving}>
-          {location ? 'Simpan perubahan' : 'Tambah site'}
+          {location ? t.sites.saveChanges : t.sites.add}
         </Button>
       </div>
     </form>

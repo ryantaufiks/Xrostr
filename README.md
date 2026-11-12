@@ -128,6 +128,7 @@ All errors are `application/problem+json` (RFC 9457) with a stable `code`.
 | POST       | `/platform/auth/login`                                | public             |
 | POST       | `/auth/login`, `/auth/refresh`, `/auth/accept-invite` | public, 10/min     |
 | GET        | `/auth/me`                                            | any session        |
+| PUT        | `/auth/me/locale` (personal language, `en` or `id`)   | any session        |
 | POST       | `/auth/mfa/setup`, `/auth/mfa/enable`, `/auth/logout` | any session        |
 | GET, POST  | `/platform/tenants`                                   | superadmin         |
 | GET, PATCH | `/platform/tenants/:id` (name, plan, suspend)         | superadmin         |

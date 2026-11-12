@@ -12,7 +12,7 @@ export function AccountSection({
   children: ReactNode;
 }) {
   return (
-    <Card className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[240px_1fr]">
+    <Card className="account-section grid gap-6 p-5 sm:p-6 lg:grid-cols-[240px_1fr]">
       <div>
         <h2 className="label font-bold text-fg">{title}</h2>
         <p className="mt-1 text-sm text-muted">{description}</p>

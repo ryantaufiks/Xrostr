@@ -121,4 +121,34 @@ describe('notifications', () => {
     ]);
     expect(rows.rowCount).toBe(0);
   });
+
+  it('follows the tenant language until the person picks their own', async () => {
+    const me = await http.get('/auth/me').set(bearer(token)).expect(200);
+    expect(me.body.locale).toEqual({ locale: 'id', preferred: null, default: 'id' });
+
+    const chosen = await http
+      .put('/auth/me/locale')
+      .set(bearer(token))
+      .send({ locale: 'en' })
+      .expect(200);
+    expect(chosen.body).toEqual({ locale: 'en', preferred: 'en', default: 'id' });
+    await http.put('/auth/me/locale').set(bearer(token)).send({ locale: 'fr' }).expect(422);
+  });
+
+  it('writes notifications in the reader’s language', async () => {
+    await http.post('/notifications/test').set(bearer(token)).expect(204);
+    const latest = await owner.query(
+      `select title from notifications where tenant_id = $1 order by created_at desc limit 1`,
+      [tenantId],
+    );
+    expect(latest.rows[0].title).toBe('Notifications are on');
+
+    await http.put('/auth/me/locale').set(bearer(token)).send({ locale: null }).expect(200);
+    await http.post('/notifications/test').set(bearer(token)).expect(204);
+    const again = await owner.query(
+      `select title from notifications where tenant_id = $1 order by created_at desc limit 1`,
+      [tenantId],
+    );
+    expect(again.rows[0].title).toBe('Notifikasi aktif');
+  });
 });

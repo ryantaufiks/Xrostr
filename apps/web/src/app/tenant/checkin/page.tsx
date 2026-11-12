@@ -9,7 +9,9 @@ import { Button, Card, Spinner, buttonStyles } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { currentPosition } from '@/lib/checkin';
 import { dayLabel } from '@/lib/dates';
-import { shiftHours } from '@/lib/shifts';
+import { intlLocale } from '@/lib/i18n/state';
+import { localClock, shiftHours } from '@/lib/shifts';
+import { useT } from '@/lib/i18n';
 
 type State =
   | { step: 'locating' }
@@ -17,16 +19,8 @@ type State =
   | { step: 'done'; result: AttendanceResult }
   | { step: 'failed'; message: string; distance?: { distanceM: number; radiusM: number } };
 
-/** Clock time at the site, not on the phone: both read the same on a WIB phone in Bali. */
-const clock = (iso: string, timeZone: string) =>
-  new Intl.DateTimeFormat('id-ID', {
-    timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).format(new Date(iso));
-
 function Checkin() {
+  const t = useT();
   const params = useSearchParams();
   const locationId = params.get('l');
   const code = params.get('c');
@@ -35,7 +29,7 @@ function Checkin() {
 
   const run = useCallback(async () => {
     if (!locationId || !code) {
-      setState({ step: 'failed', message: 'QR tidak lengkap. Pindai ulang poster QR di lokasi.' });
+      setState({ step: 'failed', message: t.attendance.incompleteQr });
       return;
     }
     setState({ step: 'locating' });
@@ -60,7 +54,7 @@ function Checkin() {
       } else {
         setState({
           step: 'failed',
-          message: e instanceof Error ? e.message : 'Terjadi kesalahan.',
+          message: e instanceof Error ? e.message : t.common.error,
         });
       }
     }
@@ -73,28 +67,30 @@ function Checkin() {
     void run();
   }, [run]);
 
-  if (state.step === 'locating') return <Spinner label="Membaca lokasi Anda…" />;
-  if (state.step === 'sending') return <Spinner label="Mencatat absensi…" />;
+  if (state.step === 'locating') return <Spinner label={t.attendance.locating} />;
+  if (state.step === 'sending') return <Spinner label={t.attendance.sending} />;
 
   if (state.step === 'failed') {
     return (
       <div className="space-y-6">
         <Card className="flex flex-col items-center px-6 py-10 text-center">
           <MapPinOff className="size-14 text-accent" aria-hidden />
-          <h1 className="mt-4 text-2xl font-bold text-fg">Absensi belum tercatat</h1>
+          <h1 className="mt-4 text-2xl font-bold text-fg">{t.attendance.notRecorded}</h1>
           <p className="mt-2 max-w-sm text-lg text-muted">{state.message}</p>
           {state.distance && (
             <p className="mt-3 text-base text-fg">
-              Jarak Anda {state.distance.distanceM.toLocaleString('id-ID')} m · batas{' '}
-              {state.distance.radiusM} m
+              {t.attendance.distance(
+                state.distance.distanceM.toLocaleString(intlLocale()),
+                state.distance.radiusM,
+              )}
             </p>
           )}
         </Card>
         <div className="grid gap-3">
-          <Button onClick={() => void run()}>Coba lagi</Button>
+          <Button onClick={() => void run()}>{t.common.retry}</Button>
           <Link href="/tenant/scan" className={buttonStyles('secondary')}>
             <ScanLine className="size-5" aria-hidden />
-            Pindai ulang QR
+            {t.attendance.rescan}
           </Link>
         </div>
       </div>
@@ -109,10 +105,10 @@ function Checkin() {
       <Card className="flex flex-col items-center px-6 py-10 text-center">
         <CheckCircle2 className="size-16 text-fg" aria-hidden />
         <h1 className="mt-4 text-2xl font-bold text-fg">
-          {isIn ? 'Absen masuk tercatat' : 'Absen pulang tercatat'}
+          {isIn ? t.attendance.checkedIn : t.attendance.checkedOut}
         </h1>
         <p className="mt-3 text-5xl font-bold tracking-tight text-fg tabular-nums">
-          {clock(result.occurredAt, result.shift.timezone).replace(':', '.')}
+          {localClock(result.occurredAt, result.shift.timezone)}
         </p>
         {isIn && (
           <p
@@ -122,7 +118,7 @@ function Checkin() {
                 : 'mt-3 text-lg text-muted'
             }
           >
-            {result.lateMinutes ? `Terlambat ${result.lateMinutes} menit` : 'Tepat waktu'}
+            {result.lateMinutes ? t.attendance.lateBy(result.lateMinutes) : t.attendance.onTime}
           </p>
         )}
         <div className="mt-6 flex items-center gap-2 text-base text-muted">
@@ -132,7 +128,7 @@ function Checkin() {
         </div>
       </Card>
       <Link href="/tenant" className={buttonStyles('primary', 'w-full')}>
-        Kembali ke jadwal
+        {t.attendance.backToSchedule}
       </Link>
     </div>
   );

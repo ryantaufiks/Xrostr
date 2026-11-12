@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from './api';
+import { messageFor } from './messages';
 
 /** Loads `path` from the API; `reload` fetches it again after a change. */
 export function useData<T>(path: string | null) {
@@ -14,7 +15,7 @@ export function useData<T>(path: string | null) {
       setData(await api<T>(path));
       setError(null);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      setError(e instanceof ApiError ? e.message : messageFor('unknown'));
     }
   }, [path]);
 

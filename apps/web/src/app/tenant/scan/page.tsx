@@ -5,8 +5,9 @@ import { CameraOff, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { buttonStyles } from '@/components/ui';
+import { buttonStyles, iconButtonStyles } from '@/components/ui';
 import { parseCheckinQr } from '@/lib/checkin';
+import { useT } from '@/lib/i18n';
 
 interface Detector {
   detect(source: CanvasImageSource): Promise<{ rawValue: string }[]>;
@@ -21,6 +22,7 @@ function nativeDetector(): Detector | null {
 }
 
 export default function ScanPage() {
+  const t = useT();
   const router = useRouter();
   const video = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function ScanPage() {
             );
             return;
           }
-          setHint('Ini bukan QR absensi Xrostr. Arahkan ke poster QR di lokasi.');
+          setHint(t.attendance.notXrostrQr);
         }
       } catch {
         // A single unreadable frame is normal; keep scanning.
@@ -78,41 +80,31 @@ export default function ScanPage() {
         await video.current.play();
         void loop();
       })
-      .catch(() =>
-        setError(
-          'Kamera tidak bisa dibuka. Izinkan kamera untuk Xrostr di pengaturan browser, lalu coba lagi.',
-        ),
-      );
-    if (!navigator.mediaDevices) setError('Browser ini tidak bisa membuka kamera.');
+      .catch(() => setError(t.attendance.cameraDenied));
+    if (!navigator.mediaDevices) setError(t.attendance.noCamera);
 
     return () => {
       stopped = true;
       window.clearTimeout(frame);
-      stream?.getTracks().forEach((t) => t.stop());
+      stream?.getTracks().forEach((track) => track.stop());
     };
   }, [router]);
 
   return (
     <div className="mx-auto max-w-md space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-3xl font-bold">Pindai QR</h1>
-        <Link
-          href="/tenant"
-          aria-label="Tutup"
-          className="inline-flex size-12 items-center justify-center rounded-full text-muted hover:text-fg"
-        >
+        <h1 className="font-display text-3xl font-bold">{t.attendance.scanTitle}</h1>
+        <Link href="/tenant" aria-label={t.attendance.close} className={iconButtonStyles('md')}>
           <X className="size-6" aria-hidden />
         </Link>
       </div>
-      <p className="text-lg text-muted">
-        Arahkan kamera ke poster QR di lokasi. Absen tercatat otomatis.
-      </p>
+      <p className="text-lg text-muted">{t.attendance.scanHint}</p>
       {error ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-line px-6 py-12 text-center">
           <CameraOff className="size-12 text-accent" aria-hidden />
           <p className="text-lg text-fg">{error}</p>
           <Link href="/tenant" className={buttonStyles('secondary')}>
-            Kembali
+            {t.common.back}
           </Link>
         </div>
       ) : (

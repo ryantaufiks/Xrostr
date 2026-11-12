@@ -8,6 +8,7 @@ import type {
   ShiftView,
 } from '@xrostr/contracts';
 import { AuditLogger, UnitOfWork } from '../../../shared/application/ports.js';
+import { formatCalendarDate } from '../../../shared/domain/dates.js';
 import { err, ok, type Result } from '../../../shared/domain/result.js';
 import type { Principal } from '../../identity/public-api.js';
 import { Notifier } from '../../notifications/public-api.js';
@@ -24,14 +25,6 @@ const MAX_RANGE_DAYS = 62;
 const tenantOf = (actor: Principal) => actor.subject.tenantId!;
 const dayCount = (from: string, to: string) =>
   (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000 + 1;
-const humanDate = (date: string) =>
-  new Intl.DateTimeFormat('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T00:00:00Z`));
-
 /**
  * Rosters per site. Planners build drafts; publishing makes them visible to officers and
  * notifies each one. Officers only ever see published shifts.
@@ -109,8 +102,16 @@ export class SchedulingService {
         await this.notifier.notify(tenantId, {
           userId: employee.userId,
           kind: 'schedule.cancelled',
-          title: 'Shift dibatalkan',
-          body: `${humanDate(view.localDate)}, ${view.localStart}–${view.localEnd} di ${view.location.name}.`,
+          text: {
+            en: {
+              title: 'Shift cancelled',
+              body: `${formatCalendarDate(view.localDate, 'en')}, ${view.localStart}–${view.localEnd} at ${view.location.name}.`,
+            },
+            id: {
+              title: 'Shift dibatalkan',
+              body: `${formatCalendarDate(view.localDate, 'id')}, ${view.localStart}–${view.localEnd} di ${view.location.name}.`,
+            },
+          },
           url: '/tenant',
         });
       }
@@ -141,11 +142,20 @@ export class SchedulingService {
         const employee = employees.get(employeeId);
         if (!employee) continue;
         const first = theirs.reduce((a, b) => (a.startsAt < b.startsAt ? a : b));
+        const firstDay = utcToLocal(first.startsAt, location.timezone).date;
         await this.notifier.notify(tenantId, {
           userId: employee.userId,
           kind: 'schedule.published',
-          title: 'Jadwal baru terbit',
-          body: `${theirs.length} shift di ${location.name}, mulai ${humanDate(utcToLocal(first.startsAt, location.timezone).date)}.`,
+          text: {
+            en: {
+              title: 'New schedule published',
+              body: `${theirs.length} ${theirs.length === 1 ? 'shift' : 'shifts'} at ${location.name}, from ${formatCalendarDate(firstDay, 'en')}.`,
+            },
+            id: {
+              title: 'Jadwal baru terbit',
+              body: `${theirs.length} shift di ${location.name}, mulai ${formatCalendarDate(firstDay, 'id')}.`,
+            },
+          },
           url: '/tenant',
         });
       }

@@ -60,8 +60,16 @@ export class NotificationsService {
     await this.notifier.notify(me.tenantId, {
       userId: me.userId,
       kind: 'test',
-      title: 'Notifikasi aktif',
-      body: 'Perangkat ini akan menerima pemberitahuan dari Xrostr.',
+      text: {
+        en: {
+          title: 'Notifications are on',
+          body: 'This device will receive alerts from Xrostr.',
+        },
+        id: {
+          title: 'Notifikasi aktif',
+          body: 'Perangkat ini akan menerima pemberitahuan dari Xrostr.',
+        },
+      },
       url: '/tenant/notifications',
     });
   }

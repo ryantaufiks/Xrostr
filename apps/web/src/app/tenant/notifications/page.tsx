@@ -7,8 +7,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, Card, Dot, PageHeader, Spinner, cx } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 
 export default function NotificationsPage() {
+  const t = useT();
   const router = useRouter();
   const [inbox, setInbox] = useState<NotificationInbox | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +19,7 @@ export default function NotificationsPage() {
     () =>
       api<NotificationInbox>('/notifications')
         .then(setInbox)
-        .catch((e: unknown) => setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.')),
+        .catch((e: unknown) => setError(e instanceof ApiError ? e.message : t.common.error)),
     [],
   );
   useEffect(() => void load(), [load]);
@@ -37,12 +39,12 @@ export default function NotificationsPage() {
   return (
     <>
       <PageHeader
-        title="Notifikasi"
-        description={inbox ? `${inbox.unread} belum dibaca` : undefined}
+        title={t.common.notifications}
+        description={inbox ? t.leave.notificationsUnread(inbox.unread) : undefined}
         actions={
           inbox && inbox.unread > 0 ? (
             <Button variant="secondary" onClick={readAll}>
-              Tandai semua dibaca
+              {t.leave.markAllRead}
             </Button>
           ) : undefined
         }
@@ -52,10 +54,8 @@ export default function NotificationsPage() {
       {inbox?.items.length === 0 && (
         <Card className="flex flex-col items-center px-6 py-16 text-center">
           <BellOff className="size-10 text-faint" aria-hidden />
-          <h2 className="mt-4 font-display text-xl font-bold">Belum ada notifikasi</h2>
-          <p className="mt-1 max-w-sm text-base text-muted">
-            Pemberitahuan jadwal, absensi, dan cuti akan muncul di sini.
-          </p>
+          <h2 className="mt-4 font-display text-xl font-bold">{t.leave.noNotifications}</h2>
+          <p className="mt-1 max-w-sm text-base text-muted">{t.leave.noNotificationsHint}</p>
         </Card>
       )}
       {inbox && inbox.items.length > 0 && (

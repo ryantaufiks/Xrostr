@@ -18,7 +18,7 @@ export const indonesiaPack: CountryPack = {
   leaveTypes: [
     {
       code: 'annual',
-      name: 'Cuti tahunan',
+      name: { en: 'Annual leave', id: 'Cuti tahunan' },
       paid: true,
       requiresDocument: false,
       minServiceMonths: 12,
@@ -27,7 +27,7 @@ export const indonesiaPack: CountryPack = {
     },
     {
       code: 'sick',
-      name: 'Sakit (dengan surat dokter)',
+      name: { en: "Sick leave (doctor's note)", id: 'Sakit (dengan surat dokter)' },
       paid: true,
       requiresDocument: true,
       minServiceMonths: 0,
@@ -36,7 +36,7 @@ export const indonesiaPack: CountryPack = {
     },
     {
       code: 'maternity',
-      name: 'Cuti melahirkan',
+      name: { en: 'Maternity leave', id: 'Cuti melahirkan' },
       paid: true,
       requiresDocument: true,
       minServiceMonths: 0,
@@ -45,7 +45,7 @@ export const indonesiaPack: CountryPack = {
     },
     {
       code: 'paternity',
-      name: 'Cuti istri melahirkan',
+      name: { en: 'Paternity leave (wife giving birth)', id: 'Cuti istri melahirkan' },
       paid: true,
       requiresDocument: true,
       minServiceMonths: 0,
@@ -54,7 +54,7 @@ export const indonesiaPack: CountryPack = {
     },
     {
       code: 'marriage',
-      name: 'Cuti menikah',
+      name: { en: 'Marriage leave', id: 'Cuti menikah' },
       paid: true,
       requiresDocument: true,
       minServiceMonths: 0,
@@ -63,7 +63,7 @@ export const indonesiaPack: CountryPack = {
     },
     {
       code: 'child_marriage',
-      name: 'Menikahkan anak',
+      name: { en: "Child's wedding", id: 'Menikahkan anak' },
       paid: true,
       requiresDocument: true,
       minServiceMonths: 0,
@@ -72,7 +72,7 @@ export const indonesiaPack: CountryPack = {
     },
     {
       code: 'child_rite',
-      name: 'Khitanan / baptis anak',
+      name: { en: "Child's circumcision / baptism", id: 'Khitanan / baptis anak' },
       paid: true,
       requiresDocument: true,
       minServiceMonths: 0,
@@ -81,7 +81,7 @@ export const indonesiaPack: CountryPack = {
     },
     {
       code: 'bereavement',
-      name: 'Duka (keluarga inti)',
+      name: { en: 'Bereavement (immediate family)', id: 'Duka (keluarga inti)' },
       paid: true,
       requiresDocument: false,
       minServiceMonths: 0,
@@ -90,7 +90,7 @@ export const indonesiaPack: CountryPack = {
     },
     {
       code: 'bereavement_household',
-      name: 'Duka (anggota serumah)',
+      name: { en: 'Bereavement (household member)', id: 'Duka (anggota serumah)' },
       paid: true,
       requiresDocument: false,
       minServiceMonths: 0,
@@ -99,7 +99,7 @@ export const indonesiaPack: CountryPack = {
     },
     {
       code: 'unpaid',
-      name: 'Cuti tanpa upah',
+      name: { en: 'Unpaid leave', id: 'Cuti tanpa upah' },
       paid: false,
       requiresDocument: false,
       minServiceMonths: 0,

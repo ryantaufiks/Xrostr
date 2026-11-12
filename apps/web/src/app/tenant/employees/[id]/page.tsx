@@ -7,11 +7,13 @@ import { EmployeeForm } from '@/components/employee-form';
 import { InviteShare } from '@/components/invite-share';
 import { Alert, Badge, Button, Card, PageHeader, Spinner } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
+import { useT } from '@/lib/i18n';
 import { usePrincipal } from '@/lib/principal-context';
 import { useData } from '@/lib/use-data';
 import { personStatus, roleLabel, type LegalEntityOption } from '@/lib/workforce';
 
 export default function EmployeePage() {
+  const t = useT();
   const { id } = useParams<{ id: string }>();
   const { permissions } = usePrincipal();
   const canManage = permissions.includes('employees.manage');
@@ -31,7 +33,7 @@ export default function EmployeePage() {
     try {
       await action();
     } catch (e) {
-      setMessage({ tone: 'error', text: e instanceof ApiError ? e.message : 'Terjadi kesalahan.' });
+      setMessage({ tone: 'error', text: e instanceof ApiError ? e.message : t.common.error });
     } finally {
       setBusy(false);
     }
@@ -44,10 +46,7 @@ export default function EmployeePage() {
       await employees.reload();
       setMessage({
         tone: 'success',
-        text:
-          next === 'inactive'
-            ? 'Karyawan dinonaktifkan; aksesnya diblokir.'
-            : 'Karyawan aktif kembali.',
+        text: next === 'inactive' ? t.workforce.deactivated : t.workforce.reactivated,
       });
     });
 
@@ -59,7 +58,7 @@ export default function EmployeePage() {
   const error = employees.error ?? entities.error ?? locations.error;
   if (error) return <Alert>{error}</Alert>;
   if (!employees.data || !locations.data || (canManage && !entities.data)) return <Spinner />;
-  if (!employee) return <Alert>Karyawan tidak ditemukan.</Alert>;
+  if (!employee) return <Alert>{t.workforce.notFound}</Alert>;
 
   const status = personStatus(employee.status, employee.accountStatus);
   return (
@@ -74,12 +73,9 @@ export default function EmployeePage() {
 
         {canManage && (
           <Card className="space-y-4 p-5 sm:p-6">
-            <h2 className="label font-bold text-fg">Akses</h2>
+            <h2 className="label font-bold text-fg">{t.workforce.access}</h2>
             {employee.accountStatus === 'invited' && employee.status === 'active' && (
-              <p className="text-base text-muted">
-                {employee.fullName} belum membuat password. Kirim ulang undangan bila tautan lama
-                hilang atau kedaluwarsa; tautan lama otomatis tidak berlaku.
-              </p>
+              <p className="text-base text-muted">{t.workforce.notActivated(employee.fullName)}</p>
             )}
             {invite && (
               <InviteShare
@@ -93,11 +89,11 @@ export default function EmployeePage() {
             <div className="flex flex-wrap gap-2">
               {employee.accountStatus === 'invited' && employee.status === 'active' && !invite && (
                 <Button type="button" loading={busy} onClick={reissue}>
-                  Kirim ulang undangan
+                  {t.workforce.resendInvite}
                 </Button>
               )}
               <Button type="button" variant="secondary" disabled={busy} onClick={toggleStatus}>
-                {employee.status === 'active' ? 'Nonaktifkan karyawan' : 'Aktifkan kembali'}
+                {employee.status === 'active' ? t.workforce.deactivate : t.workforce.reactivate}
               </Button>
             </div>
           </Card>
@@ -111,20 +107,20 @@ export default function EmployeePage() {
             employee={employee}
             onSaved={async () => {
               await employees.reload();
-              setMessage({ tone: 'success', text: 'Perubahan tersimpan.' });
+              setMessage({ tone: 'success', text: t.workforce.saved });
               window.scrollTo({ top: 0 });
             }}
           />
         ) : (
           <Card className="p-5 text-base sm:p-6">
             <dl className="grid grid-cols-[140px_1fr] gap-y-2.5">
-              <dt className="text-muted">Email</dt>
+              <dt className="text-muted">{t.workforce.email}</dt>
               <dd>{employee.email}</dd>
-              <dt className="text-muted">No. HP</dt>
+              <dt className="text-muted">{t.workforce.phoneShort}</dt>
               <dd>{employee.phone ?? '—'}</dd>
-              <dt className="text-muted">Site</dt>
+              <dt className="text-muted">{t.workforce.site}</dt>
               <dd>{employee.location?.name ?? '—'}</dd>
-              <dt className="text-muted">Jabatan</dt>
+              <dt className="text-muted">{t.workforce.jobTitle}</dt>
               <dd>{employee.jobTitle ?? '—'}</dd>
             </dl>
           </Card>

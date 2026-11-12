@@ -25,21 +25,26 @@ import {
   Button,
   Card,
   Field,
+  IconButton,
   Input,
   PageHeader,
+  SegmentedControl,
   Select,
   Spinner,
   cx,
+  segmentedOptionStyles,
 } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { addDays, dayLabel, mondayOf, todayLocal, weekLabel } from '@/lib/dates';
 import { usePrincipal } from '@/lib/principal-context';
-import { attendanceSummary, SHIFT_LABELS, shiftHours } from '@/lib/shifts';
+import { attendanceSummary, shiftHours, shiftKindLabel } from '@/lib/shifts';
 import { useData } from '@/lib/use-data';
+import { useT } from '@/lib/i18n';
 
 const SITE_KEY = 'xr-roster-site';
 
 export default function RosterPage() {
+  const t = useT();
   const { permissions } = usePrincipal();
   const canManage = permissions.includes('schedules.manage');
   const sites = useData<LocationView[]>('/tenant/locations');
@@ -93,11 +98,11 @@ export default function RosterPage() {
       });
       setMessage({
         tone: 'success',
-        text: `${result.published} shift terbit. ${result.notified} officer menerima notifikasi.`,
+        text: t.schedule.published(result.published, result.notified),
       });
       await roster.reload();
     } catch (e) {
-      setMessage({ tone: 'error', text: e instanceof ApiError ? e.message : 'Terjadi kesalahan.' });
+      setMessage({ tone: 'error', text: e instanceof ApiError ? e.message : t.common.error });
     } finally {
       setPublishing(false);
     }
@@ -108,13 +113,11 @@ export default function RosterPage() {
   if (activeSites.length === 0) {
     return (
       <>
-        <PageHeader title="Jadwal" />
+        <PageHeader title={t.schedule.title} />
         <Card className="flex flex-col items-center px-6 py-16 text-center">
           <CalendarDays className="size-10 text-faint" aria-hidden />
-          <h2 className="mt-4 font-display text-xl font-bold">Belum ada site</h2>
-          <p className="mt-1 max-w-sm text-base text-muted">
-            Tambahkan site terlebih dahulu untuk menyusun jadwal.
-          </p>
+          <h2 className="mt-4 font-display text-xl font-bold">{t.schedule.noSites}</h2>
+          <p className="mt-1 max-w-sm text-base text-muted">{t.schedule.noSitesHint}</p>
         </Card>
       </>
     );
@@ -123,11 +126,11 @@ export default function RosterPage() {
   return (
     <>
       <PageHeader
-        title="Jadwal"
+        title={t.schedule.title}
         description={site ? `${site.name} · ${weekLabel(monday)}` : undefined}
       />
       <div className="mb-6 space-y-4">
-        <Field label="Site" htmlFor="site">
+        <Field label={t.schedule.site} htmlFor="site">
           <Select id="site" value={siteId ?? ''} onChange={(e) => chooseSite(e.target.value)}>
             {activeSites.map((s) => (
               <option key={s.id} value={s.id}>
@@ -139,17 +142,17 @@ export default function RosterPage() {
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
-            aria-label="Minggu sebelumnya"
+            aria-label={t.schedule.previousWeek}
             onClick={() => setMonday(addDays(monday, -7))}
           >
             <ChevronLeft className="size-5" aria-hidden />
           </Button>
           <Button variant="secondary" className="flex-1" onClick={() => setMonday(mondayOf(today))}>
-            Minggu ini
+            {t.schedule.thisWeek}
           </Button>
           <Button
             variant="secondary"
-            aria-label="Minggu berikutnya"
+            aria-label={t.schedule.nextWeek}
             onClick={() => setMonday(addDays(monday, 7))}
           >
             <ChevronRight className="size-5" aria-hidden />
@@ -159,10 +162,10 @@ export default function RosterPage() {
           <Button className="w-full" disabled={drafts === 0} loading={publishing} onClick={publish}>
             <Send className="size-5" aria-hidden />
             {drafts > 0
-              ? `Terbitkan ${drafts} shift draft`
+              ? t.schedule.publishDrafts(drafts)
               : roster.data?.length
-                ? 'Semua shift minggu ini sudah terbit'
-                : 'Belum ada shift untuk diterbitkan'}
+                ? t.schedule.allPublished
+                : t.schedule.nothingToPublish}
           </Button>
         )}
         {message && <Alert tone={message.tone}>{message.text}</Alert>}
@@ -205,21 +208,22 @@ function DayCard({
   employees: EmployeeView[] | null;
   onChanged: () => Promise<void>;
 }) {
+  const t = useT();
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function remove(shift: ShiftView) {
     const question =
       shift.status === 'published'
-        ? `Batalkan shift ${shift.employee.fullName}? Officer akan diberi tahu.`
-        : `Hapus draft shift ${shift.employee.fullName}?`;
+        ? t.schedule.cancelConfirm(shift.employee.fullName)
+        : t.schedule.deleteDraftConfirm(shift.employee.fullName);
     if (!window.confirm(question)) return;
     setError(null);
     try {
       await api(`/tenant/shifts/${shift.id}`, { method: 'DELETE' });
       await onChanged();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      setError(e instanceof ApiError ? e.message : t.common.error);
     }
   }
 
@@ -228,17 +232,17 @@ function DayCard({
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-fg">
           {dayLabel(day)}
-          {isToday && <span className="label ml-2 text-accent">Hari ini</span>}
+          {isToday && <span className="label ml-2 text-accent">{t.schedule.today}</span>}
         </h2>
         {employees && !adding && (
           <Button
             variant="ghost"
             className="px-3"
             onClick={() => setAdding(true)}
-            aria-label={`Tambah shift ${dayLabel(day)}`}
+            aria-label={t.schedule.addShiftOn(dayLabel(day))}
           >
             <Plus className="size-5" aria-hidden />
-            Shift
+            {t.schedule.shift}
           </Button>
         )}
       </div>
@@ -248,7 +252,7 @@ function DayCard({
         </div>
       )}
       {shifts.length === 0 && !adding && (
-        <p className="mt-2 text-base text-faint">Belum ada shift.</p>
+        <p className="mt-2 text-base text-faint">{t.schedule.noShifts}</p>
       )}
       {shifts.length > 0 && (
         <ul className="mt-3 divide-y divide-line">
@@ -263,22 +267,23 @@ function DayCard({
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-base font-semibold break-words text-fg">{s.employee.fullName}</p>
                 <p className="text-sm text-muted">
-                  {SHIFT_LABELS[s.kind]} · {shiftHours(s)}
+                  {shiftKindLabel(s.kind)} · {shiftHours(s)}
                 </p>
                 <AttendanceNote shift={s} />
                 <Badge tone={s.status === 'draft' ? 'warn' : 'active'}>
-                  {s.status === 'draft' ? 'Draft' : 'Terbit'}
+                  {s.status === 'draft' ? t.schedule.draft : t.schedule.publishedBadge}
                 </Badge>
               </div>
               {employees && (
-                <button
-                  type="button"
+                <IconButton
                   onClick={() => remove(s)}
-                  aria-label={s.status === 'published' ? 'Batalkan shift' : 'Hapus shift'}
-                  className="inline-flex size-11 items-center justify-center rounded-full text-muted hover:text-accent"
+                  aria-label={
+                    s.status === 'published' ? t.schedule.cancelShift : t.schedule.deleteShift
+                  }
+                  tone="danger"
                 >
                   <Trash2 className="size-5" aria-hidden />
-                </button>
+                </IconButton>
               )}
             </li>
           ))}
@@ -310,6 +315,7 @@ function AddShift({
   employees: EmployeeView[];
   onDone: (saved: boolean) => Promise<void>;
 }) {
+  const t = useT();
   // Officers contracted by the site's legal entity, those based at this site first.
   const candidates = useMemo(
     () =>
@@ -349,7 +355,7 @@ function AddShift({
       });
       await onDone(true);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      setError(e instanceof ApiError ? e.message : t.common.error);
       setSaving(false);
     }
   }
@@ -357,23 +363,23 @@ function AddShift({
   if (candidates.length === 0) {
     return (
       <div className="mt-4 space-y-3">
-        <Alert>Belum ada karyawan aktif di legal entity site ini.</Alert>
+        <Alert>{t.schedule.noCandidates}</Alert>
         <Button variant="secondary" onClick={() => onDone(false)}>
-          Tutup
+          {t.schedule.close}
         </Button>
       </div>
     );
   }
 
   const kinds: { value: ShiftKind; label: string }[] = [
-    { value: 'day', label: 'Pagi 08–20' },
-    { value: 'night', label: 'Malam 20–08' },
-    { value: 'custom', label: 'Khusus' },
+    { value: 'day', label: t.schedule.presetDay },
+    { value: 'night', label: t.schedule.presetNight },
+    { value: 'custom', label: t.schedule.presetCustom },
   ];
   return (
     <div className="mt-4 space-y-4 border-t border-line pt-4">
       {error && <Alert>{error}</Alert>}
-      <Field label="Officer" htmlFor={`officer-${day}`}>
+      <Field label={t.schedule.officer} htmlFor={`officer-${day}`}>
         <Select
           id={`officer-${day}`}
           value={employeeId}
@@ -386,7 +392,11 @@ function AddShift({
           ))}
         </Select>
       </Field>
-      <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Jenis shift">
+      <SegmentedControl
+        className="grid grid-cols-3"
+        role="radiogroup"
+        aria-label={t.schedule.shiftType}
+      >
         {kinds.map((k) => (
           <button
             key={k.value}
@@ -394,18 +404,15 @@ function AddShift({
             role="radio"
             aria-checked={kind === k.value}
             onClick={() => choose(k.value)}
-            className={cx(
-              'min-h-12 rounded-lg border px-2 text-sm font-semibold',
-              kind === k.value ? 'border-fg bg-fg text-bg' : 'border-control text-fg',
-            )}
+            className={segmentedOptionStyles(kind === k.value)}
           >
             {k.label}
           </button>
         ))}
-      </div>
+      </SegmentedControl>
       {kind === 'custom' && (
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Mulai" htmlFor={`start-${day}`}>
+          <Field label={t.schedule.start} htmlFor={`start-${day}`}>
             <Input
               id={`start-${day}`}
               type="time"
@@ -413,7 +420,7 @@ function AddShift({
               onChange={(e) => setStartTime(e.target.value)}
             />
           </Field>
-          <Field label="Durasi (jam)" htmlFor={`hours-${day}`}>
+          <Field label={t.schedule.duration} htmlFor={`hours-${day}`}>
             <Input
               id={`hours-${day}`}
               type="number"
@@ -427,10 +434,10 @@ function AddShift({
       )}
       <div className="flex gap-2">
         <Button loading={saving} onClick={save}>
-          Simpan draft
+          {t.schedule.saveDraft}
         </Button>
         <Button variant="ghost" onClick={() => onDone(false)}>
-          Batal
+          {t.common.cancel}
         </Button>
       </div>
     </div>
@@ -439,6 +446,7 @@ function AddShift({
 
 /** Check-in status of a published shift: present, late, left, or not yet arrived. */
 function AttendanceNote({ shift }: { shift: ShiftView }) {
+  const t = useT();
   if (shift.status !== 'published') return null;
   const summary = attendanceSummary(shift);
   if (summary) {
@@ -449,5 +457,7 @@ function AttendanceNote({ shift }: { shift: ShiftView }) {
     );
   }
   const started = Date.parse(shift.startsAt) <= Date.now();
-  return started ? <p className="text-sm font-semibold text-accent">Belum absen masuk</p> : null;
+  return started ? (
+    <p className="text-sm font-semibold text-accent">{t.schedule.notCheckedIn}</p>
+  ) : null;
 }

@@ -124,7 +124,7 @@ describe('NoShowMonitor', () => {
       expect.objectContaining({ user_id: plannerId, kind: 'attendance.no_show' }),
       expect.objectContaining({ user_id: dueOfficerUserId, kind: 'attendance.reminder' }),
     ]);
-    expect(notes.rows[0].body).toMatch(/^Officer due, shift \d{2}\.\d{2} di Pelabuhan Benoa/);
+    expect(notes.rows[0].body).toMatch(/^Officer due, shift \d{2}:\d{2} di Pelabuhan Benoa/);
 
     const queued = await owner.query(
       `select count(*)::int as n from outbox_events where type = 'notification.created'`,

@@ -5,11 +5,13 @@ import { ChevronRight, Plus, Search, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Alert, Badge, Card, Input, PageHeader, Spinner, buttonStyles } from '@/components/ui';
+import { useT } from '@/lib/i18n';
 import { usePrincipal } from '@/lib/principal-context';
 import { useData } from '@/lib/use-data';
 import { personStatus, roleLabel } from '@/lib/workforce';
 
 export default function EmployeesPage() {
+  const t = useT();
   const { permissions } = usePrincipal();
   const canManage = permissions.includes('employees.manage');
   const { data, error } = useData<EmployeeView[]>('/tenant/employees');
@@ -28,13 +30,13 @@ export default function EmployeesPage() {
   return (
     <>
       <PageHeader
-        title="Karyawan"
-        description={data ? `${data.length} orang` : undefined}
+        title={t.workforce.title}
+        description={data ? t.workforce.count(data.length) : undefined}
         actions={
           canManage && (
             <Link href="/tenant/employees/new" className={buttonStyles('primary')}>
               <Plus className="size-5" aria-hidden />
-              Tambah karyawan
+              {t.workforce.add}
             </Link>
           )
         }
@@ -51,8 +53,8 @@ export default function EmployeesPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cari nama, nomor, atau site"
-            aria-label="Cari karyawan"
+            placeholder={t.workforce.search}
+            aria-label={t.workforce.searchLabel}
             className="pl-12"
           />
         </div>
@@ -60,10 +62,8 @@ export default function EmployeesPage() {
       {data?.length === 0 && (
         <Card className="flex flex-col items-center px-6 py-16 text-center">
           <Users className="size-10 text-faint" aria-hidden />
-          <h2 className="mt-4 font-display text-xl font-bold">Belum ada karyawan</h2>
-          <p className="mt-1 max-w-sm text-base text-muted">
-            Tambahkan karyawan; masing-masing mendapat tautan undangan untuk membuat password.
-          </p>
+          <h2 className="mt-4 font-display text-xl font-bold">{t.workforce.empty}</h2>
+          <p className="mt-1 max-w-sm text-base text-muted">{t.workforce.emptyHint}</p>
         </Card>
       )}
       {shown && shown.length > 0 && (
@@ -100,7 +100,7 @@ export default function EmployeesPage() {
         </Card>
       )}
       {shown && data && data.length > 0 && shown.length === 0 && (
-        <p className="py-10 text-center text-base text-muted">Tidak ada karyawan yang cocok.</p>
+        <p className="py-10 text-center text-base text-muted">{t.workforce.noMatch}</p>
       )}
     </>
   );

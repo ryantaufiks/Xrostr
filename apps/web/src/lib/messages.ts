@@ -1,68 +1,8 @@
-/** Indonesian wording for the API's stable error codes. Unknown codes fall back to its title. */
-const MESSAGES: Record<string, string> = {
-  network: 'Tidak dapat terhubung ke server. Periksa koneksi Anda.',
-  invalid_credentials: 'Email atau password salah.',
-  account_locked:
-    'Terlalu banyak percobaan gagal. Akun dikunci sementara, coba lagi dalam 15 menit.',
-  mfa_required: 'Masukkan 6 digit kode dari aplikasi authenticator Anda.',
-  invalid_mfa_code: 'Kode authenticator salah atau sudah kedaluwarsa.',
-  mfa_already_enabled: 'Autentikasi dua faktor sudah aktif.',
-  mfa_setup_not_started: 'Mulai ulang pengaturan autentikasi dua faktor.',
-  mfa_enrollment_required: 'Aktifkan autentikasi dua faktor terlebih dahulu.',
-  invalid_refresh_token: 'Sesi berakhir. Silakan masuk kembali.',
-  unauthenticated: 'Silakan masuk untuk melanjutkan.',
-  invalid_current_password: 'Password saat ini salah.',
-  email_taken: 'Email ini sudah dipakai akun lain di perusahaan Anda.',
-  employee_no_taken: 'Nomor karyawan ini sudah dipakai.',
-  employee_not_found: 'Karyawan tidak ditemukan.',
-  user_already_active: 'Orang ini sudah mengaktifkan akunnya.',
-  location_code_taken: 'Kode site ini sudah dipakai.',
-  location_not_found: 'Site tidak ditemukan.',
-  location_in_other_entity: 'Site ini milik legal entity lain dari kontrak karyawan.',
-  legal_entity_not_found: 'Pilih salah satu legal entity perusahaan.',
-  timezone_not_in_country: 'Zona waktu ini tidak berlaku di negara legal entity tersebut.',
-  shift_overlap: 'Officer ini sudah punya shift yang bertabrakan dengan jam tersebut.',
-  shift_not_found: 'Shift tidak ditemukan.',
-  shift_already_cancelled: 'Shift ini sudah dibatalkan.',
-  employee_inactive: 'Karyawan ini nonaktif.',
-  employee_other_entity: 'Karyawan ini dikontrak legal entity lain dari site tersebut.',
-  location_archived: 'Site ini sudah diarsipkan.',
-  range_too_long: 'Pilih paling lama 62 hari sekaligus.',
-  not_an_employee: 'Akun Anda belum terhubung ke data karyawan.',
-  invalid_checkin_code:
-    'QR ini bukan QR absensi site ini, atau sudah diganti. Pindai poster QR terbaru di lokasi.',
-  site_without_point: 'Titik lokasi site ini belum diisi. Hubungi supervisor Anda.',
-  outside_geofence: 'Anda berada di luar area site.',
-  no_active_shift:
-    'Tidak ada shift Anda di site ini sekarang. Absen dibuka 2 jam sebelum shift dimulai.',
-  already_checked_out: 'Anda sudah absen pulang untuk shift ini.',
-  leave_type_unknown: 'Jenis cuti ini tidak berlaku untuk Anda.',
-  leave_not_eligible: 'Masa kerja Anda belum cukup untuk jenis cuti ini.',
-  leave_crosses_year: 'Cuti yang melewati akhir tahun harus diajukan terpisah per tahun.',
-  leave_too_long: 'Satu pengajuan paling lama 120 hari.',
-  leave_no_days: 'Semua tanggal yang dipilih adalah hari libur nasional.',
-  leave_insufficient: 'Sisa cuti tidak mencukupi.',
-  leave_overlap: 'Anda sudah punya cuti yang menunggu atau disetujui di tanggal ini.',
-  leave_not_found: 'Pengajuan cuti tidak ditemukan.',
-  leave_not_pending: 'Pengajuan ini sudah diputuskan atau dibatalkan.',
-  leave_self_approval: 'Cuti Anda sendiri harus diputuskan oleh atasan lain.',
-  holiday_exists: 'Sudah ada hari libur di tanggal ini.',
-  holiday_not_found: 'Hari libur tidak ditemukan.',
-  invalid_invite: 'Undangan tidak valid, sudah dipakai, atau kedaluwarsa.',
-  platform_only: 'Halaman ini khusus Superadmin.',
-  missing_permission: 'Anda tidak memiliki izin untuk tindakan ini.',
-  slug_taken: 'Slug sudah dipakai tenant lain.',
-  slug_reserved: 'Slug ini dicadangkan sistem. Pilih slug lain.',
-  duplicate_legal_entity: 'Nama legal entity tidak boleh sama.',
-  tenant_not_found: 'Tenant tidak ditemukan.',
-  tenant_admin_not_found: 'Orang ini bukan administrator tenant tersebut.',
-  user_not_found: 'Pengguna tidak ditemukan.',
-  invalid_request: 'Periksa kembali isian formulir.',
-  rate_limited: 'Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.',
-  csrf_rejected: 'Permintaan ditolak. Muat ulang halaman lalu coba lagi.',
-  internal: 'Terjadi kesalahan di server. Coba lagi nanti.',
-};
+import { common } from './i18n/messages/common';
+import { errors } from './i18n/messages/errors';
+import { currentLocale } from './i18n/state';
 
 export function messageFor(code: string, fallback?: unknown): string {
-  return MESSAGES[code] ?? (typeof fallback === 'string' ? fallback : 'Terjadi kesalahan.');
+  const locale = currentLocale();
+  return errors[locale][code] ?? (typeof fallback === 'string' ? fallback : common[locale].error);
 }

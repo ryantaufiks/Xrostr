@@ -51,6 +51,8 @@ export const users = pgTable(
     failedLoginCount: integer('failed_login_count').notNull().default(0),
     lockedUntil: timestamp('locked_until', { withTimezone: true }),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+    /** Personal UI and notification language; null follows the tenant default. */
+    locale: text('locale'),
     ...timestamps,
     version: version(),
   },

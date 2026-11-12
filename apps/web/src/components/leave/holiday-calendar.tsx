@@ -6,8 +6,8 @@ import { useState, type FormEvent } from 'react';
 import { Alert, Button, Card, Field, Input, Select, Spinner } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { dayLabel } from '@/lib/dates';
-import { COUNTRY_LABELS } from '@/lib/format';
 import { useData } from '@/lib/use-data';
+import { useT } from '@/lib/i18n';
 
 /**
  * Public holidays of one country and year. The starting list comes from the Country Pack;
@@ -22,6 +22,7 @@ export function HolidayCalendar({
   year: number;
   canManage: boolean;
 }) {
+  const t = useT();
   const [country, setCountry] = useState<CountryCode>(countries[0]!);
   const list = useData<HolidayView[]>(`/tenant/holidays?countryCode=${country}&year=${year}`);
   const [error, setError] = useState<string | null>(null);
@@ -37,19 +38,19 @@ export function HolidayCalendar({
       setForm({ date: '', name: '' });
       await list.reload();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      setError(e instanceof ApiError ? e.message : t.common.error);
     } finally {
       setSaving(false);
     }
   }
 
   async function remove(holiday: HolidayView) {
-    if (!confirm(`Hapus ${holiday.name} dari daftar hari libur?`)) return;
+    if (!confirm(t.leave.removeHolidayConfirm(holiday.name))) return;
     try {
       await api(`/tenant/holidays/${holiday.id}`, { method: 'DELETE' });
       await list.reload();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      setError(e instanceof ApiError ? e.message : t.common.error);
     }
   }
 
@@ -57,11 +58,11 @@ export function HolidayCalendar({
     <section className="space-y-4" aria-labelledby="holidays">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h2 id="holidays" className="font-display text-2xl font-bold">
-          Hari libur nasional {year}
+          {t.leave.holidaysTitle(year)}
         </h2>
         {countries.length > 1 && (
           <div className="w-48">
-            <Field label="Negara" htmlFor="holiday-country">
+            <Field label={t.leave.country} htmlFor="holiday-country">
               <Select
                 id="holiday-country"
                 value={country}
@@ -69,7 +70,7 @@ export function HolidayCalendar({
               >
                 {countries.map((c) => (
                   <option key={c} value={c}>
-                    {COUNTRY_LABELS[c] ?? c}
+                    {t.common.countries[c] ?? c}
                   </option>
                 ))}
               </Select>
@@ -77,20 +78,14 @@ export function HolidayCalendar({
           </div>
         )}
       </div>
-      {canManage && (
-        <Alert tone="success">
-          Daftar awal disiapkan sistem dan perlu diverifikasi dengan keputusan resmi pemerintah
-          (SKB/gazette), terutama tanggal hari raya berbasis kalender bulan. Tambah atau hapus di
-          sini bila berbeda.
-        </Alert>
-      )}
+      {canManage && <Alert tone="success">{t.leave.holidaysVerify}</Alert>}
       {error && <Alert>{error}</Alert>}
       {list.error && <Alert>{list.error}</Alert>}
       {!list.data && !list.error && <Spinner />}
       {list.data && (
         <Card>
           {list.data.length === 0 ? (
-            <p className="px-5 py-4 text-base text-muted">Belum ada hari libur untuk tahun ini.</p>
+            <p className="px-5 py-4 text-base text-muted">{t.leave.noHolidays}</p>
           ) : (
             <ul className="divide-y divide-line">
               {list.data.map((h) => (
@@ -102,7 +97,7 @@ export function HolidayCalendar({
                   {canManage && (
                     <Button
                       variant="ghost"
-                      aria-label={`Hapus ${h.name}`}
+                      aria-label={t.leave.removeHoliday(h.name)}
                       onClick={() => remove(h)}
                     >
                       <Trash2 className="size-5" aria-hidden />
@@ -117,7 +112,7 @@ export function HolidayCalendar({
       {canManage && (
         <Card className="p-5">
           <form onSubmit={add} className="grid gap-4 sm:grid-cols-[12rem_1fr_auto] sm:items-end">
-            <Field label="Tanggal" htmlFor="holiday-date">
+            <Field label={t.leave.date} htmlFor="holiday-date">
               <Input
                 id="holiday-date"
                 type="date"
@@ -128,7 +123,7 @@ export function HolidayCalendar({
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
               />
             </Field>
-            <Field label="Nama hari libur" htmlFor="holiday-name">
+            <Field label={t.leave.holidayName} htmlFor="holiday-name">
               <Input
                 id="holiday-name"
                 required
@@ -139,7 +134,7 @@ export function HolidayCalendar({
               />
             </Field>
             <Button type="submit" loading={saving}>
-              Tambah
+              {t.common.add}
             </Button>
           </form>
         </Card>

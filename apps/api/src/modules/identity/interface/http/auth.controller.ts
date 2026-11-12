@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Put } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
   acceptInviteRequestSchema,
@@ -7,6 +7,9 @@ import {
   loginRequestSchema,
   platformLoginRequestSchema,
   refreshRequestSchema,
+  setLocaleSchema,
+  type LocaleSettings,
+  type SetLocaleRequest,
   type AcceptInviteRequest,
   type ChangePasswordRequest,
   type EnableMfaRequest,
@@ -24,6 +27,7 @@ import { unwrap } from '../../../../shared/interface/http/domain-error.exception
 import { ZodValidationPipe } from '../../../../shared/interface/http/zod-validation.pipe.js';
 import { AcceptInviteUseCase } from '../../application/accept-invite.use-case.js';
 import { ChangePasswordUseCase } from '../../application/change-password.use-case.js';
+import { LocalePreferences } from '../../application/locale-preferences.js';
 import { LoginUseCase } from '../../application/login.use-case.js';
 import { LogoutUseCase } from '../../application/logout.use-case.js';
 import { ConfirmMfaSetupUseCase, StartMfaSetupUseCase } from '../../application/mfa.use-cases.js';
@@ -44,6 +48,7 @@ export class AuthController {
     private readonly startMfa: StartMfaSetupUseCase,
     private readonly confirmMfa: ConfirmMfaSetupUseCase,
     private readonly changePassword: ChangePasswordUseCase,
+    private readonly locales: LocalePreferences,
   ) {}
 
   @Public()
@@ -98,8 +103,19 @@ export class AuthController {
 
   @AllowMfaSetup()
   @Get('auth/me')
-  me(@CurrentPrincipal() principal: Principal): Principal {
-    return principal;
+  async me(
+    @CurrentPrincipal() principal: Principal,
+  ): Promise<Principal & { locale: LocaleSettings }> {
+    return { ...principal, locale: await this.locales.settings(principal.subject) };
+  }
+
+  @AllowMfaSetup()
+  @Put('auth/me/locale')
+  setLocale(
+    @CurrentPrincipal() principal: Principal,
+    @Body(new ZodValidationPipe(setLocaleSchema)) body: SetLocaleRequest,
+  ): Promise<LocaleSettings> {
+    return this.locales.set(principal.subject, body.locale);
   }
 
   @AllowMfaSetup()

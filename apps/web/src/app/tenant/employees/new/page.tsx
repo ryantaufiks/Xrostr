@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { EmployeeForm } from '@/components/employee-form';
 import { InviteShare } from '@/components/invite-share';
-import { Alert, Card, PageHeader, Spinner, buttonStyles } from '@/components/ui';
+import { Alert, Button, Card, PageHeader, Spinner, buttonStyles } from '@/components/ui';
+import { useT } from '@/lib/i18n';
 import { useData } from '@/lib/use-data';
 import type { LegalEntityOption } from '@/lib/workforce';
 
 export default function NewEmployeePage() {
+  const t = useT();
   const entities = useData<LegalEntityOption[]>('/tenant/legal-entities');
   const locations = useData<LocationView[]>('/tenant/locations');
   const profile = useData<{ slug: string }>('/tenant/profile');
@@ -20,10 +22,7 @@ export default function NewEmployeePage() {
   if (created) {
     return (
       <>
-        <PageHeader
-          title="Karyawan ditambahkan"
-          description={`Akun ${created.name} siap diaktifkan.`}
-        />
+        <PageHeader title={t.workforce.added} description={t.workforce.addedHint(created.name)} />
         <Card className="space-y-6 p-5 sm:p-6">
           <InviteShare
             token={created.inviteToken}
@@ -37,15 +36,11 @@ export default function NewEmployeePage() {
               href={`/tenant/employees/${created.employeeId}`}
               className={buttonStyles('secondary')}
             >
-              Lihat data karyawan
+              {t.workforce.viewEmployee}
             </Link>
-            <button
-              type="button"
-              onClick={() => setCreated(null)}
-              className={buttonStyles('ghost')}
-            >
-              Tambah karyawan lain
-            </button>
+            <Button type="button" variant="ghost" onClick={() => setCreated(null)}>
+              {t.workforce.addAnother}
+            </Button>
           </div>
         </Card>
       </>
@@ -55,10 +50,7 @@ export default function NewEmployeePage() {
   const error = entities.error ?? locations.error;
   return (
     <>
-      <PageHeader
-        title="Tambah karyawan"
-        description="Data karyawan sekaligus akun masuk Xrostr."
-      />
+      <PageHeader title={t.workforce.add} description={t.workforce.newSubtitle} />
       {error && <Alert>{error}</Alert>}
       {(!entities.data || !locations.data) && !error && <Spinner />}
       {entities.data && locations.data && (

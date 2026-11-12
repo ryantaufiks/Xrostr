@@ -12,6 +12,7 @@ import { Alert, Button, Card, Field, Input, Select, Spinner, cx } from '@/compon
 import { api, ApiError } from '@/lib/api';
 import { todayLocal } from '@/lib/dates';
 import { LeaveRequestRow } from './leave-request-row';
+import { useI18n } from '@/lib/i18n';
 
 /** The signed-in employee's balances, request form and own requests. */
 export function MyLeaveSection({
@@ -19,6 +20,7 @@ export function MyLeaveSection({
 }: {
   onCountry?: (country: MyLeave['countryCode']) => void;
 }) {
+  const { t, locale } = useI18n();
   const [leave, setLeave] = useState<MyLeave | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notEmployee, setNotEmployee] = useState(false);
@@ -32,19 +34,19 @@ export function MyLeaveSection({
       onCountry?.(data.countryCode);
     } catch (e) {
       if (e instanceof ApiError && e.code === 'not_an_employee') setNotEmployee(true);
-      else setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      else setError(e instanceof ApiError ? e.message : t.common.error);
     }
   }, [onCountry]);
   useEffect(() => void load(), [load]);
 
   async function cancel(request: LeaveRequestView) {
-    if (!confirm(`Batalkan pengajuan ${request.leaveType.name}?`)) return;
+    if (!confirm(t.leave.cancelConfirm(request.leaveType.name[locale]))) return;
     setNotice(null);
     try {
       await api(`/me/leave/${request.id}/cancel`, { method: 'POST' });
       await load();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      setError(e instanceof ApiError ? e.message : t.common.error);
     }
   }
 
@@ -56,12 +58,12 @@ export function MyLeaveSection({
     <section className="space-y-6" aria-labelledby="my-leave">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 id="my-leave" className="font-display text-2xl font-bold">
-          Saldo cuti {leave.year}
+          {t.leave.balanceTitle(leave.year)}
         </h2>
         {!formOpen && (
           <Button onClick={() => (setFormOpen(true), setNotice(null))}>
             <CalendarPlus className="size-5" aria-hidden />
-            Ajukan cuti
+            {t.leave.request}
           </Button>
         )}
       </div>
@@ -72,9 +74,7 @@ export function MyLeaveSection({
           onClose={() => setFormOpen(false)}
           onSent={async (r) => {
             setFormOpen(false);
-            setNotice(
-              `Pengajuan ${r.leaveType.name} (${r.days} hari) terkirim. Anda akan diberi tahu setelah diputuskan.`,
-            );
+            setNotice(t.leave.sent(r.leaveType.name[locale], r.days));
             await load();
           }}
         />
@@ -87,9 +87,9 @@ export function MyLeaveSection({
           ))}
       </div>
 
-      <h2 className="font-display text-2xl font-bold">Pengajuan saya</h2>
+      <h2 className="font-display text-2xl font-bold">{t.leave.myRequests}</h2>
       {leave.requests.length === 0 ? (
-        <p className="text-base text-muted">Belum ada pengajuan cuti tahun ini.</p>
+        <p className="text-base text-muted">{t.leave.noRequests}</p>
       ) : (
         <Card>
           <ul className="divide-y divide-line">
@@ -97,7 +97,7 @@ export function MyLeaveSection({
               <LeaveRequestRow key={r.id} request={r}>
                 {r.status === 'pending' && (
                   <Button variant="secondary" onClick={() => cancel(r)}>
-                    Batalkan
+                    {t.leave.cancelRequest}
                   </Button>
                 )}
               </LeaveRequestRow>
@@ -110,24 +110,26 @@ export function MyLeaveSection({
 }
 
 function BalanceCard({ balance: b }: { balance: LeaveBalance }) {
+  const { t, locale } = useI18n();
   return (
     <Card className={cx('p-5', !b.eligible && 'opacity-60')}>
-      <p className="text-lg font-semibold text-fg">{b.name}</p>
+      <p className="text-lg font-semibold text-fg">{b.name[locale]}</p>
       {b.remaining === null ? (
         <p className="mt-2 text-base text-muted">
-          {b.requiresDocument ? 'Sesuai surat keterangan' : 'Tanpa kuota tetap'}
-          {b.used > 0 && ` · ${b.used} hari terpakai`}
+          {b.requiresDocument ? t.leave.withDocument : t.leave.noFixedQuota}
+          {b.used > 0 && ` · ${t.leave.usedDays(b.used)}`}
         </p>
       ) : (
         <p className="mt-2 text-base text-muted">
           <span className="text-4xl font-bold text-fg tabular-nums">{b.remaining}</span> /{' '}
           {b.entitlement} hari
           <span className="block text-sm">
-            {b.used} terpakai{b.pending > 0 && ` · ${b.pending} menunggu`}
+            {t.leave.used(b.used)}
+            {b.pending > 0 && ` · ${t.leave.pendingDays(b.pending)}`}
           </span>
         </p>
       )}
-      {!b.eligible && <p className="mt-2 text-sm text-accent">Belum memenuhi masa kerja</p>}
+      {!b.eligible && <p className="mt-2 text-sm text-accent">{t.leave.notEligible}</p>}
       <p className="mt-2 text-sm text-faint">{b.basis}</p>
     </Card>
   );
@@ -142,6 +144,7 @@ function RequestForm({
   onClose: () => void;
   onSent: (request: LeaveRequestView) => Promise<void>;
 }) {
+  const { t, locale } = useI18n();
   const usable = balances.filter((b) => b.eligible);
   const today = todayLocal();
   const [form, setForm] = useState({
@@ -158,7 +161,7 @@ function RequestForm({
     event.preventDefault();
     const parsed = requestLeaveSchema.safeParse({ ...form, reason: form.reason || undefined });
     if (!parsed.success) {
-      setError('Tanggal selesai tidak boleh sebelum tanggal mulai.');
+      setError(t.leave.endBeforeStart);
       return;
     }
     setSending(true);
@@ -166,7 +169,7 @@ function RequestForm({
     try {
       await onSent(await api<LeaveRequestView>('/me/leave', { body: parsed.data }));
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      setError(e instanceof ApiError ? e.message : t.common.error);
     } finally {
       setSending(false);
     }
@@ -175,16 +178,12 @@ function RequestForm({
   return (
     <Card className="p-5 sm:p-6">
       <form onSubmit={submit} className="space-y-5">
-        <h3 className="font-display text-xl font-bold">Ajukan cuti</h3>
+        <h3 className="font-display text-xl font-bold">{t.leave.request}</h3>
         {error && <Alert>{error}</Alert>}
         <Field
-          label="Jenis cuti"
+          label={t.leave.type}
           htmlFor="leave-type"
-          hint={
-            chosen?.requiresDocument
-              ? 'Siapkan surat keterangan untuk diserahkan ke HR.'
-              : undefined
-          }
+          hint={chosen?.requiresDocument ? t.leave.documentHint : undefined}
         >
           <Select
             id="leave-type"
@@ -193,14 +192,14 @@ function RequestForm({
           >
             {usable.map((b) => (
               <option key={b.code} value={b.code}>
-                {b.name}
-                {b.remaining !== null ? ` (sisa ${b.remaining} hari)` : ''}
+                {b.name[locale]}
+                {b.remaining !== null ? t.leave.remaining(b.remaining) : ''}
               </option>
             ))}
           </Select>
         </Field>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Mulai" htmlFor="leave-start">
+          <Field label={t.leave.from} htmlFor="leave-start">
             <Input
               id="leave-start"
               type="date"
@@ -215,7 +214,7 @@ function RequestForm({
               }
             />
           </Field>
-          <Field label="Sampai" htmlFor="leave-end" hint="Hari libur nasional tidak dihitung.">
+          <Field label={t.leave.to} htmlFor="leave-end" hint={t.leave.holidaysExcluded}>
             <Input
               id="leave-end"
               type="date"
@@ -226,7 +225,7 @@ function RequestForm({
             />
           </Field>
         </div>
-        <Field label="Alasan (opsional)" htmlFor="leave-reason">
+        <Field label={t.leave.reason} htmlFor="leave-reason">
           <Input
             id="leave-reason"
             maxLength={500}
@@ -236,10 +235,10 @@ function RequestForm({
         </Field>
         <div className="flex flex-wrap gap-3">
           <Button type="submit" loading={sending} disabled={!chosen}>
-            Kirim pengajuan
+            {t.leave.send}
           </Button>
           <Button type="button" variant="ghost" onClick={onClose}>
-            Batal
+            {t.common.cancel}
           </Button>
         </div>
       </form>

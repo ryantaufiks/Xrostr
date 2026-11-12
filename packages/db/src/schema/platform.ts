@@ -26,6 +26,7 @@ export const platformAdmins = pgTable('platform_admins', {
   failedLoginCount: integer('failed_login_count').notNull().default(0),
   lockedUntil: timestamp('locked_until', { withTimezone: true }),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  locale: text('locale'),
   ...timestamps,
 });
 

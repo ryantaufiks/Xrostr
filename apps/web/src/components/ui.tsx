@@ -1,16 +1,22 @@
+'use client';
+
 import { Loader2 } from 'lucide-react';
 import type {
   ButtonHTMLAttributes,
+  HTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
 } from 'react';
+import { useT } from '@/lib/i18n';
 
 function cx(...classes: (string | false | null | undefined)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+type IconButtonSize = 'sm' | 'md';
+type IconButtonTone = 'neutral' | 'danger';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-fg text-bg hover:opacity-85 disabled:opacity-40',
@@ -40,6 +46,76 @@ export function Button({
       {loading && <Loader2 className="size-5 animate-spin" aria-hidden />}
       {children}
     </button>
+  );
+}
+
+const ICON_BUTTON_SIZES: Record<IconButtonSize, string> = {
+  sm: 'size-11',
+  md: 'size-12',
+};
+
+const ICON_BUTTON_TONES: Record<IconButtonTone, string> = {
+  neutral: 'text-muted hover:bg-sunken hover:text-fg',
+  danger: 'text-muted hover:bg-sunken hover:text-accent',
+};
+
+/** Shared 44px/48px circular target for icon-only actions and links. */
+export function iconButtonStyles(
+  size: IconButtonSize = 'sm',
+  tone: IconButtonTone = 'neutral',
+  className?: string,
+): string {
+  return cx(
+    'inline-flex shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40',
+    ICON_BUTTON_SIZES[size],
+    ICON_BUTTON_TONES[tone],
+    className,
+  );
+}
+
+export function IconButton({
+  size = 'sm',
+  tone = 'neutral',
+  className,
+  children,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  size?: IconButtonSize;
+  tone?: IconButtonTone;
+}) {
+  return (
+    <button className={iconButtonStyles(size, tone, className)} {...props}>
+      {children}
+    </button>
+  );
+}
+
+/** A capsule group for choices with one active state, such as modes or themes. */
+export function SegmentedControl({
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cx('gap-1 rounded-full border border-control p-1', className)} {...props}>
+      {children}
+    </div>
+  );
+}
+
+export function segmentedOptionStyles(selected: boolean, size: 'sm' | 'md' = 'md'): string {
+  return cx(
+    'label inline-flex items-center justify-center gap-2 rounded-full px-3 font-bold transition',
+    size === 'sm' ? 'min-h-9 min-w-11' : 'min-h-11',
+    selected ? 'bg-fg text-bg' : 'text-muted hover:text-fg',
+  );
+}
+
+/** Full-width choice inside a settings card; deliberately rectangular like a form field. */
+export function selectableRowStyles(selected: boolean): string {
+  return cx(
+    'flex min-h-12 w-full items-center gap-3 rounded-lg border px-4 text-left text-base font-semibold transition',
+    selected ? 'border-fg bg-fg text-bg' : 'border-control text-fg hover:border-fg',
   );
 }
 
@@ -140,11 +216,12 @@ export function Badge({
   );
 }
 
-export function Spinner({ label = 'Memuat…' }: { label?: string }) {
+export function Spinner({ label }: { label?: string }) {
+  const t = useT();
   return (
     <div className="label flex items-center justify-center gap-2 py-16 text-muted" role="status">
       <Loader2 className="size-4 animate-spin" aria-hidden />
-      {label}
+      {label ?? t.common.loading}
     </div>
   );
 }

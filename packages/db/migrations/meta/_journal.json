@@ -64,6 +64,13 @@
       "when": 1794467629696,
       "tag": "0008_leave_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794472315507,
+      "tag": "0009_locale",
+      "breakpoints": true
     }
   ]
 }

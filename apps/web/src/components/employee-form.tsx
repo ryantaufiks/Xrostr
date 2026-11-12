@@ -2,7 +2,6 @@
 
 import {
   EMPLOYMENT_TYPES,
-  ROLE_LABELS,
   SYSTEM_ROLES,
   type EmployeeView,
   type EmploymentType,
@@ -11,8 +10,8 @@ import {
 } from '@xrostr/contracts';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { api, ApiError } from '@/lib/api';
-import { COUNTRY_LABELS } from '@/lib/format';
-import { EMPLOYMENT_LABELS, fieldErrors, type LegalEntityOption } from '@/lib/workforce';
+import { useT } from '@/lib/i18n';
+import { employmentLabel, fieldErrors, roleLabel, type LegalEntityOption } from '@/lib/workforce';
 import { Alert, Button, Card, Field, Input, Select } from './ui';
 
 interface Values {
@@ -46,6 +45,7 @@ export function EmployeeForm<T>({
   /** `saved` echoes the name and phone that were sent, for follow-up screens. */
   onSaved: (result: T, saved: { fullName: string; phone: string | null }) => void;
 }) {
+  const t = useT();
   const [values, setValues] = useState<Values>({
     fullName: employee?.fullName ?? '',
     email: employee?.email ?? '',
@@ -103,7 +103,7 @@ export function EmployeeForm<T>({
         setErrors(fields);
         setFormError(e.message);
       } else {
-        setFormError('Terjadi kesalahan.');
+        setFormError(t.common.error);
       }
     } finally {
       setSaving(false);
@@ -114,9 +114,9 @@ export function EmployeeForm<T>({
   return (
     <form onSubmit={submit} className="space-y-6" noValidate>
       {formError && <Alert>{formError}</Alert>}
-      <Section title="Data diri">
+      <Section title={t.workforce.personal}>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Nama lengkap" htmlFor="fullName" error={errors.fullName}>
+          <Field label={t.workforce.fullName} htmlFor="fullName" error={errors.fullName}>
             <Input
               id="fullName"
               value={values.fullName}
@@ -124,9 +124,9 @@ export function EmployeeForm<T>({
             />
           </Field>
           <Field
-            label="No. HP (WhatsApp)"
+            label={t.workforce.phone}
             htmlFor="phone"
-            hint="Untuk mengirim tautan undangan."
+            hint={t.workforce.phoneHint}
             error={errors.phone}
           >
             <Input
@@ -139,11 +139,9 @@ export function EmployeeForm<T>({
             />
           </Field>
           <Field
-            label="Email"
+            label={t.workforce.email}
             htmlFor="email"
-            hint={
-              locked ? 'Dipakai untuk masuk; tidak bisa diubah.' : 'Dipakai untuk masuk ke Xrostr.'
-            }
+            hint={locked ? t.workforce.emailLocked : t.workforce.emailHint}
             error={errors.email}
           >
             <Input
@@ -154,7 +152,7 @@ export function EmployeeForm<T>({
               onChange={(e) => set({ email: e.target.value })}
             />
           </Field>
-          <Field label="No. karyawan" htmlFor="employeeNo" error={errors.employeeNo}>
+          <Field label={t.workforce.employeeNo} htmlFor="employeeNo" error={errors.employeeNo}>
             <Input
               id="employeeNo"
               value={values.employeeNo}
@@ -166,9 +164,9 @@ export function EmployeeForm<T>({
         </div>
       </Section>
 
-      <Section title="Pekerjaan">
+      <Section title={t.workforce.work}>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Legal entity (kontrak)" htmlFor="entity">
+          <Field label={t.workforce.contractEntity} htmlFor="entity">
             <Select
               id="entity"
               value={values.legalEntityId}
@@ -177,15 +175,15 @@ export function EmployeeForm<T>({
             >
               {entities.map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.name} ({COUNTRY_LABELS[e.countryCode] ?? e.countryCode})
+                  {e.name} ({t.common.countries[e.countryCode] ?? e.countryCode})
                 </option>
               ))}
             </Select>
           </Field>
           <Field
-            label="Site utama"
+            label={t.workforce.mainSite}
             htmlFor="site"
-            hint="Boleh dikosongkan."
+            hint={t.workforce.mainSiteHint}
             error={errors.locationId}
           >
             <Select
@@ -193,7 +191,7 @@ export function EmployeeForm<T>({
               value={values.locationId}
               onChange={(e) => set({ locationId: e.target.value })}
             >
-              <option value="">— Belum ditentukan —</option>
+              <option value="">{t.workforce.unassigned}</option>
               {sites.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name}
@@ -201,7 +199,7 @@ export function EmployeeForm<T>({
               ))}
             </Select>
           </Field>
-          <Field label="Jabatan" htmlFor="jobTitle" error={errors.jobTitle}>
+          <Field label={t.workforce.jobTitle} htmlFor="jobTitle" error={errors.jobTitle}>
             <Input
               id="jobTitle"
               value={values.jobTitle}
@@ -209,20 +207,20 @@ export function EmployeeForm<T>({
               onChange={(e) => set({ jobTitle: e.target.value })}
             />
           </Field>
-          <Field label="Jenis kerja" htmlFor="employmentType">
+          <Field label={t.workforce.employmentType} htmlFor="employmentType">
             <Select
               id="employmentType"
               value={values.employmentType}
               onChange={(e) => set({ employmentType: e.target.value as EmploymentType })}
             >
-              {EMPLOYMENT_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {EMPLOYMENT_LABELS[t]}
+              {EMPLOYMENT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {employmentLabel(type)}
                 </option>
               ))}
             </Select>
           </Field>
-          <Field label="Mulai kerja" htmlFor="startDate" error={errors.startDate}>
+          <Field label={t.workforce.startDate} htmlFor="startDate" error={errors.startDate}>
             <Input
               id="startDate"
               type="date"
@@ -232,11 +230,9 @@ export function EmployeeForm<T>({
             />
           </Field>
           <Field
-            label="Peran di Xrostr"
+            label={t.workforce.role}
             htmlFor="role"
-            hint={
-              locked ? undefined : 'Officer hanya melihat jadwal, absensi, dan cutinya sendiri.'
-            }
+            hint={locked ? undefined : t.workforce.roleHint}
           >
             <Select
               id="role"
@@ -246,7 +242,7 @@ export function EmployeeForm<T>({
             >
               {SYSTEM_ROLES.map((r) => (
                 <option key={r} value={r}>
-                  {ROLE_LABELS[r]}
+                  {roleLabel(r)}
                 </option>
               ))}
             </Select>
@@ -256,7 +252,7 @@ export function EmployeeForm<T>({
 
       <div className="flex justify-end">
         <Button type="submit" loading={saving}>
-          {locked ? 'Simpan perubahan' : 'Simpan dan buat undangan'}
+          {locked ? t.workforce.saveChanges : t.workforce.saveAndInvite}
         </Button>
       </div>
     </form>

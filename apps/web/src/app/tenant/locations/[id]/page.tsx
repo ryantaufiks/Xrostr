@@ -9,8 +9,10 @@ import { Alert, Button, PageHeader, Spinner } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { useData } from '@/lib/use-data';
 import type { LegalEntityOption } from '@/lib/workforce';
+import { useT } from '@/lib/i18n';
 
 export default function EditLocationPage() {
+  const t = useT();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { data: entities, error: entitiesError } =
@@ -29,7 +31,7 @@ export default function EditLocationPage() {
       });
       await reload();
     } catch (e) {
-      setStatusError(e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
+      setStatusError(e instanceof ApiError ? e.message : t.common.error);
     }
   }
 
@@ -37,19 +39,19 @@ export default function EditLocationPage() {
   return (
     <>
       <PageHeader
-        title={location?.name ?? 'Site'}
-        description={location ? `Kode ${location.code}` : undefined}
+        title={location?.name ?? t.sites.title}
+        description={location ? t.sites.code(location.code) : undefined}
         actions={
           location && (
             <Button variant="secondary" onClick={toggleArchive}>
-              {location.status === 'active' ? 'Arsipkan' : 'Aktifkan lagi'}
+              {location.status === 'active' ? t.sites.archive : t.sites.reactivate}
             </Button>
           )
         }
       />
       {failure && <Alert>{failure}</Alert>}
       {(!locations || !entities) && !failure && <Spinner />}
-      {locations && !location && <Alert>Site tidak ditemukan.</Alert>}
+      {locations && !location && <Alert>{t.sites.notFound}</Alert>}
       {location && entities && (
         <div className="space-y-6">
           <SiteQrCard locationId={location.id} hasPoint={location.latitude != null} />

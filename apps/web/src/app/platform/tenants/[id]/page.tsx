@@ -26,18 +26,14 @@ import {
   buttonStyles,
 } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
-import { COUNTRY_LABELS, PLAN_LABELS, REGION_LABELS } from '@/lib/format';
+import { PLAN_LABELS } from '@/lib/format';
+import { useT } from '@/lib/i18n';
 
 type Message = { tone: 'error' | 'success'; text: string } | null;
-const failure = (e: unknown) => (e instanceof ApiError ? e.message : 'Terjadi kesalahan.');
-
-const ACCOUNT_LABELS: Record<string, string> = {
-  invited: 'Belum aktif',
-  active: 'Aktif',
-  disabled: 'Nonaktif',
-};
+const failure = (e: unknown, fallback: string) => (e instanceof ApiError ? e.message : fallback);
 
 export default function TenantDetailPage() {
+  const t = useT();
   const { id } = useParams<{ id: string }>();
   const [tenant, setTenant] = useState<TenantDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -47,19 +43,13 @@ export default function TenantDetailPage() {
   useEffect(() => {
     api<TenantDetail>(`/platform/tenants/${id}`)
       .then(setTenant)
-      .catch((e: unknown) => setLoadError(failure(e)));
+      .catch((e: unknown) => setLoadError(failure(e, t.common.error)));
   }, [id]);
 
   async function toggleStatus() {
     if (!tenant) return;
     const suspend = tenant.status === 'active';
-    if (
-      suspend &&
-      !confirm(
-        `Tangguhkan ${tenant.name}? Semua pengguna akan dikeluarkan dan tidak bisa masuk sampai diaktifkan lagi. Data tetap tersimpan.`,
-      )
-    )
-      return;
+    if (suspend && !confirm(t.platform.suspendConfirm(tenant.name))) return;
     setToggling(true);
     setMessage(null);
     try {
@@ -71,12 +61,10 @@ export default function TenantDetailPage() {
       );
       setMessage({
         tone: 'success',
-        text: suspend
-          ? 'Tenant ditangguhkan. Semua sesi pengguna diakhiri.'
-          : 'Tenant aktif kembali.',
+        text: suspend ? t.platform.suspendedDone : t.platform.reactivatedDone,
       });
     } catch (e) {
-      setMessage({ tone: 'error', text: failure(e) });
+      setMessage({ tone: 'error', text: failure(e, t.common.error) });
     } finally {
       setToggling(false);
     }
@@ -90,20 +78,25 @@ export default function TenantDetailPage() {
     <>
       <Link href="/platform/tenants" className={buttonStyles('ghost', 'mb-4 -ml-4')}>
         <ArrowLeft className="size-5" aria-hidden />
-        Semua tenant
+        {t.platform.allTenants}
       </Link>
       <PageHeader
         title={tenant.name}
-        description={`Slug ${tenant.slug} · Region data ${REGION_LABELS[tenant.dataRegion] ?? tenant.dataRegion}`}
+        description={t.platform.detailSubtitle(
+          tenant.slug,
+          t.common.regions[tenant.dataRegion] ?? tenant.dataRegion,
+        )}
         actions={
           <Button variant="secondary" loading={toggling} onClick={toggleStatus}>
-            {active ? 'Tangguhkan' : 'Aktifkan lagi'}
+            {active ? t.platform.suspend : t.platform.reactivate}
           </Button>
         }
       />
       <div className="space-y-6">
         <div>
-          <Badge tone={active ? 'active' : 'warn'}>{active ? 'Aktif' : 'Ditangguhkan'}</Badge>
+          <Badge tone={active ? 'active' : 'warn'}>
+            {active ? t.platform.active : t.platform.suspended}
+          </Badge>
         </div>
         {message && <Alert tone={message.tone}>{message.text}</Alert>}
         <ProfileForm tenant={tenant} onSaved={setTenant} />
@@ -119,8 +112,9 @@ function ProfileForm({
   onSaved,
 }: {
   tenant: TenantDetail;
-  onSaved: (t: TenantDetail) => void;
+  onSaved: (tenant: TenantDetail) => void;
 }) {
+  const t = useT();
   const [name, setName] = useState(tenant.name);
   const [plan, setPlan] = useState(tenant.plan as Plan);
   const [saving, setSaving] = useState(false);
@@ -138,9 +132,9 @@ function ProfileForm({
           body: { name: name.trim(), plan },
         }),
       );
-      setMessage({ tone: 'success', text: 'Perubahan disimpan.' });
+      setMessage({ tone: 'success', text: t.platform.saved });
     } catch (e) {
-      setMessage({ tone: 'error', text: failure(e) });
+      setMessage({ tone: 'error', text: failure(e, t.common.error) });
     } finally {
       setSaving(false);
     }
@@ -149,10 +143,10 @@ function ProfileForm({
   return (
     <Card className="p-5 sm:p-6">
       <form onSubmit={save} className="space-y-5">
-        <h2 className="font-display text-xl font-bold">Profil</h2>
+        <h2 className="font-display text-xl font-bold">{t.platform.profile}</h2>
         {message && <Alert tone={message.tone}>{message.text}</Alert>}
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Nama perusahaan" htmlFor="tenant-name">
+          <Field label={t.platform.companyName} htmlFor="tenant-name">
             <Input
               id="tenant-name"
               required
@@ -162,7 +156,7 @@ function ProfileForm({
               onChange={(e) => setName(e.target.value)}
             />
           </Field>
-          <Field label="Paket" htmlFor="tenant-plan">
+          <Field label={t.platform.plan} htmlFor="tenant-plan">
             <Select id="tenant-plan" value={plan} onChange={(e) => setPlan(e.target.value as Plan)}>
               {PLANS.map((p) => (
                 <option key={p} value={p}>
@@ -172,12 +166,9 @@ function ProfileForm({
             </Select>
           </Field>
         </div>
-        <p className="text-sm text-muted">
-          Slug dan region data tidak bisa diubah: staf masuk memakai slug, dan data tetap berada di
-          region asalnya.
-        </p>
+        <p className="text-sm text-muted">{t.platform.fixedFields}</p>
         <Button type="submit" loading={saving} disabled={!dirty}>
-          Simpan
+          {t.common.save}
         </Button>
       </form>
     </Card>
@@ -189,8 +180,9 @@ function LegalEntities({
   onSaved,
 }: {
   tenant: TenantDetail;
-  onSaved: (t: TenantDetail) => void;
+  onSaved: (tenant: TenantDetail) => void;
 }) {
+  const t = useT();
   const [form, setForm] = useState({
     name: '',
     countryCode: 'ID' as CountryCode,
@@ -213,10 +205,10 @@ function LegalEntities({
           },
         }),
       );
-      setMessage({ tone: 'success', text: `${form.name.trim()} ditambahkan.` });
+      setMessage({ tone: 'success', text: t.platform.entityAdded(form.name.trim()) });
       setForm({ ...form, name: '', registrationNumber: '' });
     } catch (e) {
-      setMessage({ tone: 'error', text: failure(e) });
+      setMessage({ tone: 'error', text: failure(e, t.common.error) });
     } finally {
       setSaving(false);
     }
@@ -225,11 +217,8 @@ function LegalEntities({
   return (
     <Card>
       <div className="p-5 sm:p-6">
-        <h2 className="font-display text-xl font-bold">Legal entity</h2>
-        <p className="mt-1 text-sm text-muted">
-          Badan hukum yang mengontrak karyawan. Negaranya menentukan aturan cuti, hari libur, dan
-          zona waktu site.
-        </p>
+        <h2 className="font-display text-xl font-bold">{t.platform.entitySection}</h2>
+        <p className="mt-1 text-sm text-muted">{t.platform.entitiesHint}</p>
       </div>
       <ul className="divide-y divide-line border-y border-line">
         {tenant.legalEntities.map((e) => (
@@ -239,17 +228,17 @@ function LegalEntities({
           >
             <span className="text-lg text-fg">{e.name}</span>
             <span className="text-base text-muted">
-              {COUNTRY_LABELS[e.countryCode] ?? e.countryCode}
+              {t.common.countries[e.countryCode] ?? e.countryCode}
               {e.registrationNumber && ` · ${e.registrationNumber}`}
             </span>
           </li>
         ))}
       </ul>
       <form onSubmit={add} className="space-y-5 p-5 sm:p-6">
-        <h3 className="label font-bold text-muted">Tambah legal entity</h3>
+        <h3 className="label font-bold text-muted">{t.platform.addEntityTitle}</h3>
         {message && <Alert tone={message.tone}>{message.text}</Alert>}
         <div className="grid gap-5 sm:grid-cols-3">
-          <Field label="Nama" htmlFor="entity-name">
+          <Field label={t.platform.name} htmlFor="entity-name">
             <Input
               id="entity-name"
               required
@@ -259,7 +248,7 @@ function LegalEntities({
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
           </Field>
-          <Field label="Negara" htmlFor="entity-country">
+          <Field label={t.platform.country} htmlFor="entity-country">
             <Select
               id="entity-country"
               value={form.countryCode}
@@ -267,12 +256,12 @@ function LegalEntities({
             >
               {COUNTRY_CODES.map((c) => (
                 <option key={c} value={c}>
-                  {COUNTRY_LABELS[c] ?? c}
+                  {t.common.countries[c] ?? c}
                 </option>
               ))}
             </Select>
           </Field>
-          <Field label="No. registrasi (opsional)" htmlFor="entity-reg">
+          <Field label={t.platform.registrationOptional} htmlFor="entity-reg">
             <Input
               id="entity-reg"
               maxLength={50}
@@ -282,7 +271,7 @@ function LegalEntities({
           </Field>
         </div>
         <Button type="submit" variant="secondary" loading={saving}>
-          Tambah
+          {t.common.add}
         </Button>
       </form>
     </Card>
@@ -290,6 +279,7 @@ function LegalEntities({
 }
 
 function Admins({ tenant }: { tenant: TenantDetail }) {
+  const t = useT();
   const [issued, setIssued] = useState<(ReissuedAdminInvite & { userId: string }) | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -304,7 +294,7 @@ function Admins({ tenant }: { tenant: TenantDetail }) {
       );
       setIssued({ ...res, userId });
     } catch (e) {
-      setError(failure(e));
+      setError(failure(e, t.common.error));
     } finally {
       setBusy(null);
     }
@@ -313,11 +303,8 @@ function Admins({ tenant }: { tenant: TenantDetail }) {
   return (
     <Card>
       <div className="p-5 sm:p-6">
-        <h2 className="font-display text-xl font-bold">Administrator perusahaan</h2>
-        <p className="mt-1 text-sm text-muted">
-          Bila undangan hilang atau kedaluwarsa, buat tautan baru. Tautan lama otomatis tidak
-          berlaku.
-        </p>
+        <h2 className="font-display text-xl font-bold">{t.platform.adminsTitle}</h2>
+        <p className="mt-1 text-sm text-muted">{t.platform.adminsHint}</p>
       </div>
       {error && (
         <div className="px-5 pb-4 sm:px-6">
@@ -333,7 +320,7 @@ function Admins({ tenant }: { tenant: TenantDetail }) {
                 <p className="text-base break-all text-muted">{a.email}</p>
               </div>
               <Badge tone={a.status === 'active' ? 'active' : 'warn'}>
-                {ACCOUNT_LABELS[a.status] ?? a.status}
+                {t.platform.accountStatus[a.status] ?? a.status}
               </Badge>
             </div>
             {a.status === 'invited' && (
@@ -342,7 +329,7 @@ function Admins({ tenant }: { tenant: TenantDetail }) {
                 loading={busy === a.userId}
                 onClick={() => reissue(a.userId)}
               >
-                Buat ulang undangan
+                {t.platform.reissueInvite}
               </Button>
             )}
             {issued?.userId === a.userId && (

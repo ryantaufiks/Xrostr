@@ -4,8 +4,10 @@ import { Ellipsis, LogOut, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import { useT } from '@/lib/i18n';
 import { logout } from '@/lib/session';
 import { Logo } from './brand';
+import { LanguageSwitch } from './language-switch';
 import { cx, Dot } from './ui';
 
 export interface NavItem {
@@ -34,6 +36,7 @@ export function AppShell({
   actions?: ReactNode;
   children: ReactNode;
 }) {
+  const t = useT();
   const pathname = usePathname();
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
@@ -58,7 +61,7 @@ export function AppShell({
     <div className="min-h-screen">
       <header className="border-b border-line">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:gap-6 sm:px-6">
-          <Link href="/" className="text-fg" aria-label="Xrostr, beranda">
+          <Link href="/" className="text-fg" aria-label={t.common.home}>
             <Logo compact />
           </Link>
           <span className="label hidden items-center gap-1.5 rounded-full border border-control px-3 py-1 text-muted md:inline-flex">
@@ -86,11 +89,11 @@ export function AppShell({
           <button
             onClick={signOut}
             disabled={signingOut}
-            aria-label="Keluar"
+            aria-label={t.common.signOut}
             className="label inline-flex min-h-11 items-center gap-2 px-2 font-bold text-muted hover:text-fg"
           >
             <LogOut className="size-5" aria-hidden />
-            <span className="hidden sm:inline">Keluar</span>
+            <span className="hidden sm:inline">{t.common.signOut}</span>
           </button>
         </div>
       </header>
@@ -103,7 +106,7 @@ export function AppShell({
         />
       )}
       <nav
-        aria-label="Menu utama"
+        aria-label={t.common.mainMenu}
         className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
         {moreOpen && (
@@ -154,7 +157,7 @@ export function AppShell({
               className={cx(TAB, moreActive || moreOpen ? 'text-fg' : 'text-muted')}
             >
               <Ellipsis className="size-6" aria-hidden strokeWidth={moreActive ? 2.4 : 1.8} />
-              Lainnya
+              {t.common.more}
             </button>
           )}
         </div>
@@ -173,8 +176,10 @@ export function AuthLayout({
   subtitle?: string;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
-    <div className="dot-grid flex min-h-screen flex-col items-center justify-center px-4 py-12">
+    <div className="dot-grid relative flex min-h-screen flex-col items-center justify-center px-4 py-12">
+      <LanguageSwitch className="absolute top-4 right-4" />
       <div className="w-full max-w-lg">
         <div className="mb-8 flex justify-center text-fg">
           <Logo />
@@ -184,9 +189,7 @@ export function AuthLayout({
           {subtitle && <p className="mt-2 text-base text-muted">{subtitle}</p>}
           <div className="mt-6">{children}</div>
         </div>
-        <p className="label mt-6 text-center text-faint">
-          Xrostr · HRMS otonom untuk tenaga kerja shift
-        </p>
+        <p className="label mt-6 text-center text-faint">{t.common.tagline}</p>
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ import { SessionIssuer } from './application/session-issuer.js';
 import { SubjectScope } from './application/subject-scope.js';
 import { TenantIdentityProvisioner } from './application/tenant-identity-provisioner.js';
 import { TenantUserAccess } from './application/tenant-user-access.js';
+import { LocalePreferences } from './application/locale-preferences.js';
 import {
   Argon2PasswordHasher,
   CryptoOpaqueTokens,
@@ -64,6 +65,7 @@ import { AuthGuard } from './interface/http/auth.guard.js';
     { provide: SessionRepository, useClass: DrizzleSessionRepository },
     // Application
     SubjectScope,
+    LocalePreferences,
     SessionIssuer,
     LoginUseCase,
     RefreshSessionUseCase,
@@ -77,6 +79,6 @@ import { AuthGuard } from './interface/http/auth.guard.js';
     // Every route is authenticated unless marked @Public.
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
-  exports: [TenantIdentityProvisioner, TenantUserAccess],
+  exports: [TenantIdentityProvisioner, TenantUserAccess, LocalePreferences],
 })
 export class IdentityModule {}

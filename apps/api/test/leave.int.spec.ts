@@ -196,7 +196,7 @@ describe('leave: balances, requests, approvals and public holidays', () => {
     expect(res.body).toMatchObject({
       status: 'pending',
       days: 2,
-      leaveType: { name: expect.any(String) },
+      leaveType: { name: { en: 'Annual leave', id: 'Cuti tahunan' } },
     });
 
     const overlap = await ask(officer, {
