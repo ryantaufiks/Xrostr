@@ -3,6 +3,7 @@ import { IdentityModule } from '../identity/identity.module.js';
 import { TenancyModule } from '../tenancy/tenancy.module.js';
 import { EmployeesService } from './application/employees.service.js';
 import { LocationsService } from './application/locations.service.js';
+import { WorkforceDirectory } from './application/workforce-directory.js';
 import { EmployeeRepository, LocationRepository } from './application/ports.js';
 import {
   DrizzleEmployeeRepository,
@@ -21,6 +22,8 @@ import {
     { provide: EmployeeRepository, useClass: DrizzleEmployeeRepository },
     LocationsService,
     EmployeesService,
+    WorkforceDirectory,
   ],
+  exports: [WorkforceDirectory],
 })
 export class WorkforceModule {}

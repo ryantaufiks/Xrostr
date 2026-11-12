@@ -48,6 +48,7 @@ export type EmployeeChanges = Partial<
 export abstract class EmployeeRepository {
   abstract list(): Promise<Employee[]>;
   abstract findById(id: string): Promise<Employee | null>;
+  abstract findByUserId(userId: string): Promise<Employee | null>;
   abstract employeeNoExists(employeeNo: string): Promise<boolean>;
   abstract insert(employee: NewEmployee): Promise<string>;
   abstract update(id: string, changes: EmployeeChanges): Promise<void>;

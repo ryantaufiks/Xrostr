@@ -13,6 +13,8 @@ export const PERMISSIONS = [
   'employees.manage',
   'locations.read',
   'locations.manage',
+  'schedules.read',
+  'schedules.manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -49,13 +51,20 @@ export const SYSTEM_ROLE_DEFINITIONS: readonly SystemRoleDefinition[] = [
       'employees.read',
       'employees.manage',
       'locations.read',
+      'schedules.read',
     ],
     mfaRequired: true,
   },
   {
     key: 'supervisor',
     name: 'Manager / Supervisor',
-    permissions: ['users.read', 'employees.read', 'locations.read'],
+    permissions: [
+      'users.read',
+      'employees.read',
+      'locations.read',
+      'schedules.read',
+      'schedules.manage',
+    ],
     mfaRequired: false,
   },
   { key: 'employee', name: 'Employee', permissions: [], mfaRequired: false },

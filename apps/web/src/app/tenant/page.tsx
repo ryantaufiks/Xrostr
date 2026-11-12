@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Badge, Card, PageHeader, Spinner } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { COUNTRY_LABELS, formatDateTime } from '@/lib/format';
+import { MyShifts } from '@/components/my-shifts';
 import { usePrincipal } from '@/lib/principal-context';
 
 interface LegalEntity {
@@ -37,6 +38,8 @@ const ACTION_LABELS: Record<string, string> = {
   'employee.invite_reissued': 'Undangan dikirim ulang',
   'location.created': 'Site ditambahkan',
   'location.updated': 'Data site diubah',
+  'shift.cancelled': 'Shift dibatalkan',
+  'schedule.published': 'Jadwal diterbitkan',
   'auth.password_change_failed': 'Gagal mengganti password',
 };
 
@@ -52,14 +55,8 @@ export default function TenantHome() {
   if (!canReadEntities && !canReadAudit) {
     return (
       <>
-        <PageHeader title="Beranda" description="Selamat bertugas." />
-        <Card className="space-y-2 p-6">
-          <p className="text-lg font-semibold text-fg">Jadwal Anda akan tampil di sini</p>
-          <p className="text-base text-muted">
-            Shift, absensi, dan pengajuan cuti sedang disiapkan. Aktifkan notifikasi di menu Akun
-            agar Anda mendapat kabar saat jadwal terbit.
-          </p>
-        </Card>
+        <PageHeader title="Jadwal saya" description="Selamat bertugas." />
+        <MyShifts />
       </>
     );
   }

@@ -126,6 +126,10 @@ All errors are `application/problem+json` (RFC 9457) with a stable `code`.
 | GET, POST | `/tenant/locations`, PATCH `/tenant/locations/:id`    | `locations.*`      |
 | GET, POST | `/tenant/employees`, PATCH `/tenant/employees/:id`    | `employees.*`      |
 | POST      | `/tenant/employees/:id/invite`                        | `employees.manage` |
+| GET       | `/tenant/roster?locationId&from&to`                   | `schedules.read`   |
+| POST      | `/tenant/shifts`, DELETE `/tenant/shifts/:id`         | `schedules.manage` |
+| POST      | `/tenant/roster/publish`                              | `schedules.manage` |
+| GET       | `/me/shifts?from&to`                                  | tenant user        |
 | GET, POST | `/notifications`, `/notifications/push/*`             | tenant user        |
 | GET       | `/tenant/audit-log?limit=`                            | `audit.read`       |
 

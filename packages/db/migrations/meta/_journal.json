@@ -29,6 +29,20 @@
       "when": 1794462321706,
       "tag": "0003_sync_system_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794463556014,
+      "tag": "0004_shifts",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794463556466,
+      "tag": "0005_shift_rules",
+      "breakpoints": true
     }
   ]
 }

@@ -220,3 +220,36 @@ export const employees = pgTable(
     tenantIsolation('employees'),
   ],
 ).enableRLS();
+
+/**
+ * One person on one site for one stretch of time. Times are UTC; the site's time zone turns
+ * them into local dates. An exclusion constraint (migration 0005) stops overlapping shifts
+ * for the same employee, even under concurrent writes.
+ */
+export const shifts = pgTable(
+  'shifts',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    kind: text('kind').notNull(),
+    status: text('status').notNull().default('draft'),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
+    notes: text('notes'),
+    createdBy: uuid('created_by'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    ...timestamps,
+    version: version(),
+  },
+  (t) => [
+    index('shifts_location_starts_idx').on(t.locationId, t.startsAt),
+    index('shifts_employee_starts_idx').on(t.employeeId, t.startsAt),
+    tenantIsolation('shifts'),
+  ],
+).enableRLS();

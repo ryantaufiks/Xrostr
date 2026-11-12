@@ -4,3 +4,4 @@ export * from './auth.js';
 export * from './tenancy.js';
 export * from './notifications.js';
 export * from './workforce.js';
+export * from './scheduling.js';

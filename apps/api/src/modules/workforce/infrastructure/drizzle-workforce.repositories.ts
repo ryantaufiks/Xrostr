@@ -115,6 +115,16 @@ export class DrizzleEmployeeRepository extends EmployeeRepository {
     return row ? toEmployee(row) : null;
   }
 
+  async findByUserId(userId: string): Promise<Employee | null> {
+    const [row] = await this.ctx
+      .executor()
+      .select()
+      .from(employees)
+      .where(eq(employees.userId, userId))
+      .limit(1);
+    return row ? toEmployee(row) : null;
+  }
+
   async employeeNoExists(employeeNo: string): Promise<boolean> {
     const [row] = await this.ctx
       .executor()

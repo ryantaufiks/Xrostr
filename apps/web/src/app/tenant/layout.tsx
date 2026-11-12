@@ -1,7 +1,7 @@
 'use client';
 
 import type { Permission } from '@xrostr/contracts';
-import { Building2, House, UserRound, Users } from 'lucide-react';
+import { Building2, CalendarDays, House, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AppShell, type NavItem } from '@/components/app-shell';
 import { NotificationBell } from '@/components/notification-bell';
@@ -16,6 +16,9 @@ function navFor(permissions: readonly Permission[]): NavItem[] {
     { href: '/tenant', label: 'Beranda', icon: House },
     ...(can('employees.read')
       ? [{ href: '/tenant/employees', label: 'Karyawan', icon: Users }]
+      : []),
+    ...(can('schedules.read')
+      ? [{ href: '/tenant/roster', label: 'Jadwal', icon: CalendarDays }]
       : []),
     ...(can('locations.read')
       ? [{ href: '/tenant/locations', label: 'Site', icon: Building2 }]
