@@ -4,6 +4,7 @@ import type { Permission } from '@xrostr/contracts';
 import {
   Building2,
   CalendarDays,
+  ClipboardClock,
   Footprints,
   House,
   Palmtree,
@@ -11,6 +12,7 @@ import {
   Siren,
   UserRound,
   Users,
+  Wallet,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AppShell, type NavItem } from '@/components/app-shell';
@@ -32,8 +34,10 @@ function navFor(permissions: readonly Permission[], nav: Dictionary['home']['nav
       ? [
           { href: '/tenant/roster', label: nav.roster, icon: CalendarDays },
           { href: '/tenant/roving', label: nav.roving, icon: Footprints },
+          { href: '/tenant/timesheets', label: nav.timesheets, icon: ClipboardClock },
         ]
       : []),
+    ...(can('payroll.read') ? [{ href: '/tenant/payroll', label: nav.payroll, icon: Wallet }] : []),
     // Officers patrol; planners and HR monitor. Everyone in a tenant has a reason to be here.
     { href: '/tenant/patrol', label: nav.patrol, icon: Route },
     ...(can('alerts.respond') ? [{ href: '/tenant/alerts', label: nav.alerts, icon: Siren }] : []),

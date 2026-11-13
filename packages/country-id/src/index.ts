@@ -15,6 +15,16 @@ export const indonesiaPack: CountryPack = {
   timezones: ['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura'],
   locale: 'id-ID',
   defaultDataRegion: 'id',
+  payroll: {
+    // 7 hours a day for a six-day week, 8 for a five-day week; 40 hours a week either way.
+    workingTime: {
+      dailyMinutes: { 5: 480, 6: 420 },
+      weeklyMinutes: 2400,
+      basis: 'UU 13/2003 ps. 77 jo. PP 35/2021 ps. 21',
+    },
+    defaultWorkDaysPerWeek: 6,
+    defaultBankFormat: 'mandiri',
+  },
   leaveTypes: [
     {
       code: 'annual',

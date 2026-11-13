@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { EmployeeForm } from '@/components/employee-form';
 import { InviteShare } from '@/components/invite-share';
+import { PayProfileCard } from '@/components/pay-profile-card';
 import { Alert, Badge, Button, Card, PageHeader, Spinner } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -124,6 +125,13 @@ export default function EmployeePage() {
               <dd>{employee.jobTitle ?? '—'}</dd>
             </dl>
           </Card>
+        )}
+
+        {permissions.includes('payroll.read') && (
+          <PayProfileCard
+            employeeId={employee.id}
+            canManage={permissions.includes('payroll.manage')}
+          />
         )}
       </div>
     </>

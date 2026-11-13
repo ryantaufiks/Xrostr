@@ -14,6 +14,7 @@ import { auth, invite } from './messages/auth';
 import { attendance } from './messages/attendance';
 import { leave } from './messages/leave';
 import { patrol } from './messages/patrol';
+import { payroll } from './messages/payroll';
 import { planning } from './messages/planning';
 import { safety } from './messages/safety';
 import { relief } from './messages/relief';
@@ -46,6 +47,7 @@ const NAMESPACES = {
   relief,
   visits,
   planning,
+  payroll,
 };
 
 export type Dictionary = { [K in keyof typeof NAMESPACES]: (typeof NAMESPACES)[K]['id'] };

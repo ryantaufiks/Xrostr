@@ -9,6 +9,16 @@ export const singaporePack: CountryPack = {
   name: 'Singapore',
   currency: 'SGD',
   currencyMinorUnits: 2,
+  payroll: {
+    // 44 hours a week; up to 9 hours a day on a five-day week, 8 otherwise.
+    workingTime: {
+      dailyMinutes: { 5: 540, 6: 480 },
+      weeklyMinutes: 2640,
+      basis: 'Employment Act s.38',
+    },
+    defaultWorkDaysPerWeek: 6,
+    defaultBankFormat: 'dbs',
+  },
   defaultTimezone: 'Asia/Singapore',
   timezones: ['Asia/Singapore'],
   locale: 'en-SG',

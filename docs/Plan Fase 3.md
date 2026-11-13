@@ -36,7 +36,7 @@ Dikerjakan dalam tiga bagian yang masing-masing bisa dicoba dan di-commit sendir
 
 | Isi                   | Keterangan                                                                                                                                      |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Dasar pembayaran      | `monthly` (bulanan), `daily` (harian), `hourly` (per jam, part-time)                                                                            |
+| Dasar pembayaran      | `monthly` (bulanan), `daily` (harian), `hourly` (per jam, part-time); siklus bayar bulanan atau harian                                          |
 | Upah pokok            | Per bulan / hari / jam sesuai dasar                                                                                                             |
 | Tunjangan tetap       | Mis. jabatan, masa kerja: dibayar tetap, ikut dasar lembur (ID)                                                                                 |
 | Tunjangan tidak tetap | Mis. makan dan transport **per kehadiran**: dihitung dari absen                                                                                 |
@@ -52,16 +52,16 @@ izin `payroll.manage`, dan setiap pembacaan penuh tercatat di audit.
 
 Default dari Country Pack, bisa diubah perusahaan (dengan peringatan bila di bawah ketentuan):
 
-| Kebijakan             | Pilihan                                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------------------------- |
-| Siklus dan cut-off    | Bulanan; cut-off mis. tanggal 21–20 (umum di ID) atau 1–akhir bulan; tanggal bayar                      |
-| Lembur                | `statutory` (rumus undang-undang) atau `flat` (tarif per jam/shift tetap, dengan cek minimum statutory) |
-| Tunjangan siaga       | Per jam siaga atau per shift siaga                                                                      |
-| Uang panggil          | Nominal tetap saat officer siaga/libur dipanggil sebagai pengganti (dari `replaces_shift_id`)           |
-| Tunjangan malam       | Opsional, per shift malam                                                                               |
-| Keterlambatan         | Tanpa potongan / potong per menit / potong per blok; dengan toleransi (grace)                           |
-| Tidak hadir (no-show) | Hari tidak dibayar (upah harian), sesuai `daily rate` negara                                            |
-| Pembulatan jam kerja  | Ke 15 / 30 menit, ke bawah untuk masuk terlambat dan pulang cepat                                       |
+| Kebijakan             | Pilihan                                                                                       |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| Siklus dan cut-off    | **Bulanan 1–akhir bulan** (default) atau **harian** (dibayar per hari kerja); tanggal bayar   |
+| Lembur                | **Per jam menurut undang-undang** (default), bisa **dinonaktifkan** per legal entity          |
+| Tunjangan siaga       | Per jam siaga atau per shift siaga                                                            |
+| Uang panggil          | Nominal tetap saat officer siaga/libur dipanggil sebagai pengganti (dari `replaces_shift_id`) |
+| Tunjangan malam       | Opsional, per shift malam                                                                     |
+| Keterlambatan         | Tanpa potongan / potong per menit / potong per blok; dengan toleransi (grace)                 |
+| Tidak hadir (no-show) | Hari tidak dibayar (upah harian), sesuai `daily rate` negara                                  |
+| Pembulatan jam kerja  | Ke 15 / 30 menit, ke bawah untuk masuk terlambat dan pulang cepat                             |
 
 ### Lembar waktu (timesheet)
 
@@ -81,7 +81,15 @@ Dihitung dari data yang sudah ada, per shift terbit dalam periode:
 
 **Koreksi supervisor.** Absen pulang yang lupa, jam yang salah, atau hadir tanpa scan bisa
 dikoreksi dengan alasan wajib. Nilai asli tetap tersimpan; koreksi dan pelakunya tercatat.
-**Kunci lembar waktu** per periode menjadi syarat menghitung gaji.
+**Lembar waktu dihitung langsung** dari data sumber, jadi koreksi langsung terlihat. Saat periode gaji dihitung (3B), lembar waktunya disalin sebagai snapshot dan terkunci bersama periode itu.
+
+### Status 3A (13 November 2026)
+
+Selesai: kebijakan gaji per badan usaha (halaman _Gaji_), profil gaji berversi dan rekening per
+karyawan (terenkripsi, dimasking, buka lengkap tercatat di audit), lembar waktu bulanan (halaman
+_Lembar waktu_) dengan lembur harian/mingguan, hari istirahat, hari libur, siaga, panggilan, cuti,
+dan koreksi absen beserta alasannya. Migrasi `0021_payroll_data` (termasuk izin `payroll.*` untuk
+peran Tenant Admin dan HR).
 
 ### Selesai bila
 
@@ -131,7 +139,8 @@ Potongan: keterlambatan, tidak hadir, cuti tidak dibayar, penyesuaian, lalu iura
   diatur per legal entity), JKM. **BPJS Kesehatan** (dengan batas upah). Porsi perusahaan dan
   karyawan dipisah di slip.
 - **PPh 21**: metode TER bulanan (Januari–November) dan perhitungan setahun di Desember atau saat
-  keluar, menurut status PTKP. Gross atau gross-up dipilih per legal entity.
+  keluar, menurut status PTKP. **Gross** (default) dan **gross-up** (perusahaan menanggung pajak
+  lewat tunjangan pajak) keduanya didukung, dipilih per legal entity dan bisa diganti per karyawan.
 - **THR**: periode khusus; 1 bulan upah untuk masa kerja ≥ 12 bulan, prorata untuk ≥ 1 bulan.
 
 ### Singapura (Country Pack SG)
@@ -165,13 +174,15 @@ dikunci; setiap baris slip punya rumus dan sumber; kasus emas ID dan SG lolos.
 
 - **Slip gaji officer**: di aplikasi (menu _Gaji_) dan PDF, dua bahasa, rincian per baris dengan
   tautan ke shift sumbernya. Push saat slip terbit.
-- **File bank**: CSV transfer massal generik dulu; format bank tertentu (mis. BCA, Mandiri,
-  DBS/OCBC GIRO) sebagai adaptor menyusul.
+- **File bank**: format **Mandiri** (ID) dan **DBS** (SG) sebagai bawaan; bank di kebijakan
+  legal entity boleh **kosong**, dan periode tetap bisa diselesaikan dengan transfer manual (rekap
+  CSV rekening dan nominal tetap tersedia). Bank lain menyusul sebagai adaptor.
 - **Laporan**: rekap periode per site dan legal entity (biaya per site untuk penagihan klien),
   rekap BPJS dan PPh 21 (ID), rekap CPF/SDL/SHG (SG), perbandingan antar periode.
 - **Ekspor ke sistem lain**: CSV jurnal untuk akuntansi.
-- **Uji paralel**: tenant pertama menjalankan Xrostr berdampingan dengan payroll lamanya 1–2 bulan;
-  laporan selisih per karyawan membantu menemukan perbedaan aturan sebelum beralih.
+- **Uji paralel**: belum ada tenant yang bisa menjalankannya. Sebagai gantinya, kasus emas (hitungan
+  manual dan contoh resmi) di CI diperbanyak, dan laporan selisih tetap dibangun: tenant pertama bisa
+  mengunggah rekap gaji lamanya (CSV) untuk dibandingkan per karyawan sebelum beralih.
 
 ### Selesai bila
 
@@ -188,13 +199,13 @@ rekap iuran dan pajak cocok dengan slip.
 | `pay_profile_allowances` | Tunjangan tetap dan per kehadiran per profil                                          |
 | `pay_policies`           | Kebijakan per legal entity (siklus, lembur, siaga, panggil, potongan, pembulatan)     |
 | `employee_bank_accounts` | Rekening terenkripsi                                                                  |
-| `timesheet_entries`      | Per shift per periode: jam terjadwal/bekerja, terlambat, libur, siaga, panggilan      |
+| `timesheet_entries`      | _(3B)_ Snapshot lembar waktu per periode gaji; di 3A lembar waktu dihitung langsung   |
 | `timesheet_corrections`  | Nilai asli, nilai koreksi, alasan, pelaku                                             |
 | `pay_runs`               | Periode per legal entity: rentang, status, penyiap, penyetuju, waktu                  |
 | `payslips`               | Per karyawan per periode: total kotor, potongan, bersih, status                       |
 | `payslip_lines`          | Baris: kode, label, jumlah, rumus, sumber                                             |
 | `pay_adjustments`        | Penyesuaian satu kali per karyawan per periode                                        |
-| `locations.wage_region`  | Kode wilayah UMK (ID) untuk cek upah minimum                                          |
+| `locations.wage_region`  | _(3B)_ Kode wilayah UMK (ID) untuk cek upah minimum                                   |
 
 Semua tabel tenant memakai RLS seperti biasa; `payslips` dan `payslip_lines` hanya bisa diubah
 selama periodenya belum `approved`.
@@ -224,15 +235,17 @@ Supervisor (`schedules.manage`) boleh mengoreksi lembar waktu site-nya, tidak me
 
 ---
 
-## Keputusan yang perlu dari Anda sebelum mulai
+## Keputusan (13 November 2026)
 
-1. **Siklus dan cut-off** default: bulanan 21–20 atau 1–akhir bulan?
-2. **Lembur security di klien Anda**: dihitung statutory per jam, atau tarif flat per shift
-   (umum di ID, tetapi perlu cek minimum statutory)?
-3. **Bank** pertama untuk file transfer (ID dan SG).
-4. **PPh 21**: gross atau gross-up sebagai default?
-5. **Tenant uji paralel**: ada perusahaan yang bisa menjalankan payroll lama dan Xrostr
-   berdampingan 1–2 bulan?
+1. **Siklus**: bulanan 1–akhir bulan sebagai default, dan siklus **harian** untuk karyawan yang
+   dibayar per hari. Satu legal entity bisa menjalankan keduanya; siklus ikut profil gaji karyawan.
+2. **Lembur**: dihitung per jam menurut undang-undang, dan bisa dinonaktifkan per legal entity
+   (mis. bila upah sudah mencakup lembur menurut perjanjian kerja). Saat nonaktif, jam lembur tetap
+   tampil di lembar waktu sebagai informasi.
+3. **Bank**: Mandiri (ID) dan DBS (SG) sebagai bawaan; boleh kosong (transfer manual).
+4. **PPh 21**: gross dan gross-up keduanya didukung; default gross.
+5. **Uji paralel**: belum ada tenant; diganti kasus emas yang lebih banyak dan unggah rekap lama
+   untuk perbandingan.
 
 ## Di luar lingkup Fase 3
 

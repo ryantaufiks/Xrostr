@@ -27,6 +27,29 @@ export interface HolidayDefault {
   readonly name: string;
 }
 
+/**
+ * Normal working time before overtime, by the number of working days in the officer's week.
+ * Hours past the daily limit, or past the weekly limit, are overtime (whichever gives more).
+ */
+export interface WorkingTimeRule {
+  readonly dailyMinutes: Readonly<Record<5 | 6, number>>;
+  readonly weeklyMinutes: number;
+  /** Short legal basis shown to HR. */
+  readonly basis: string;
+}
+
+/** Payroll defaults of a country. Rates (overtime multipliers, contributions, tax) come in 3B. */
+export interface PayrollRules {
+  readonly workingTime: WorkingTimeRule;
+  /** Working days per week assumed for an officer without a pay profile. */
+  readonly defaultWorkDaysPerWeek: 5 | 6;
+  /** Bank file format offered by default; the tenant may clear it. */
+  readonly defaultBankFormat: BankFormat | null;
+}
+
+export const BANK_FORMATS = ['mandiri', 'dbs'] as const;
+export type BankFormat = (typeof BANK_FORMATS)[number];
+
 /** Static metadata of a Country Pack. Payroll rules are versioned data, added in Phase 3. */
 export interface CountryPack {
   readonly code: CountryCode;
@@ -44,4 +67,5 @@ export interface CountryPack {
    * there. Lunar-calendar dates must be checked against the official gazette each year.
    */
   readonly holidays: Readonly<Record<number, readonly HolidayDefault[]>>;
+  readonly payroll: PayrollRules;
 }

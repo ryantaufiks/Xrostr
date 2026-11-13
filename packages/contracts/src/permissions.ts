@@ -20,6 +20,9 @@ export const PERMISSIONS = [
   'patrols.read',
   'patrols.manage',
   'alerts.respond',
+  'payroll.read',
+  'payroll.manage',
+  'payroll.approve',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -60,6 +63,8 @@ export const SYSTEM_ROLE_DEFINITIONS: readonly SystemRoleDefinition[] = [
       'leave.approve',
       'holidays.manage',
       'patrols.read',
+      'payroll.read',
+      'payroll.manage',
     ],
     mfaRequired: true,
   },

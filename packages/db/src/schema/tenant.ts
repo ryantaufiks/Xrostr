@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -749,4 +750,133 @@ export const visitAlerts = pgTable(
     alertedAt: timestamp('alerted_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.shiftId, t.locationId] }), tenantIsolation('visit_alerts')],
+).enableRLS();
+
+// ---------- Payroll (Fase 3) ----------
+
+/** Money columns hold the currency's minor unit (rupiah, Singapore cents) as whole numbers. */
+const money = (name: string) => bigint(name, { mode: 'number' }).notNull().default(0);
+
+/** A legal entity's payroll policy; without a row the Country Pack defaults apply. */
+export const payPolicies = pgTable(
+  'pay_policies',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    legalEntityId: uuid('legal_entity_id')
+      .notNull()
+      .references(() => legalEntities.id),
+    overtimeEnabled: boolean('overtime_enabled').notNull().default(true),
+    roundingMinutes: integer('rounding_minutes').notNull().default(15),
+    lateGraceMinutes: integer('late_grace_minutes').notNull().default(0),
+    lateDeduction: text('late_deduction').notNull().default('none'),
+    standbyRate: money('standby_rate'),
+    standbyUnit: text('standby_unit').notNull().default('shift'),
+    calloutAmount: money('callout_amount'),
+    nightAllowance: money('night_allowance'),
+    taxMethod: text('tax_method').notNull().default('gross'),
+    bankFormat: text('bank_format'),
+    payDay: integer('pay_day').notNull().default(1),
+    ...timestamps,
+    version: version(),
+  },
+  (t) => [unique('pay_policies_entity_uq').on(t.legalEntityId), tenantIsolation('pay_policies')],
+).enableRLS();
+
+/**
+ * One version of an employee's pay terms, in force from `effective_from` until the next version.
+ * Sensitive identifiers are stored encrypted (`*_enc`).
+ */
+export const payProfiles = pgTable(
+  'pay_profiles',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id),
+    effectiveFrom: date('effective_from').notNull(),
+    payCycle: text('pay_cycle').notNull(),
+    payBasis: text('pay_basis').notNull(),
+    baseAmount: money('base_amount'),
+    workDaysPerWeek: integer('work_days_per_week').notNull(),
+    overtimeEligible: boolean('overtime_eligible').notNull().default(true),
+    taxMethod: text('tax_method'),
+    ptkpStatus: text('ptkp_status'),
+    taxIdEnc: text('tax_id_enc'),
+    bpjsTkNoEnc: text('bpjs_tk_no_enc'),
+    bpjsKesNoEnc: text('bpjs_kes_no_enc'),
+    sgResidency: text('sg_residency'),
+    sgShgFund: text('sg_shg_fund'),
+    pwmGrade: text('pwm_grade'),
+    dateOfBirthEnc: text('date_of_birth_enc'),
+    createdBy: uuid('created_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('pay_profiles_version_uq').on(t.employeeId, t.effectiveFrom),
+    tenantIsolation('pay_profiles'),
+  ],
+).enableRLS();
+
+export const payProfileAllowances = pgTable(
+  'pay_profile_allowances',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    profileId: uuid('profile_id')
+      .notNull()
+      .references(() => payProfiles.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    label: text('label').notNull(),
+    kind: text('kind').notNull(),
+    amount: money('amount'),
+  },
+  (t) => [
+    index('pay_profile_allowances_profile_idx').on(t.profileId, t.position),
+    tenantIsolation('pay_profile_allowances'),
+  ],
+).enableRLS();
+
+export const employeeBankAccounts = pgTable(
+  'employee_bank_accounts',
+  {
+    tenantId: tenantId(),
+    employeeId: uuid('employee_id')
+      .primaryKey()
+      .references(() => employees.id),
+    bankName: text('bank_name').notNull(),
+    accountNoEnc: text('account_no_enc').notNull(),
+    accountName: text('account_name').notNull(),
+    updatedBy: uuid('updated_by'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  () => [tenantIsolation('employee_bank_accounts')],
+).enableRLS();
+
+/**
+ * A supervisor's correction of a shift's attendance for payroll. The original check-in and
+ * check-out stay untouched; the latest correction of each time wins. `*_set` tells "corrected to
+ * nothing" apart from "not corrected".
+ */
+export const timesheetCorrections = pgTable(
+  'timesheet_corrections',
+  {
+    id: id(),
+    tenantId: tenantId(),
+    shiftId: uuid('shift_id')
+      .notNull()
+      .references(() => shifts.id),
+    checkInSet: boolean('check_in_set').notNull().default(false),
+    checkInAt: timestamp('check_in_at', { withTimezone: true }),
+    checkOutSet: boolean('check_out_set').notNull().default(false),
+    checkOutAt: timestamp('check_out_at', { withTimezone: true }),
+    reason: text('reason').notNull(),
+    correctedBy: uuid('corrected_by').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('timesheet_corrections_shift_idx').on(t.shiftId, t.createdAt),
+    tenantIsolation('timesheet_corrections'),
+  ],
 ).enableRLS();

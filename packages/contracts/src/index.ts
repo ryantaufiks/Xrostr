@@ -10,3 +10,4 @@ export * from './leave.js';
 export * from './locale.js';
 export * from './patrol.js';
 export * from './safety.js';
+export * from './payroll.js';

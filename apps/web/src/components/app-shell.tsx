@@ -1,6 +1,6 @@
 'use client';
 
-import { Ellipsis, LogOut, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Ellipsis, LogOut, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -18,6 +18,22 @@ export interface NavItem {
 }
 
 const MAX_TABS = 5;
+/**
+ * Top-bar links shown directly by screen width: three on small screens, four from `lg`, five
+ * from `xl`. The rest sit under "More", which shows exactly the links the bar leaves out.
+ */
+const TOP_SHOWN = [
+  'inline-flex',
+  'inline-flex',
+  'inline-flex',
+  'hidden lg:inline-flex',
+  'hidden xl:inline-flex',
+];
+const TOP_IN_MORE = ['hidden', 'hidden', 'hidden', 'lg:hidden', 'xl:hidden'];
+const TOP_SMALL = 3;
+const TOP_LARGE = TOP_SHOWN.length;
+// No display class here: each link sets its own, so `hidden` never competes with `inline-flex`.
+const TOP_LINK = 'label min-h-11 items-center border-b-2 px-2 font-bold whitespace-nowrap';
 const TAB = 'flex min-h-16 flex-col items-center justify-center gap-1 text-[13px] font-semibold';
 
 /**
@@ -41,7 +57,11 @@ export function AppShell({
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  useEffect(() => setMoreOpen(false), [pathname]);
+  const [topMoreOpen, setTopMoreOpen] = useState(false);
+  useEffect(() => {
+    setMoreOpen(false);
+    setTopMoreOpen(false);
+  }, [pathname]);
   // The most specific match wins, so /tenant/account does not also light up /tenant.
   const activeHref = nav
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
@@ -64,17 +84,18 @@ export function AppShell({
           <Link href="/" className="text-fg" aria-label={t.common.home}>
             <Logo compact />
           </Link>
-          <span className="label hidden items-center gap-1.5 rounded-full border border-control px-3 py-1 text-muted md:inline-flex">
+          <span className="label hidden items-center gap-1.5 rounded-full border border-control px-3 py-1 text-muted lg:inline-flex">
             <Dot />
             {areaLabel}
           </span>
-          <nav className="hidden flex-1 gap-4 sm:flex">
-            {nav.map((item) => (
+          <nav className="hidden min-w-0 flex-1 items-center gap-4 sm:flex">
+            {nav.slice(0, TOP_LARGE).map((item, i) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cx(
-                  'label inline-flex min-h-11 items-center border-b-2 px-2 font-bold',
+                  TOP_LINK,
+                  TOP_SHOWN[i],
                   item.href === activeHref
                     ? 'border-fg text-fg'
                     : 'border-transparent text-muted hover:text-fg',
@@ -83,6 +104,63 @@ export function AppShell({
                 {item.label}
               </Link>
             ))}
+            {nav.length > TOP_SMALL && (
+              <div
+                className={cx(
+                  'relative',
+                  // Hidden once the bar itself has room for every link.
+                  nav.length <= TOP_SMALL + 1
+                    ? 'lg:hidden'
+                    : nav.length <= TOP_LARGE && 'xl:hidden',
+                )}
+              >
+                <button
+                  type="button"
+                  aria-expanded={topMoreOpen}
+                  aria-controls="top-more-menu"
+                  onClick={() => setTopMoreOpen((open) => !open)}
+                  className={cx(
+                    TOP_LINK,
+                    'inline-flex gap-1',
+                    nav.slice(TOP_SMALL).some((item) => item.href === activeHref)
+                      ? 'border-fg text-fg'
+                      : 'border-transparent text-muted hover:text-fg',
+                  )}
+                >
+                  {t.common.more}
+                  <ChevronDown className="size-4" aria-hidden />
+                </button>
+                {topMoreOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setTopMoreOpen(false)}
+                      aria-hidden
+                    />
+                    <ul
+                      id="top-more-menu"
+                      className="absolute right-0 z-20 mt-2 min-w-56 rounded-2xl border border-line bg-surface py-2 shadow-lg"
+                    >
+                      {nav.slice(TOP_SMALL).map(({ href, label, icon: Icon }, i) => (
+                        <li key={href} className={TOP_IN_MORE[i + TOP_SMALL]}>
+                          <Link
+                            href={href}
+                            aria-current={href === activeHref ? 'page' : undefined}
+                            className={cx(
+                              'flex min-h-11 items-center gap-3 px-4 text-base font-semibold',
+                              href === activeHref ? 'text-fg' : 'text-muted hover:text-fg',
+                            )}
+                          >
+                            <Icon className="size-5" aria-hidden />
+                            {label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
           </nav>
           <div className="flex-1 sm:hidden" />
           {actions}
@@ -93,7 +171,7 @@ export function AppShell({
             className="label inline-flex min-h-11 items-center gap-2 px-2 font-bold text-muted hover:text-fg"
           >
             <LogOut className="size-5" aria-hidden />
-            <span className="hidden sm:inline">{t.common.signOut}</span>
+            <span className="hidden lg:inline">{t.common.signOut}</span>
           </button>
         </div>
       </header>

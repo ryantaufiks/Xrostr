@@ -22,5 +22,6 @@ import { LeaveController } from './interface/http/leave.controller.js';
     HolidaysService,
     LeaveService,
   ],
+  exports: [HolidaysService],
 })
 export class LeaveModule {}
