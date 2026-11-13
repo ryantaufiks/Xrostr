@@ -114,11 +114,28 @@ berpindah otomatis, tanpa dua pengganti untuk satu kekosongan.
 
 ## B3 — Pola rotasi dan isi otomatis
 
-- **Pola rotasi**: urutan hari, mis. `P P M M L L` (L = libur), diterapkan ke satu officer untuk
-  rentang tanggal dan site tertentu → draft lewat batch (semua atau tidak sama sekali).
-- **Isi otomatis**: untuk slot di bawah kebutuhan (baris _Terisi_), sistem menyarankan officer
-  dengan aturan yang sama seperti urutan calon B1; perencana memilih **Terapkan saran**.
+- **Pola rotasi** (grid → _Pola rotasi_): urutan hari, mis. `P P M M L L` (P = pagi, M = malam,
+  L = libur; dalam bahasa Inggris D/N/O), diterapkan ke satu officer di satu site dari tanggal
+  mulai sampai selesai (default 4 minggu, maks. 62 hari), mulai dari langkah mana pun.
+  - Hari kerja → draft (menggantikan draft yang ada); hari L → draft officer itu di site ini
+    dihapus, jadi rentang selalu mengikuti pola terakhir.
+  - Hari cuti disetujui dan hari dengan shift terbit dilewati dan dilaporkan.
+  - Satu transaksi: bila satu hari bentrok (mis. shift di site lain), tidak ada yang berubah dan
+    galat menyebut tanggalnya.
+  - Batas jam mingguan tidak memblokir rotasi; panel konflik grid tetap memperingatkan.
+- **Isi otomatis** (grid → _Isi otomatis_): untuk tiap hari dan shift pagi/malam di bawah
+  Kebutuhan, sistem menyarankan officer, berurutan per hari sehingga saran saling memperhitungkan.
+  - Disaring: cuti, tidak terdaftar untuk site, officer roving, sudah bekerja di jam itu,
+    istirahat < 11 jam, jam mingguan akan melewati batas, malam beruntun mencapai ambang peringatan.
+  - Urutan: officer site ini dulu, lalu jam minggu itu paling sedikit, lalu nama.
+  - Slot yang tetap kosong ditampilkan sebagai _tidak bisa diisi tanpa melanggar aturan_.
+  - Perencana menghapus centang yang tidak diinginkan lalu **Terapkan saran** → batch draft.
 - Menjadi dasar autonomy engine Fase 4: L1 menyarankan, L2 membuat draft sendiri, L3 menerbitkan.
+
+| Method | Path                                                  | Izin               |
+| ------ | ----------------------------------------------------- | ------------------ |
+| POST   | `/tenant/roster/rotation`                             | `schedules.manage` |
+| GET    | `/tenant/roster/suggestions?locationId=…&from=…&to=…` | `schedules.manage` |
 
 ---
 

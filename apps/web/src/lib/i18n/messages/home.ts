@@ -67,6 +67,7 @@ export const home = bilingual(
       'relief.accepted': 'Pengganti menerima shift',
       'relief.cancelled': 'Pencarian pengganti dihentikan',
       'zone.targets_updated': 'Target kunjungan zona diubah',
+      'roster.rotation_applied': 'Pola rotasi diterapkan',
     } as Record<string, string>,
   },
   {
@@ -135,6 +136,7 @@ export const home = bilingual(
       'relief.accepted': 'Relief accepted the shift',
       'relief.cancelled': 'Relief search stopped',
       'zone.targets_updated': 'Zone visit targets changed',
+      'roster.rotation_applied': 'Rotation pattern applied',
     },
   },
 );

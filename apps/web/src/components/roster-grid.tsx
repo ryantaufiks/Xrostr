@@ -10,13 +10,15 @@ import {
   type ShiftView,
   type StaffingView,
 } from '@xrostr/contracts';
-import { AlertTriangle, Copy, Eraser, Plus, X } from 'lucide-react';
+import { AlertTriangle, Copy, Eraser, Plus, Repeat, Sparkles, X } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useToast } from '@/components/toast';
 import { api, ApiError } from '@/lib/api';
 import { addDays, dayLabel } from '@/lib/dates';
 import { useT } from '@/lib/i18n';
 import { shiftKindShort } from '@/lib/shifts';
+import { RosterAutofill } from './roster-autofill';
+import { RotationPanel } from './rotation-panel';
 import { Button, Card, Field, Input, cx } from './ui';
 
 /**
@@ -57,6 +59,7 @@ export function RosterGrid({
   const [custom, setCustom] = useState(false);
   const [customStart, setCustomStart] = useState(SHIFT_PRESETS.day.start);
   const [customHours, setCustomHours] = useState(String(SHIFT_PRESETS.day.hours));
+  const [panel, setPanel] = useState<'autofill' | 'rotation' | null>(null);
 
   const officers = useMemo(
     () =>
@@ -217,6 +220,24 @@ export function RosterGrid({
           {selected.size > 0 ? `${selected.size} ${t.schedule.shift}` : t.schedule.selectHint}
         </p>
         <div className="flex flex-wrap gap-2">
+          {selected.size === 0 && (
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => setPanel((p) => (p === 'autofill' ? null : 'autofill'))}
+              >
+                <Sparkles className="size-5" aria-hidden />
+                {t.planning.autofill}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setPanel((p) => (p === 'rotation' ? null : 'rotation'))}
+              >
+                <Repeat className="size-5" aria-hidden />
+                {t.planning.rotation}
+              </Button>
+            </>
+          )}
           <Button variant="secondary" loading={copying} onClick={onCopy}>
             <Copy className="size-5" aria-hidden />
             {t.schedule.copyLastWeek}
@@ -238,6 +259,26 @@ export function RosterGrid({
           )}
         </div>
       </div>
+
+      {panel === 'autofill' && selected.size === 0 && (
+        <RosterAutofill
+          site={site}
+          from={days[0]!}
+          to={days[days.length - 1]!}
+          hasStaffing={(staffing?.requirements.length ?? 0) > 0}
+          onApplied={onChanged}
+          onClose={() => setPanel(null)}
+        />
+      )}
+      {panel === 'rotation' && selected.size === 0 && (
+        <RotationPanel
+          site={site}
+          officers={officers.filter((o) => o.assignmentType !== 'roving')}
+          monday={days[0]!}
+          onApplied={onChanged}
+          onClose={() => setPanel(null)}
+        />
+      )}
 
       {custom && (
         <Card className="grid gap-4 p-4 sm:grid-cols-[12rem_8rem_auto] sm:items-end">

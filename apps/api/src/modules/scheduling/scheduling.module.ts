@@ -12,6 +12,7 @@ import {
   VisitRepository,
   ZoneRepository,
 } from './application/ports.js';
+import { PlanningService } from './application/planning.service.js';
 import { ReliefService } from './application/relief.service.js';
 import { RovingVisitsService } from './application/roving-visits.service.js';
 import { SchedulingDirectory } from './application/scheduling-directory.js';
@@ -24,13 +25,14 @@ import { DrizzleShiftRepository } from './infrastructure/drizzle-shift.repositor
 import { DrizzleStaffingRepository } from './infrastructure/drizzle-staffing.repository.js';
 import { DrizzleVisitRepository } from './infrastructure/drizzle-visit.repository.js';
 import { DrizzleZoneRepository } from './infrastructure/drizzle-zone.repository.js';
+import { PlanningController } from './interface/http/planning.controller.js';
 import { SchedulingController } from './interface/http/scheduling.controller.js';
 import { ReliefController } from './interface/http/relief.controller.js';
 import { ZonesController } from './interface/http/zones.controller.js';
 
 @Module({
   imports: [WorkforceModule, TenancyModule, NotificationsModule],
-  controllers: [SchedulingController, ZonesController, ReliefController],
+  controllers: [SchedulingController, ZonesController, ReliefController, PlanningController],
   providers: [
     { provide: ShiftRepository, useClass: DrizzleShiftRepository },
     { provide: AttendanceRepository, useClass: DrizzleAttendanceRepository },
@@ -45,6 +47,7 @@ import { ZonesController } from './interface/http/zones.controller.js';
     ZonesService,
     ReliefService,
     RovingVisitsService,
+    PlanningService,
   ],
   exports: [SchedulingDirectory],
 })

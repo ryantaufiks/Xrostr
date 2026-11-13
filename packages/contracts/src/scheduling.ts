@@ -340,3 +340,101 @@ export interface MyReliefOffer {
 export function visitsAtRisk(owed: number, remainingMs: number, gapMinutes: number): boolean {
   return owed > 0 && remainingMs < owed * gapMinutes * 60_000;
 }
+
+// ---------- Rotation patterns and auto-fill ----------
+
+/** One day of a rotation: a day shift, a night shift, or a day off. */
+export const ROTATION_STEPS = ['day', 'night', 'off'] as const;
+export type RotationStep = (typeof ROTATION_STEPS)[number];
+export const MAX_ROTATION_LENGTH = 28;
+
+/**
+ * Applies a repeating pattern (e.g. day, day, night, night, off, off) to one officer at one site
+ * from `from` to `to`, as drafts; the officer's drafts there on days off are removed. `startAt` is the pattern step used on `from`, so a rotation can
+ * continue where the previous one stopped.
+ */
+export const rotationSchema = z
+  .object({
+    locationId: z.uuid(),
+    employeeId: z.uuid(),
+    from: isoDate,
+    to: isoDate,
+    pattern: z.array(z.enum(ROTATION_STEPS)).min(1).max(MAX_ROTATION_LENGTH),
+    startAt: z
+      .number()
+      .int()
+      .min(0)
+      .max(MAX_ROTATION_LENGTH - 1)
+      .default(0),
+  })
+  .refine((v) => v.from <= v.to, { path: ['to'], message: 'End must not be before start' })
+  .refine((v) => v.pattern.some((s) => s !== 'off'), {
+    path: ['pattern'],
+    message: 'A pattern needs at least one working day',
+  })
+  .refine((v) => v.startAt < v.pattern.length, {
+    path: ['startAt'],
+    message: 'Start inside the pattern',
+  });
+export type RotationRequest = z.input<typeof rotationSchema>;
+
+export interface RotationResult {
+  created: number;
+  /** Drafts of the officer at this site removed because the pattern has a day off there. */
+  removed: number;
+  /** Working days left alone: approved leave, or a published shift already there. */
+  skipped: { date: string; reason: 'leave' | 'published' }[];
+}
+
+/** The step of the pattern for each date from `from` to `to`, inclusive. */
+export function expandRotation(
+  pattern: readonly RotationStep[],
+  from: string,
+  to: string,
+  startAt = 0,
+): { date: string; step: RotationStep }[] {
+  const out: { date: string; step: RotationStep }[] = [];
+  const first = Date.parse(`${from}T00:00:00Z`);
+  const last = Date.parse(`${to}T00:00:00Z`);
+  for (let t = first, i = 0; t <= last; t += 86_400_000, i++) {
+    out.push({
+      date: new Date(t).toISOString().slice(0, 10),
+      step: pattern[(startAt + i) % pattern.length]!,
+    });
+  }
+  return out;
+}
+
+/**
+ * Reads a pattern typed as letters: P or D = day, M or N = night, L, O or - = off. Spaces and
+ * commas are ignored. Returns null when a letter is not understood.
+ */
+export function parseRotation(text: string): RotationStep[] | null {
+  const steps: RotationStep[] = [];
+  for (const ch of text.toUpperCase().replace(/[\s,]/g, '')) {
+    if (ch === 'P' || ch === 'D') steps.push('day');
+    else if (ch === 'M' || ch === 'N') steps.push('night');
+    else if (ch === 'L' || ch === 'O' || ch === '-') steps.push('off');
+    else return null;
+  }
+  return steps;
+}
+
+export const rosterSuggestionsQuerySchema = rosterQuerySchema;
+
+/** A suggested draft to bring a day's day or night shifts up to the site's staffing target. */
+export interface RosterSuggestion {
+  date: string;
+  kind: 'day' | 'night';
+  employee: { id: string; fullName: string; employeeNo: string };
+  /** The officer is based at this site (otherwise cleared for it). */
+  homeSite: boolean;
+  /** Working hours in that week, this suggestion included. */
+  weeklyHours: number;
+}
+
+export interface RosterSuggestionsView {
+  suggestions: RosterSuggestion[];
+  /** Slots still short after the suggestions: nobody fits without breaking a rule. */
+  unfilled: { date: string; kind: 'day' | 'night'; missing: number }[];
+}
